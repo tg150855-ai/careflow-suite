@@ -8,7 +8,7 @@ export type AppRole =
   | "receptionist"
   | "nurse"
   | "pharmacist"
-  | "lab_technician"
+  | "lab_tech"
   | "accountant";
 
 interface AuthState {
