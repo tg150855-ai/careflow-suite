@@ -98,6 +98,126 @@ export type Database = {
         }
         Relationships: []
       }
+      bill_items: {
+        Row: {
+          amount: number
+          bill_id: string
+          category: string
+          description: string
+          id: string
+          position: number
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          amount?: number
+          bill_id: string
+          category: string
+          description: string
+          id?: string
+          position?: number
+          quantity?: number
+          unit_price?: number
+        }
+        Update: {
+          amount?: number
+          bill_id?: string
+          category?: string
+          description?: string
+          id?: string
+          position?: number
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_items_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bills: {
+        Row: {
+          bill_no: string
+          created_at: string
+          created_by: string | null
+          discount: number
+          doctor_id: string | null
+          gst: number
+          id: string
+          notes: string | null
+          opd_visit_id: string | null
+          paid: number
+          patient_id: string
+          pending: number
+          status: Database["public"]["Enums"]["bill_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          bill_no?: string
+          created_at?: string
+          created_by?: string | null
+          discount?: number
+          doctor_id?: string | null
+          gst?: number
+          id?: string
+          notes?: string | null
+          opd_visit_id?: string | null
+          paid?: number
+          patient_id: string
+          pending?: number
+          status?: Database["public"]["Enums"]["bill_status"]
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          bill_no?: string
+          created_at?: string
+          created_by?: string | null
+          discount?: number
+          doctor_id?: string | null
+          gst?: number
+          id?: string
+          notes?: string | null
+          opd_visit_id?: string | null
+          paid?: number
+          patient_id?: string
+          pending?: number
+          status?: Database["public"]["Enums"]["bill_status"]
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bills_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_opd_visit_id_fkey"
+            columns: ["opd_visit_id"]
+            isOneToOne: false
+            referencedRelation: "opd_visits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           code: string
@@ -165,6 +285,240 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lab_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          doctor_id: string | null
+          id: string
+          notes: string | null
+          opd_visit_id: string | null
+          order_no: string
+          patient_id: string
+          status: Database["public"]["Enums"]["lab_order_status"]
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          doctor_id?: string | null
+          id?: string
+          notes?: string | null
+          opd_visit_id?: string | null
+          order_no?: string
+          patient_id: string
+          status?: Database["public"]["Enums"]["lab_order_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          doctor_id?: string | null
+          id?: string
+          notes?: string | null
+          opd_visit_id?: string | null
+          order_no?: string
+          patient_id?: string
+          status?: Database["public"]["Enums"]["lab_order_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_orders_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_orders_opd_visit_id_fkey"
+            columns: ["opd_visit_id"]
+            isOneToOne: false
+            referencedRelation: "opd_visits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_orders_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_results: {
+        Row: {
+          flag: string | null
+          id: string
+          order_id: string
+          reference_range: string | null
+          report_url: string | null
+          result_entered_at: string | null
+          result_entered_by: string | null
+          result_value: string | null
+          test_id: string
+          test_name: string
+          unit: string | null
+        }
+        Insert: {
+          flag?: string | null
+          id?: string
+          order_id: string
+          reference_range?: string | null
+          report_url?: string | null
+          result_entered_at?: string | null
+          result_entered_by?: string | null
+          result_value?: string | null
+          test_id: string
+          test_name: string
+          unit?: string | null
+        }
+        Update: {
+          flag?: string | null
+          id?: string
+          order_id?: string
+          reference_range?: string | null
+          report_url?: string | null
+          result_entered_at?: string | null
+          result_entered_by?: string | null
+          result_value?: string | null
+          test_id?: string
+          test_name?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_results_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "lab_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_results_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "lab_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_tests: {
+        Row: {
+          active: boolean
+          code: string | null
+          created_at: string
+          department: string | null
+          id: string
+          name: string
+          price: number
+          turnaround_hours: number
+        }
+        Insert: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          name: string
+          price?: number
+          turnaround_hours?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          name?: string
+          price?: number
+          turnaround_hours?: number
+        }
+        Relationships: []
+      }
+      medicine_batches: {
+        Row: {
+          batch_no: string
+          created_at: string
+          expiry_date: string
+          id: string
+          medicine_id: string
+          mrp: number
+          purchase_price: number
+          quantity: number
+        }
+        Insert: {
+          batch_no: string
+          created_at?: string
+          expiry_date: string
+          id?: string
+          medicine_id: string
+          mrp?: number
+          purchase_price?: number
+          quantity?: number
+        }
+        Update: {
+          batch_no?: string
+          created_at?: string
+          expiry_date?: string
+          id?: string
+          medicine_id?: string
+          mrp?: number
+          purchase_price?: number
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicine_batches_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicines: {
+        Row: {
+          active: boolean
+          created_at: string
+          generic_name: string | null
+          gst_percent: number
+          id: string
+          manufacturer: string | null
+          minimum_stock: number
+          name: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          generic_name?: string | null
+          gst_percent?: number
+          id?: string
+          manufacturer?: string | null
+          minimum_stock?: number
+          name: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          generic_name?: string | null
+          gst_percent?: number
+          id?: string
+          manufacturer?: string | null
+          minimum_stock?: number
+          name?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       opd_visits: {
         Row: {
@@ -308,6 +662,149 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          bill_id: string
+          created_by: string | null
+          id: string
+          method: Database["public"]["Enums"]["payment_method"]
+          paid_at: string
+          reference: string | null
+        }
+        Insert: {
+          amount: number
+          bill_id: string
+          created_by?: string | null
+          id?: string
+          method: Database["public"]["Enums"]["payment_method"]
+          paid_at?: string
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          bill_id?: string
+          created_by?: string | null
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method"]
+          paid_at?: string
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pharmacy_sale_items: {
+        Row: {
+          amount: number
+          batch_id: string | null
+          gst_percent: number
+          id: string
+          medicine_id: string
+          medicine_name: string
+          quantity: number
+          sale_id: string
+          unit_price: number
+        }
+        Insert: {
+          amount: number
+          batch_id?: string | null
+          gst_percent?: number
+          id?: string
+          medicine_id: string
+          medicine_name: string
+          quantity: number
+          sale_id: string
+          unit_price: number
+        }
+        Update: {
+          amount?: number
+          batch_id?: string | null
+          gst_percent?: number
+          id?: string
+          medicine_id?: string
+          medicine_name?: string
+          quantity?: number
+          sale_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pharmacy_sale_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "medicine_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_sale_items_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pharmacy_sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "pharmacy_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pharmacy_sales: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          discount: number
+          gst: number
+          id: string
+          invoice_no: string
+          patient_id: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          subtotal: number
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          discount?: number
+          gst?: number
+          id?: string
+          invoice_no?: string
+          patient_id?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          subtotal?: number
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          discount?: number
+          gst?: number
+          id?: string
+          invoice_no?: string
+          patient_id?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          subtotal?: number
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pharmacy_sales_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prescription_items: {
         Row: {
           dosage: string | null
@@ -431,6 +928,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gen_bill_no: { Args: never; Returns: string }
+      gen_lab_order_no: { Args: never; Returns: string }
+      gen_pharm_invoice_no: { Args: never; Returns: string }
       generate_uhid: { Args: never; Returns: string }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
@@ -457,7 +957,21 @@ export type Database = {
         | "waiting"
         | "completed"
         | "cancelled"
+      bill_status: "draft" | "partial" | "paid" | "cancelled"
       gender_type: "male" | "female" | "other"
+      lab_order_status:
+        | "ordered"
+        | "sample_collected"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+      payment_method:
+        | "cash"
+        | "upi"
+        | "card"
+        | "bank_transfer"
+        | "insurance"
+        | "credit"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -602,7 +1116,23 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      bill_status: ["draft", "partial", "paid", "cancelled"],
       gender_type: ["male", "female", "other"],
+      lab_order_status: [
+        "ordered",
+        "sample_collected",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+      payment_method: [
+        "cash",
+        "upi",
+        "card",
+        "bank_transfer",
+        "insurance",
+        "credit",
+      ],
     },
   },
 } as const
