@@ -1,3 +1,2 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ComingSoon } from "@/components/coming-soon";
-export const Route = createFileRoute("/_authenticated/billing")({ component: () => <ComingSoon title="Billing" description="Consultation, procedure, pharmacy & room charges" /> });
+import { createFileRoute, Outlet } from "@tanstack/react-router";
+export const Route = createFileRoute("/_authenticated/billing")({ component: () => <Outlet /> });
