@@ -48,7 +48,7 @@ function LabOrderView() {
         }).eq("id", r.id);
         if (error) throw error;
       }
-      await supabase.from("lab_orders").update({ status }).eq("id", id);
+      await supabase.from("lab_orders").update({ status: status as any }).eq("id", id);
     },
     onSuccess: () => { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["lab-order", id] }); },
     onError: (e: Error) => toast.error(e.message),
