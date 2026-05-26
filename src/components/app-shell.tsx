@@ -7,11 +7,11 @@ import {
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
+import { GlobalSearch } from "@/components/global-search";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
 
@@ -92,10 +92,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 border-b bg-surface/80 backdrop-blur sticky top-0 z-30 flex items-center gap-4 px-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search patients, doctors, bills..." className="pl-9 h-10 bg-surface-muted border-transparent focus-visible:bg-surface" />
-          </div>
+          <GlobalSearch />
+
 
           <div className="hidden lg:flex flex-col items-center text-center px-6 border-l border-r">
             <div className="text-sm font-semibold">MediCore General Hospital</div>
@@ -144,7 +142,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          {hasAnyRole(["admin","doctor","receptionist","nurse","pharmacist","lab_technician","accountant"]) ? (
+          {hasAnyRole(["admin","doctor","receptionist","nurse","pharmacist","lab_tech","accountant"]) ? (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
