@@ -450,6 +450,7 @@ export type Database = {
         | "pharmacist"
         | "lab_technician"
         | "accountant"
+        | "lab_tech"
       appointment_status:
         | "booked"
         | "checked_in"
@@ -592,6 +593,7 @@ export const Constants = {
         "pharmacist",
         "lab_technician",
         "accountant",
+        "lab_tech",
       ],
       appointment_status: [
         "booked",
