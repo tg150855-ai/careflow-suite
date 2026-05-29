@@ -42,7 +42,7 @@ function BedMap() {
   });
 
   const setStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status }: { id: string; status: "available" | "occupied" | "cleaning" | "reserved" | "maintenance" }) => {
       const { error } = await supabase.from("beds").update({ status }).eq("id", id);
       if (error) throw error;
     },

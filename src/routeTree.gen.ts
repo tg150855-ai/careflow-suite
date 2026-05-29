@@ -27,8 +27,10 @@ import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAppointmentsRouteImport } from './routes/_authenticated/appointments'
 import { Route as AuthenticatedPharmacyIndexRouteImport } from './routes/_authenticated/pharmacy.index'
 import { Route as AuthenticatedLaboratoryIndexRouteImport } from './routes/_authenticated/laboratory.index'
+import { Route as AuthenticatedIpdIndexRouteImport } from './routes/_authenticated/ipd.index'
 import { Route as AuthenticatedBillingIndexRouteImport } from './routes/_authenticated/billing.index'
 import { Route as PrescriptionsIdPrintRouteImport } from './routes/prescriptions.$id.print'
+import { Route as DischargeIdPrintRouteImport } from './routes/discharge.$id.print'
 import { Route as AuthenticatedPharmacyMedicinesRouteImport } from './routes/_authenticated/pharmacy.medicines'
 import { Route as AuthenticatedPatientsNewRouteImport } from './routes/_authenticated/patients.new'
 import { Route as AuthenticatedPatientsIdRouteImport } from './routes/_authenticated/patients.$id'
@@ -36,9 +38,13 @@ import { Route as AuthenticatedOpdAppointmentIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedLaboratoryTestsRouteImport } from './routes/_authenticated/laboratory.tests'
 import { Route as AuthenticatedLaboratoryNewRouteImport } from './routes/_authenticated/laboratory.new'
 import { Route as AuthenticatedLaboratoryIdRouteImport } from './routes/_authenticated/laboratory.$id'
+import { Route as AuthenticatedIpdNewRouteImport } from './routes/_authenticated/ipd.new'
+import { Route as AuthenticatedIpdBedsRouteImport } from './routes/_authenticated/ipd.beds'
+import { Route as AuthenticatedIpdIdRouteImport } from './routes/_authenticated/ipd.$id'
 import { Route as AuthenticatedBillingNewRouteImport } from './routes/_authenticated/billing.new'
 import { Route as AuthenticatedBillingIdRouteImport } from './routes/_authenticated/billing.$id'
 import { Route as AuthenticatedPharmacySalesNewRouteImport } from './routes/_authenticated/pharmacy.sales.new'
+import { Route as AuthenticatedIpdIdDischargeRouteImport } from './routes/_authenticated/ipd.$id.discharge'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -133,6 +139,11 @@ const AuthenticatedLaboratoryIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedLaboratoryRoute,
   } as any)
+const AuthenticatedIpdIndexRoute = AuthenticatedIpdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedIpdRoute,
+} as any)
 const AuthenticatedBillingIndexRoute =
   AuthenticatedBillingIndexRouteImport.update({
     id: '/',
@@ -142,6 +153,11 @@ const AuthenticatedBillingIndexRoute =
 const PrescriptionsIdPrintRoute = PrescriptionsIdPrintRouteImport.update({
   id: '/prescriptions/$id/print',
   path: '/prescriptions/$id/print',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DischargeIdPrintRoute = DischargeIdPrintRouteImport.update({
+  id: '/discharge/$id/print',
+  path: '/discharge/$id/print',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedPharmacyMedicinesRoute =
@@ -185,6 +201,21 @@ const AuthenticatedLaboratoryIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedLaboratoryRoute,
   } as any)
+const AuthenticatedIpdNewRoute = AuthenticatedIpdNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthenticatedIpdRoute,
+} as any)
+const AuthenticatedIpdBedsRoute = AuthenticatedIpdBedsRouteImport.update({
+  id: '/beds',
+  path: '/beds',
+  getParentRoute: () => AuthenticatedIpdRoute,
+} as any)
+const AuthenticatedIpdIdRoute = AuthenticatedIpdIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedIpdRoute,
+} as any)
 const AuthenticatedBillingNewRoute = AuthenticatedBillingNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -201,6 +232,12 @@ const AuthenticatedPharmacySalesNewRoute =
     path: '/sales/new',
     getParentRoute: () => AuthenticatedPharmacyRoute,
   } as any)
+const AuthenticatedIpdIdDischargeRoute =
+  AuthenticatedIpdIdDischargeRouteImport.update({
+    id: '/discharge',
+    path: '/discharge',
+    getParentRoute: () => AuthenticatedIpdIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -208,7 +245,7 @@ export interface FileRoutesByFullPath {
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/billing': typeof AuthenticatedBillingRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/ipd': typeof AuthenticatedIpdRoute
+  '/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
   '/nurse-station': typeof AuthenticatedNurseStationRoute
   '/opd': typeof AuthenticatedOpdRouteWithChildren
@@ -220,6 +257,9 @@ export interface FileRoutesByFullPath {
   '/staff': typeof AuthenticatedStaffRoute
   '/billing/$id': typeof AuthenticatedBillingIdRoute
   '/billing/new': typeof AuthenticatedBillingNewRoute
+  '/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
+  '/ipd/beds': typeof AuthenticatedIpdBedsRoute
+  '/ipd/new': typeof AuthenticatedIpdNewRoute
   '/laboratory/$id': typeof AuthenticatedLaboratoryIdRoute
   '/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
   '/laboratory/tests': typeof AuthenticatedLaboratoryTestsRoute
@@ -227,10 +267,13 @@ export interface FileRoutesByFullPath {
   '/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/patients/new': typeof AuthenticatedPatientsNewRoute
   '/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
+  '/discharge/$id/print': typeof DischargeIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/billing/': typeof AuthenticatedBillingIndexRoute
+  '/ipd/': typeof AuthenticatedIpdIndexRoute
   '/laboratory/': typeof AuthenticatedLaboratoryIndexRoute
   '/pharmacy/': typeof AuthenticatedPharmacyIndexRoute
+  '/ipd/$id/discharge': typeof AuthenticatedIpdIdDischargeRoute
   '/pharmacy/sales/new': typeof AuthenticatedPharmacySalesNewRoute
 }
 export interface FileRoutesByTo {
@@ -238,7 +281,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/ipd': typeof AuthenticatedIpdRoute
   '/nurse-station': typeof AuthenticatedNurseStationRoute
   '/opd': typeof AuthenticatedOpdRouteWithChildren
   '/ot': typeof AuthenticatedOtRoute
@@ -248,6 +290,9 @@ export interface FileRoutesByTo {
   '/staff': typeof AuthenticatedStaffRoute
   '/billing/$id': typeof AuthenticatedBillingIdRoute
   '/billing/new': typeof AuthenticatedBillingNewRoute
+  '/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
+  '/ipd/beds': typeof AuthenticatedIpdBedsRoute
+  '/ipd/new': typeof AuthenticatedIpdNewRoute
   '/laboratory/$id': typeof AuthenticatedLaboratoryIdRoute
   '/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
   '/laboratory/tests': typeof AuthenticatedLaboratoryTestsRoute
@@ -255,10 +300,13 @@ export interface FileRoutesByTo {
   '/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/patients/new': typeof AuthenticatedPatientsNewRoute
   '/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
+  '/discharge/$id/print': typeof DischargeIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/billing': typeof AuthenticatedBillingIndexRoute
+  '/ipd': typeof AuthenticatedIpdIndexRoute
   '/laboratory': typeof AuthenticatedLaboratoryIndexRoute
   '/pharmacy': typeof AuthenticatedPharmacyIndexRoute
+  '/ipd/$id/discharge': typeof AuthenticatedIpdIdDischargeRoute
   '/pharmacy/sales/new': typeof AuthenticatedPharmacySalesNewRoute
 }
 export interface FileRoutesById {
@@ -269,7 +317,7 @@ export interface FileRoutesById {
   '/_authenticated/appointments': typeof AuthenticatedAppointmentsRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/ipd': typeof AuthenticatedIpdRoute
+  '/_authenticated/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/_authenticated/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
   '/_authenticated/nurse-station': typeof AuthenticatedNurseStationRoute
   '/_authenticated/opd': typeof AuthenticatedOpdRouteWithChildren
@@ -281,6 +329,9 @@ export interface FileRoutesById {
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/billing/$id': typeof AuthenticatedBillingIdRoute
   '/_authenticated/billing/new': typeof AuthenticatedBillingNewRoute
+  '/_authenticated/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
+  '/_authenticated/ipd/beds': typeof AuthenticatedIpdBedsRoute
+  '/_authenticated/ipd/new': typeof AuthenticatedIpdNewRoute
   '/_authenticated/laboratory/$id': typeof AuthenticatedLaboratoryIdRoute
   '/_authenticated/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
   '/_authenticated/laboratory/tests': typeof AuthenticatedLaboratoryTestsRoute
@@ -288,10 +339,13 @@ export interface FileRoutesById {
   '/_authenticated/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/_authenticated/patients/new': typeof AuthenticatedPatientsNewRoute
   '/_authenticated/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
+  '/discharge/$id/print': typeof DischargeIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/_authenticated/billing/': typeof AuthenticatedBillingIndexRoute
+  '/_authenticated/ipd/': typeof AuthenticatedIpdIndexRoute
   '/_authenticated/laboratory/': typeof AuthenticatedLaboratoryIndexRoute
   '/_authenticated/pharmacy/': typeof AuthenticatedPharmacyIndexRoute
+  '/_authenticated/ipd/$id/discharge': typeof AuthenticatedIpdIdDischargeRoute
   '/_authenticated/pharmacy/sales/new': typeof AuthenticatedPharmacySalesNewRoute
 }
 export interface FileRouteTypes {
@@ -314,6 +368,9 @@ export interface FileRouteTypes {
     | '/staff'
     | '/billing/$id'
     | '/billing/new'
+    | '/ipd/$id'
+    | '/ipd/beds'
+    | '/ipd/new'
     | '/laboratory/$id'
     | '/laboratory/new'
     | '/laboratory/tests'
@@ -321,10 +378,13 @@ export interface FileRouteTypes {
     | '/patients/$id'
     | '/patients/new'
     | '/pharmacy/medicines'
+    | '/discharge/$id/print'
     | '/prescriptions/$id/print'
     | '/billing/'
+    | '/ipd/'
     | '/laboratory/'
     | '/pharmacy/'
+    | '/ipd/$id/discharge'
     | '/pharmacy/sales/new'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -332,7 +392,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/appointments'
     | '/dashboard'
-    | '/ipd'
     | '/nurse-station'
     | '/opd'
     | '/ot'
@@ -342,6 +401,9 @@ export interface FileRouteTypes {
     | '/staff'
     | '/billing/$id'
     | '/billing/new'
+    | '/ipd/$id'
+    | '/ipd/beds'
+    | '/ipd/new'
     | '/laboratory/$id'
     | '/laboratory/new'
     | '/laboratory/tests'
@@ -349,10 +411,13 @@ export interface FileRouteTypes {
     | '/patients/$id'
     | '/patients/new'
     | '/pharmacy/medicines'
+    | '/discharge/$id/print'
     | '/prescriptions/$id/print'
     | '/billing'
+    | '/ipd'
     | '/laboratory'
     | '/pharmacy'
+    | '/ipd/$id/discharge'
     | '/pharmacy/sales/new'
   id:
     | '__root__'
@@ -374,6 +439,9 @@ export interface FileRouteTypes {
     | '/_authenticated/staff'
     | '/_authenticated/billing/$id'
     | '/_authenticated/billing/new'
+    | '/_authenticated/ipd/$id'
+    | '/_authenticated/ipd/beds'
+    | '/_authenticated/ipd/new'
     | '/_authenticated/laboratory/$id'
     | '/_authenticated/laboratory/new'
     | '/_authenticated/laboratory/tests'
@@ -381,10 +449,13 @@ export interface FileRouteTypes {
     | '/_authenticated/patients/$id'
     | '/_authenticated/patients/new'
     | '/_authenticated/pharmacy/medicines'
+    | '/discharge/$id/print'
     | '/prescriptions/$id/print'
     | '/_authenticated/billing/'
+    | '/_authenticated/ipd/'
     | '/_authenticated/laboratory/'
     | '/_authenticated/pharmacy/'
+    | '/_authenticated/ipd/$id/discharge'
     | '/_authenticated/pharmacy/sales/new'
   fileRoutesById: FileRoutesById
 }
@@ -392,6 +463,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  DischargeIdPrintRoute: typeof DischargeIdPrintRoute
   PrescriptionsIdPrintRoute: typeof PrescriptionsIdPrintRoute
 }
 
@@ -523,6 +595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLaboratoryIndexRouteImport
       parentRoute: typeof AuthenticatedLaboratoryRoute
     }
+    '/_authenticated/ipd/': {
+      id: '/_authenticated/ipd/'
+      path: '/'
+      fullPath: '/ipd/'
+      preLoaderRoute: typeof AuthenticatedIpdIndexRouteImport
+      parentRoute: typeof AuthenticatedIpdRoute
+    }
     '/_authenticated/billing/': {
       id: '/_authenticated/billing/'
       path: '/'
@@ -535,6 +614,13 @@ declare module '@tanstack/react-router' {
       path: '/prescriptions/$id/print'
       fullPath: '/prescriptions/$id/print'
       preLoaderRoute: typeof PrescriptionsIdPrintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discharge/$id/print': {
+      id: '/discharge/$id/print'
+      path: '/discharge/$id/print'
+      fullPath: '/discharge/$id/print'
+      preLoaderRoute: typeof DischargeIdPrintRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/pharmacy/medicines': {
@@ -586,6 +672,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLaboratoryIdRouteImport
       parentRoute: typeof AuthenticatedLaboratoryRoute
     }
+    '/_authenticated/ipd/new': {
+      id: '/_authenticated/ipd/new'
+      path: '/new'
+      fullPath: '/ipd/new'
+      preLoaderRoute: typeof AuthenticatedIpdNewRouteImport
+      parentRoute: typeof AuthenticatedIpdRoute
+    }
+    '/_authenticated/ipd/beds': {
+      id: '/_authenticated/ipd/beds'
+      path: '/beds'
+      fullPath: '/ipd/beds'
+      preLoaderRoute: typeof AuthenticatedIpdBedsRouteImport
+      parentRoute: typeof AuthenticatedIpdRoute
+    }
+    '/_authenticated/ipd/$id': {
+      id: '/_authenticated/ipd/$id'
+      path: '/$id'
+      fullPath: '/ipd/$id'
+      preLoaderRoute: typeof AuthenticatedIpdIdRouteImport
+      parentRoute: typeof AuthenticatedIpdRoute
+    }
     '/_authenticated/billing/new': {
       id: '/_authenticated/billing/new'
       path: '/new'
@@ -607,6 +714,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPharmacySalesNewRouteImport
       parentRoute: typeof AuthenticatedPharmacyRoute
     }
+    '/_authenticated/ipd/$id/discharge': {
+      id: '/_authenticated/ipd/$id/discharge'
+      path: '/discharge'
+      fullPath: '/ipd/$id/discharge'
+      preLoaderRoute: typeof AuthenticatedIpdIdDischargeRouteImport
+      parentRoute: typeof AuthenticatedIpdIdRoute
+    }
   }
 }
 
@@ -624,6 +738,34 @@ const AuthenticatedBillingRouteChildren: AuthenticatedBillingRouteChildren = {
 
 const AuthenticatedBillingRouteWithChildren =
   AuthenticatedBillingRoute._addFileChildren(AuthenticatedBillingRouteChildren)
+
+interface AuthenticatedIpdIdRouteChildren {
+  AuthenticatedIpdIdDischargeRoute: typeof AuthenticatedIpdIdDischargeRoute
+}
+
+const AuthenticatedIpdIdRouteChildren: AuthenticatedIpdIdRouteChildren = {
+  AuthenticatedIpdIdDischargeRoute: AuthenticatedIpdIdDischargeRoute,
+}
+
+const AuthenticatedIpdIdRouteWithChildren =
+  AuthenticatedIpdIdRoute._addFileChildren(AuthenticatedIpdIdRouteChildren)
+
+interface AuthenticatedIpdRouteChildren {
+  AuthenticatedIpdIdRoute: typeof AuthenticatedIpdIdRouteWithChildren
+  AuthenticatedIpdBedsRoute: typeof AuthenticatedIpdBedsRoute
+  AuthenticatedIpdNewRoute: typeof AuthenticatedIpdNewRoute
+  AuthenticatedIpdIndexRoute: typeof AuthenticatedIpdIndexRoute
+}
+
+const AuthenticatedIpdRouteChildren: AuthenticatedIpdRouteChildren = {
+  AuthenticatedIpdIdRoute: AuthenticatedIpdIdRouteWithChildren,
+  AuthenticatedIpdBedsRoute: AuthenticatedIpdBedsRoute,
+  AuthenticatedIpdNewRoute: AuthenticatedIpdNewRoute,
+  AuthenticatedIpdIndexRoute: AuthenticatedIpdIndexRoute,
+}
+
+const AuthenticatedIpdRouteWithChildren =
+  AuthenticatedIpdRoute._addFileChildren(AuthenticatedIpdRouteChildren)
 
 interface AuthenticatedLaboratoryRouteChildren {
   AuthenticatedLaboratoryIdRoute: typeof AuthenticatedLaboratoryIdRoute
@@ -692,7 +834,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAppointmentsRoute: typeof AuthenticatedAppointmentsRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedIpdRoute: typeof AuthenticatedIpdRoute
+  AuthenticatedIpdRoute: typeof AuthenticatedIpdRouteWithChildren
   AuthenticatedLaboratoryRoute: typeof AuthenticatedLaboratoryRouteWithChildren
   AuthenticatedNurseStationRoute: typeof AuthenticatedNurseStationRoute
   AuthenticatedOpdRoute: typeof AuthenticatedOpdRouteWithChildren
@@ -708,7 +850,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAppointmentsRoute: AuthenticatedAppointmentsRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedIpdRoute: AuthenticatedIpdRoute,
+  AuthenticatedIpdRoute: AuthenticatedIpdRouteWithChildren,
   AuthenticatedLaboratoryRoute: AuthenticatedLaboratoryRouteWithChildren,
   AuthenticatedNurseStationRoute: AuthenticatedNurseStationRoute,
   AuthenticatedOpdRoute: AuthenticatedOpdRouteWithChildren,
@@ -728,6 +870,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  DischargeIdPrintRoute: DischargeIdPrintRoute,
   PrescriptionsIdPrintRoute: PrescriptionsIdPrintRoute,
 }
 export const routeTree = rootRouteImport
