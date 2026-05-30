@@ -2,8 +2,8 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import {
   LayoutDashboard, Users, CalendarDays, Stethoscope, BedDouble, Pill, FlaskConical,
-  Scissors, HeartPulse, FileBarChart, UserCog, Settings, Search, Bell, LogOut,
-  ChevronLeft, Heart, ChevronDown,
+  Scissors, HeartPulse, FileBarChart, UserCog, Settings, Bell, LogOut,
+  ChevronLeft, Heart, ChevronDown, Ambulance, ShieldCheck, Siren, MessageSquare,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -12,20 +12,25 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { GlobalSearch } from "@/components/global-search";
+import { NotificationBell } from "@/components/notification-bell";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
 
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/emergency", label: "Emergency", icon: Siren },
   { to: "/patients", label: "Patients", icon: Users },
   { to: "/appointments", label: "Appointments", icon: CalendarDays },
   { to: "/opd", label: "OPD", icon: Stethoscope },
   { to: "/ipd", label: "IPD", icon: BedDouble },
-  { to: "/pharmacy", label: "Pharmacy", icon: Pill },
-  { to: "/laboratory", label: "Laboratory", icon: FlaskConical },
   { to: "/ot", label: "OT / Surgery", icon: Scissors },
   { to: "/nurse-station", label: "Nurse Station", icon: HeartPulse },
+  { to: "/pharmacy", label: "Pharmacy", icon: Pill },
+  { to: "/laboratory", label: "Laboratory", icon: FlaskConical },
   { to: "/billing", label: "Billing", icon: FileBarChart },
+  { to: "/insurance", label: "Insurance", icon: ShieldCheck },
+  { to: "/ambulance", label: "Ambulance", icon: Ambulance },
+  { to: "/communications", label: "Communications", icon: MessageSquare },
   { to: "/reports", label: "Reports", icon: FileBarChart },
   { to: "/staff", label: "Staff", icon: UserCog, roles: ["admin"] },
   { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
