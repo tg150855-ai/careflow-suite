@@ -160,6 +160,128 @@ export type Database = {
           },
         ]
       }
+      ambulance_dispatches: {
+        Row: {
+          ambulance_id: string | null
+          arrived_at: string | null
+          caller_name: string | null
+          caller_phone: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          destination: string | null
+          destination_lat: number | null
+          destination_lng: number | null
+          dispatch_no: string
+          dispatched_at: string | null
+          eta_minutes: number | null
+          fare: number
+          id: string
+          notes: string | null
+          patient_id: string | null
+          pickup_lat: number | null
+          pickup_lng: number | null
+          pickup_location: string
+          status: Database["public"]["Enums"]["dispatch_status"]
+          updated_at: string
+        }
+        Insert: {
+          ambulance_id?: string | null
+          arrived_at?: string | null
+          caller_name?: string | null
+          caller_phone?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          destination?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
+          dispatch_no?: string
+          dispatched_at?: string | null
+          eta_minutes?: number | null
+          fare?: number
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          pickup_location: string
+          status?: Database["public"]["Enums"]["dispatch_status"]
+          updated_at?: string
+        }
+        Update: {
+          ambulance_id?: string | null
+          arrived_at?: string | null
+          caller_name?: string | null
+          caller_phone?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          destination?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
+          dispatch_no?: string
+          dispatched_at?: string | null
+          eta_minutes?: number | null
+          fare?: number
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          pickup_location?: string
+          status?: Database["public"]["Enums"]["dispatch_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ambulance_dispatches_ambulance_id_fkey"
+            columns: ["ambulance_id"]
+            isOneToOne: false
+            referencedRelation: "ambulances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ambulances: {
+        Row: {
+          active: boolean
+          created_at: string
+          driver_name: string | null
+          driver_phone: string | null
+          equipment: string | null
+          id: string
+          status: Database["public"]["Enums"]["ambulance_status"]
+          updated_at: string
+          vehicle_number: string
+          vehicle_type: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          driver_name?: string | null
+          driver_phone?: string | null
+          equipment?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["ambulance_status"]
+          updated_at?: string
+          vehicle_number: string
+          vehicle_type?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          driver_name?: string | null
+          driver_phone?: string | null
+          equipment?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["ambulance_status"]
+          updated_at?: string
+          vehicle_number?: string
+          vehicle_type?: string | null
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           created_at: string
@@ -676,6 +798,259 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          body: string | null
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          message_type: string
+          patient_id: string | null
+          recipient: string
+          reference_id: string | null
+          reference_type: string | null
+          status: Database["public"]["Enums"]["comm_status"]
+          subject: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          message_type: string
+          patient_id?: string | null
+          recipient: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: Database["public"]["Enums"]["comm_status"]
+          subject: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          message_type?: string
+          patient_id?: string | null
+          recipient?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: Database["public"]["Enums"]["comm_status"]
+          subject?: string
+        }
+        Relationships: []
+      }
+      emergency_cases: {
+        Row: {
+          approx_age: number | null
+          arrival_time: string
+          attending_doctor_id: string | null
+          chief_complaint: string | null
+          created_at: string
+          created_by: string | null
+          emergency_no: string
+          emergency_type: string | null
+          full_name: string
+          gender: string | null
+          id: string
+          mobile: string | null
+          notes: string | null
+          patient_id: string | null
+          status: Database["public"]["Enums"]["emergency_status"]
+          treatment_end: string | null
+          treatment_start: string | null
+          triage: Database["public"]["Enums"]["triage_level"] | null
+          updated_at: string
+        }
+        Insert: {
+          approx_age?: number | null
+          arrival_time?: string
+          attending_doctor_id?: string | null
+          chief_complaint?: string | null
+          created_at?: string
+          created_by?: string | null
+          emergency_no?: string
+          emergency_type?: string | null
+          full_name: string
+          gender?: string | null
+          id?: string
+          mobile?: string | null
+          notes?: string | null
+          patient_id?: string | null
+          status?: Database["public"]["Enums"]["emergency_status"]
+          treatment_end?: string | null
+          treatment_start?: string | null
+          triage?: Database["public"]["Enums"]["triage_level"] | null
+          updated_at?: string
+        }
+        Update: {
+          approx_age?: number | null
+          arrival_time?: string
+          attending_doctor_id?: string | null
+          chief_complaint?: string | null
+          created_at?: string
+          created_by?: string | null
+          emergency_no?: string
+          emergency_type?: string | null
+          full_name?: string
+          gender?: string | null
+          id?: string
+          mobile?: string | null
+          notes?: string | null
+          patient_id?: string | null
+          status?: Database["public"]["Enums"]["emergency_status"]
+          treatment_end?: string | null
+          treatment_start?: string | null
+          triage?: Database["public"]["Enums"]["triage_level"] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      insurance_claims: {
+        Row: {
+          admission_id: string | null
+          approved_amount: number
+          bill_id: string | null
+          claim_amount: number
+          claim_no: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          patient_insurance_id: string | null
+          pre_auth_no: string | null
+          rejection_reason: string | null
+          settled_at: string | null
+          status: Database["public"]["Enums"]["claim_status"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          admission_id?: string | null
+          approved_amount?: number
+          bill_id?: string | null
+          claim_amount?: number
+          claim_no?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          patient_insurance_id?: string | null
+          pre_auth_no?: string | null
+          rejection_reason?: string | null
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["claim_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admission_id?: string | null
+          approved_amount?: number
+          bill_id?: string | null
+          claim_amount?: number
+          claim_no?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          patient_insurance_id?: string | null
+          pre_auth_no?: string | null
+          rejection_reason?: string | null
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["claim_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_claims_patient_insurance_id_fkey"
+            columns: ["patient_insurance_id"]
+            isOneToOne: false
+            referencedRelation: "patient_insurance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_companies: {
+        Row: {
+          active: boolean
+          contact_person: string | null
+          coverage_rules: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          policy_type: string | null
+          tpa: string | null
+        }
+        Insert: {
+          active?: boolean
+          contact_person?: string | null
+          coverage_rules?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          policy_type?: string | null
+          tpa?: string | null
+        }
+        Update: {
+          active?: boolean
+          contact_person?: string | null
+          coverage_rules?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          policy_type?: string | null
+          tpa?: string | null
+        }
+        Relationships: []
+      }
+      insurance_documents: {
+        Row: {
+          claim_id: string
+          created_at: string
+          document_type: string
+          file_url: string | null
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          document_type: string
+          file_url?: string | null
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          document_type?: string
+          file_url?: string | null
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_documents_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_orders: {
         Row: {
           created_at: string
@@ -960,6 +1335,51 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          category: string
+          created_at: string
+          id: string
+          link: string | null
+          priority: Database["public"]["Enums"]["notification_priority"]
+          read_at: string | null
+          reference_id: string | null
+          reference_type: string | null
+          target_role: Database["public"]["Enums"]["app_role"] | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          category: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          priority?: Database["public"]["Enums"]["notification_priority"]
+          read_at?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          target_role?: Database["public"]["Enums"]["app_role"] | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          priority?: Database["public"]["Enums"]["notification_priority"]
+          read_at?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          target_role?: Database["public"]["Enums"]["app_role"] | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       nursing_notes: {
         Row: {
           admission_id: string
@@ -1061,6 +1481,77 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ot_rooms: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      patient_insurance: {
+        Row: {
+          active: boolean
+          authorization_number: string | null
+          company_id: string | null
+          coverage_limit: number
+          created_at: string
+          id: string
+          patient_id: string
+          policy_number: string
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          active?: boolean
+          authorization_number?: string | null
+          company_id?: string | null
+          coverage_limit?: number
+          created_at?: string
+          id?: string
+          patient_id: string
+          policy_number: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          active?: boolean
+          authorization_number?: string | null
+          company_id?: string | null
+          coverage_limit?: number
+          created_at?: string
+          id?: string
+          patient_id?: string
+          policy_number?: string
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_insurance_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_companies"
             referencedColumns: ["id"]
           },
         ]
@@ -1377,6 +1868,457 @@ export type Database = {
         }
         Relationships: []
       }
+      recovery_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          discharge_recommendation: string | null
+          icu_transfer: boolean
+          id: string
+          notes: string | null
+          recovery_status: string | null
+          surgery_id: string
+          vitals: Json | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          discharge_recommendation?: string | null
+          icu_transfer?: boolean
+          id?: string
+          notes?: string | null
+          recovery_status?: string | null
+          surgery_id: string
+          vitals?: Json | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          discharge_recommendation?: string | null
+          icu_transfer?: boolean
+          id?: string
+          notes?: string | null
+          recovery_status?: string | null
+          surgery_id?: string
+          vitals?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_notes_surgery_id_fkey"
+            columns: ["surgery_id"]
+            isOneToOne: false
+            referencedRelation: "surgeries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheme_beneficiaries: {
+        Row: {
+          coverage_balance: number
+          created_at: string
+          eligibility_status: string
+          family_id: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          scheme_id: string
+          scheme_name: string
+          verified_at: string | null
+        }
+        Insert: {
+          coverage_balance?: number
+          created_at?: string
+          eligibility_status?: string
+          family_id?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          scheme_id: string
+          scheme_name: string
+          verified_at?: string | null
+        }
+        Update: {
+          coverage_balance?: number
+          created_at?: string
+          eligibility_status?: string
+          family_id?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          scheme_id?: string
+          scheme_name?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      scheme_claims: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          beneficiary_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          package_id: string | null
+          patient_id: string
+          status: Database["public"]["Enums"]["claim_status"]
+          submitted_at: string | null
+        }
+        Insert: {
+          amount?: number
+          approved_at?: string | null
+          beneficiary_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          package_id?: string | null
+          patient_id: string
+          status?: Database["public"]["Enums"]["claim_status"]
+          submitted_at?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          beneficiary_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          package_id?: string | null
+          patient_id?: string
+          status?: Database["public"]["Enums"]["claim_status"]
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheme_claims_beneficiary_id_fkey"
+            columns: ["beneficiary_id"]
+            isOneToOne: false
+            referencedRelation: "scheme_beneficiaries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheme_claims_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "scheme_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheme_packages: {
+        Row: {
+          active: boolean
+          amount: number
+          created_at: string
+          id: string
+          package_code: string
+          package_name: string
+          scheme_name: string
+        }
+        Insert: {
+          active?: boolean
+          amount?: number
+          created_at?: string
+          id?: string
+          package_code: string
+          package_name: string
+          scheme_name: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          created_at?: string
+          id?: string
+          package_code?: string
+          package_name?: string
+          scheme_name?: string
+        }
+        Relationships: []
+      }
+      sms_logs: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          message_type: string
+          patient_id: string | null
+          recipient: string
+          reference_id: string | null
+          reference_type: string | null
+          status: Database["public"]["Enums"]["comm_status"]
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          message_type: string
+          patient_id?: string | null
+          recipient: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: Database["public"]["Enums"]["comm_status"]
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          message_type?: string
+          patient_id?: string | null
+          recipient?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: Database["public"]["Enums"]["comm_status"]
+        }
+        Relationships: []
+      }
+      surgeries: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          admission_id: string | null
+          anesthetist_id: string | null
+          created_at: string
+          created_by: string | null
+          estimated_cost: number
+          id: string
+          notes: string | null
+          ot_room_id: string | null
+          patient_id: string
+          primary_surgeon_id: string | null
+          priority: Database["public"]["Enums"]["surgery_priority"]
+          procedure_code: string | null
+          procedure_name: string
+          scheduled_end: string
+          scheduled_start: string
+          status: Database["public"]["Enums"]["surgery_status"]
+          surgery_no: string
+          updated_at: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          admission_id?: string | null
+          anesthetist_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          estimated_cost?: number
+          id?: string
+          notes?: string | null
+          ot_room_id?: string | null
+          patient_id: string
+          primary_surgeon_id?: string | null
+          priority?: Database["public"]["Enums"]["surgery_priority"]
+          procedure_code?: string | null
+          procedure_name: string
+          scheduled_end: string
+          scheduled_start: string
+          status?: Database["public"]["Enums"]["surgery_status"]
+          surgery_no?: string
+          updated_at?: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          admission_id?: string | null
+          anesthetist_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          estimated_cost?: number
+          id?: string
+          notes?: string | null
+          ot_room_id?: string | null
+          patient_id?: string
+          primary_surgeon_id?: string | null
+          priority?: Database["public"]["Enums"]["surgery_priority"]
+          procedure_code?: string | null
+          procedure_name?: string
+          scheduled_end?: string
+          scheduled_start?: string
+          status?: Database["public"]["Enums"]["surgery_status"]
+          surgery_no?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      surgery_checklists: {
+        Row: {
+          anesthesia_clearance: boolean
+          blood_available: boolean
+          consent_signed: boolean
+          fitness_clearance: boolean
+          id: string
+          insurance_approved: boolean
+          lab_completed: boolean
+          notes: string | null
+          surgery_id: string
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          anesthesia_clearance?: boolean
+          blood_available?: boolean
+          consent_signed?: boolean
+          fitness_clearance?: boolean
+          id?: string
+          insurance_approved?: boolean
+          lab_completed?: boolean
+          notes?: string | null
+          surgery_id: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          anesthesia_clearance?: boolean
+          blood_available?: boolean
+          consent_signed?: boolean
+          fitness_clearance?: boolean
+          id?: string
+          insurance_approved?: boolean
+          lab_completed?: boolean
+          notes?: string | null
+          surgery_id?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surgery_checklists_surgery_id_fkey"
+            columns: ["surgery_id"]
+            isOneToOne: false
+            referencedRelation: "surgeries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surgery_notes: {
+        Row: {
+          blood_loss_ml: number | null
+          complications: string | null
+          created_at: string
+          created_by: string | null
+          findings: string | null
+          id: string
+          implants_used: string | null
+          procedure_performed: string | null
+          remarks: string | null
+          surgery_id: string
+        }
+        Insert: {
+          blood_loss_ml?: number | null
+          complications?: string | null
+          created_at?: string
+          created_by?: string | null
+          findings?: string | null
+          id?: string
+          implants_used?: string | null
+          procedure_performed?: string | null
+          remarks?: string | null
+          surgery_id: string
+        }
+        Update: {
+          blood_loss_ml?: number | null
+          complications?: string | null
+          created_at?: string
+          created_by?: string | null
+          findings?: string | null
+          id?: string
+          implants_used?: string | null
+          procedure_performed?: string | null
+          remarks?: string | null
+          surgery_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surgery_notes_surgery_id_fkey"
+            columns: ["surgery_id"]
+            isOneToOne: false
+            referencedRelation: "surgeries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surgery_team: {
+        Row: {
+          created_at: string
+          id: string
+          member_name: string
+          role: string
+          surgery_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_name: string
+          role: string
+          surgery_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_name?: string
+          role?: string
+          surgery_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surgery_team_surgery_id_fkey"
+            columns: ["surgery_id"]
+            isOneToOne: false
+            referencedRelation: "surgeries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      triage_records: {
+        Row: {
+          assessed_by: string | null
+          assessment: string | null
+          created_at: string
+          emergency_case_id: string
+          id: string
+          level: Database["public"]["Enums"]["triage_level"]
+          vitals: Json | null
+        }
+        Insert: {
+          assessed_by?: string | null
+          assessment?: string | null
+          created_at?: string
+          emergency_case_id: string
+          id?: string
+          level: Database["public"]["Enums"]["triage_level"]
+          vitals?: Json | null
+        }
+        Update: {
+          assessed_by?: string | null
+          assessment?: string | null
+          created_at?: string
+          emergency_case_id?: string
+          id?: string
+          level?: Database["public"]["Enums"]["triage_level"]
+          vitals?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "triage_records_emergency_case_id_fkey"
+            columns: ["emergency_case_id"]
+            isOneToOne: false
+            referencedRelation: "emergency_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1488,6 +2430,48 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_logs: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          message_type: string
+          patient_id: string | null
+          recipient: string
+          reference_id: string | null
+          reference_type: string | null
+          status: Database["public"]["Enums"]["comm_status"]
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          message_type: string
+          patient_id?: string | null
+          recipient: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: Database["public"]["Enums"]["comm_status"]
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          message_type?: string
+          patient_id?: string | null
+          recipient?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: Database["public"]["Enums"]["comm_status"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1495,8 +2479,12 @@ export type Database = {
     Functions: {
       gen_admission_no: { Args: never; Returns: string }
       gen_bill_no: { Args: never; Returns: string }
+      gen_claim_no: { Args: never; Returns: string }
+      gen_dispatch_no: { Args: never; Returns: string }
+      gen_emergency_no: { Args: never; Returns: string }
       gen_lab_order_no: { Args: never; Returns: string }
       gen_pharm_invoice_no: { Args: never; Returns: string }
+      gen_surgery_no: { Args: never; Returns: string }
       generate_uhid: { Args: never; Returns: string }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
@@ -1509,6 +2497,11 @@ export type Database = {
     }
     Enums: {
       admission_status: "active" | "discharged" | "transferred" | "cancelled"
+      ambulance_status:
+        | "available"
+        | "on_duty"
+        | "maintenance"
+        | "out_of_service"
       app_role:
         | "admin"
         | "doctor"
@@ -1535,6 +2528,29 @@ export type Database = {
         | "reserved"
         | "maintenance"
       bill_status: "draft" | "partial" | "paid" | "cancelled"
+      claim_status:
+        | "draft"
+        | "submitted"
+        | "under_review"
+        | "approved"
+        | "rejected"
+        | "settled"
+      comm_status: "queued" | "sent" | "delivered" | "read" | "failed"
+      dispatch_status:
+        | "requested"
+        | "dispatched"
+        | "en_route"
+        | "arrived"
+        | "returning"
+        | "completed"
+        | "cancelled"
+      emergency_status:
+        | "waiting"
+        | "in_treatment"
+        | "admitted"
+        | "discharged"
+        | "referred"
+        | "deceased"
       gender_type: "male" | "female" | "other"
       lab_order_status:
         | "ordered"
@@ -1543,6 +2559,7 @@ export type Database = {
         | "completed"
         | "cancelled"
       mar_status: "scheduled" | "administered" | "missed" | "held"
+      notification_priority: "low" | "normal" | "high" | "critical"
       payment_method:
         | "cash"
         | "upi"
@@ -1550,6 +2567,14 @@ export type Database = {
         | "bank_transfer"
         | "insurance"
         | "credit"
+      surgery_priority: "emergency" | "urgent" | "elective"
+      surgery_status:
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "postponed"
+      triage_level: "red" | "orange" | "yellow" | "green"
       ward_type: "icu" | "general" | "semi_private" | "private" | "emergency"
     }
     CompositeTypes: {
@@ -1679,6 +2704,12 @@ export const Constants = {
   public: {
     Enums: {
       admission_status: ["active", "discharged", "transferred", "cancelled"],
+      ambulance_status: [
+        "available",
+        "on_duty",
+        "maintenance",
+        "out_of_service",
+      ],
       app_role: [
         "admin",
         "doctor",
@@ -1708,6 +2739,32 @@ export const Constants = {
         "maintenance",
       ],
       bill_status: ["draft", "partial", "paid", "cancelled"],
+      claim_status: [
+        "draft",
+        "submitted",
+        "under_review",
+        "approved",
+        "rejected",
+        "settled",
+      ],
+      comm_status: ["queued", "sent", "delivered", "read", "failed"],
+      dispatch_status: [
+        "requested",
+        "dispatched",
+        "en_route",
+        "arrived",
+        "returning",
+        "completed",
+        "cancelled",
+      ],
+      emergency_status: [
+        "waiting",
+        "in_treatment",
+        "admitted",
+        "discharged",
+        "referred",
+        "deceased",
+      ],
       gender_type: ["male", "female", "other"],
       lab_order_status: [
         "ordered",
@@ -1717,6 +2774,7 @@ export const Constants = {
         "cancelled",
       ],
       mar_status: ["scheduled", "administered", "missed", "held"],
+      notification_priority: ["low", "normal", "high", "critical"],
       payment_method: [
         "cash",
         "upi",
@@ -1725,6 +2783,15 @@ export const Constants = {
         "insurance",
         "credit",
       ],
+      surgery_priority: ["emergency", "urgent", "elective"],
+      surgery_status: [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "postponed",
+      ],
+      triage_level: ["red", "orange", "yellow", "green"],
       ward_type: ["icu", "general", "semi_private", "private", "emergency"],
     },
   },
