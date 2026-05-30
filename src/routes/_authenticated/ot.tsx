@@ -28,8 +28,8 @@ function OTDashboard() {
 
   async function load() {
     const [s, r, p] = await Promise.all([
-      supabase.from("surgeries").select("*").order("scheduled_start", { ascending: false }).limit(50),
-      supabase.from("ot_rooms").select("id,name").eq("active", true),
+      (supabase as any).from("surgeries").select("*").order("scheduled_start", { ascending: false }).limit(50),
+      (supabase as any).from("ot_rooms").select("id,name").eq("active", true),
       supabase.from("patients").select("id,full_name,uhid").order("created_at", { ascending: false }).limit(200),
     ]);
     setSurgeries((s.data as Surgery[]) ?? []);
@@ -50,7 +50,7 @@ function OTDashboard() {
     }
     // Conflict detection: same OT room overlap
     if (form.ot_room_id) {
-      const { data: conflicts } = await supabase.from("surgeries")
+      const { data: conflicts } = await (supabase as any).from("surgeries")
         .select("id,procedure_name,scheduled_start,scheduled_end")
         .eq("ot_room_id", form.ot_room_id)
         .neq("status", "cancelled")
@@ -62,7 +62,7 @@ function OTDashboard() {
       }
     }
     const user = (await supabase.auth.getUser()).data.user;
-    const { error } = await supabase.from("surgeries").insert({ ...form, created_by: user?.id, ot_room_id: form.ot_room_id || null });
+    const { error } = await (supabase as any).from("surgeries").insert({ ...form, created_by: user?.id, ot_room_id: form.ot_room_id || null });
     if (error) return toast.error(error.message);
     toast.success("Surgery scheduled");
     setOpen(false);
@@ -74,7 +74,7 @@ function OTDashboard() {
     const patch: Record<string, unknown> = { status };
     if (status === "in_progress") patch.actual_start = new Date().toISOString();
     if (status === "completed") patch.actual_end = new Date().toISOString();
-    const { error } = await supabase.from("surgeries").update(patch).eq("id", id);
+    const { error } = await (supabase as any).from("surgeries").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Updated");
     load();

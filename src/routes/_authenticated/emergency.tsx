@@ -30,7 +30,7 @@ function EmergencyPage() {
   const [form, setForm] = useState({ full_name: "", mobile: "", gender: "male", approx_age: 30, emergency_type: "trauma", chief_complaint: "", triage: "yellow" });
 
   async function load() {
-    const { data } = await supabase.from("emergency_cases").select("*").order("arrival_time", { ascending: false }).limit(100);
+    const { data } = await (supabase as any).from("emergency_cases").select("*").order("arrival_time", { ascending: false }).limit(100);
     setCases((data as ER[]) ?? []);
   }
   useEffect(() => { load(); }, []);
@@ -38,7 +38,7 @@ function EmergencyPage() {
   async function submit() {
     if (!form.full_name) return toast.error("Name required");
     const user = (await supabase.auth.getUser()).data.user;
-    const { error } = await supabase.from("emergency_cases").insert({ ...form, created_by: user?.id });
+    const { error } = await (supabase as any).from("emergency_cases").insert({ ...form, created_by: user?.id });
     if (error) return toast.error(error.message);
     toast.success("Emergency case registered");
     setOpen(false);
@@ -50,7 +50,7 @@ function EmergencyPage() {
     const patch: Record<string, unknown> = { status };
     if (status === "in_treatment") patch.treatment_start = new Date().toISOString();
     if (status === "discharged" || status === "admitted") patch.treatment_end = new Date().toISOString();
-    await supabase.from("emergency_cases").update(patch).eq("id", id);
+    await (supabase as any).from("emergency_cases").update(patch).eq("id", id);
     load();
   }
 

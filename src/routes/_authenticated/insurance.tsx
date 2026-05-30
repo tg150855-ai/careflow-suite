@@ -26,8 +26,8 @@ function InsurancePage() {
 
   async function load() {
     const [c, co, p] = await Promise.all([
-      supabase.from("insurance_claims").select("*").order("created_at", { ascending: false }).limit(50),
-      supabase.from("insurance_companies").select("*").eq("active", true),
+      (supabase as any).from("insurance_claims").select("*").order("created_at", { ascending: false }).limit(50),
+      (supabase as any).from("insurance_companies").select("*").eq("active", true),
       supabase.from("patients").select("id,full_name,uhid").limit(200),
     ]);
     setClaims(c.data ?? []);
@@ -38,13 +38,13 @@ function InsurancePage() {
 
   useEffect(() => {
     if (!form.patient_id) { setPatIns([]); return; }
-    supabase.from("patient_insurance").select("id,policy_number,company_id,coverage_limit").eq("patient_id", form.patient_id).then(({ data }) => setPatIns(data ?? []));
+    (supabase as any).from("patient_insurance").select("id,policy_number,company_id,coverage_limit").eq("patient_id", form.patient_id).then(({ data }) => setPatIns(data ?? []));
   }, [form.patient_id]);
 
   async function submit() {
     if (!form.patient_id || !form.claim_amount) return toast.error("Patient & amount required");
     const user = (await supabase.auth.getUser()).data.user;
-    const { error } = await supabase.from("insurance_claims").insert({
+    const { error } = await (supabase as any).from("insurance_claims").insert({
       patient_id: form.patient_id,
       patient_insurance_id: form.patient_insurance_id || null,
       claim_amount: form.claim_amount,
@@ -64,7 +64,7 @@ function InsurancePage() {
     const patch: Record<string, unknown> = { status };
     if (status === "submitted") patch.submitted_at = new Date().toISOString();
     if (status === "settled") patch.settled_at = new Date().toISOString();
-    await supabase.from("insurance_claims").update(patch).eq("id", id);
+    await (supabase as any).from("insurance_claims").update(patch).eq("id", id);
     load();
   }
 
