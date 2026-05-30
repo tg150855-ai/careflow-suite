@@ -22,9 +22,13 @@ import { Route as AuthenticatedOpdRouteImport } from './routes/_authenticated/op
 import { Route as AuthenticatedNurseStationRouteImport } from './routes/_authenticated/nurse-station'
 import { Route as AuthenticatedLaboratoryRouteImport } from './routes/_authenticated/laboratory'
 import { Route as AuthenticatedIpdRouteImport } from './routes/_authenticated/ipd'
+import { Route as AuthenticatedInsuranceRouteImport } from './routes/_authenticated/insurance'
+import { Route as AuthenticatedEmergencyRouteImport } from './routes/_authenticated/emergency'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedAppointmentsRouteImport } from './routes/_authenticated/appointments'
+import { Route as AuthenticatedAmbulanceRouteImport } from './routes/_authenticated/ambulance'
 import { Route as AuthenticatedPharmacyIndexRouteImport } from './routes/_authenticated/pharmacy.index'
 import { Route as AuthenticatedLaboratoryIndexRouteImport } from './routes/_authenticated/laboratory.index'
 import { Route as AuthenticatedIpdIndexRouteImport } from './routes/_authenticated/ipd.index'
@@ -111,11 +115,27 @@ const AuthenticatedIpdRoute = AuthenticatedIpdRouteImport.update({
   path: '/ipd',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedInsuranceRoute = AuthenticatedInsuranceRouteImport.update({
+  id: '/insurance',
+  path: '/insurance',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedEmergencyRoute = AuthenticatedEmergencyRouteImport.update({
+  id: '/emergency',
+  path: '/emergency',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCommunicationsRoute =
+  AuthenticatedCommunicationsRouteImport.update({
+    id: '/communications',
+    path: '/communications',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
@@ -127,6 +147,11 @@ const AuthenticatedAppointmentsRoute =
     path: '/appointments',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAmbulanceRoute = AuthenticatedAmbulanceRouteImport.update({
+  id: '/ambulance',
+  path: '/ambulance',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedPharmacyIndexRoute =
   AuthenticatedPharmacyIndexRouteImport.update({
     id: '/',
@@ -242,9 +267,13 @@ const AuthenticatedIpdIdDischargeRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/ambulance': typeof AuthenticatedAmbulanceRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/communications': typeof AuthenticatedCommunicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/emergency': typeof AuthenticatedEmergencyRoute
+  '/insurance': typeof AuthenticatedInsuranceRoute
   '/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
   '/nurse-station': typeof AuthenticatedNurseStationRoute
@@ -279,8 +308,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/ambulance': typeof AuthenticatedAmbulanceRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
+  '/communications': typeof AuthenticatedCommunicationsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/emergency': typeof AuthenticatedEmergencyRoute
+  '/insurance': typeof AuthenticatedInsuranceRoute
   '/nurse-station': typeof AuthenticatedNurseStationRoute
   '/opd': typeof AuthenticatedOpdRouteWithChildren
   '/ot': typeof AuthenticatedOtRoute
@@ -314,9 +347,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/ambulance': typeof AuthenticatedAmbulanceRoute
   '/_authenticated/appointments': typeof AuthenticatedAppointmentsRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/emergency': typeof AuthenticatedEmergencyRoute
+  '/_authenticated/insurance': typeof AuthenticatedInsuranceRoute
   '/_authenticated/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/_authenticated/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
   '/_authenticated/nurse-station': typeof AuthenticatedNurseStationRoute
@@ -353,9 +390,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/ambulance'
     | '/appointments'
     | '/billing'
+    | '/communications'
     | '/dashboard'
+    | '/emergency'
+    | '/insurance'
     | '/ipd'
     | '/laboratory'
     | '/nurse-station'
@@ -390,8 +431,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/ambulance'
     | '/appointments'
+    | '/communications'
     | '/dashboard'
+    | '/emergency'
+    | '/insurance'
     | '/nurse-station'
     | '/opd'
     | '/ot'
@@ -424,9 +469,13 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/ambulance'
     | '/_authenticated/appointments'
     | '/_authenticated/billing'
+    | '/_authenticated/communications'
     | '/_authenticated/dashboard'
+    | '/_authenticated/emergency'
+    | '/_authenticated/insurance'
     | '/_authenticated/ipd'
     | '/_authenticated/laboratory'
     | '/_authenticated/nurse-station'
@@ -560,11 +609,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIpdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/insurance': {
+      id: '/_authenticated/insurance'
+      path: '/insurance'
+      fullPath: '/insurance'
+      preLoaderRoute: typeof AuthenticatedInsuranceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/emergency': {
+      id: '/_authenticated/emergency'
+      path: '/emergency'
+      fullPath: '/emergency'
+      preLoaderRoute: typeof AuthenticatedEmergencyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/communications': {
+      id: '/_authenticated/communications'
+      path: '/communications'
+      fullPath: '/communications'
+      preLoaderRoute: typeof AuthenticatedCommunicationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/billing': {
@@ -579,6 +649,13 @@ declare module '@tanstack/react-router' {
       path: '/appointments'
       fullPath: '/appointments'
       preLoaderRoute: typeof AuthenticatedAppointmentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/ambulance': {
+      id: '/_authenticated/ambulance'
+      path: '/ambulance'
+      fullPath: '/ambulance'
+      preLoaderRoute: typeof AuthenticatedAmbulanceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pharmacy/': {
@@ -831,9 +908,13 @@ const AuthenticatedPharmacyRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAmbulanceRoute: typeof AuthenticatedAmbulanceRoute
   AuthenticatedAppointmentsRoute: typeof AuthenticatedAppointmentsRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRouteWithChildren
+  AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEmergencyRoute: typeof AuthenticatedEmergencyRoute
+  AuthenticatedInsuranceRoute: typeof AuthenticatedInsuranceRoute
   AuthenticatedIpdRoute: typeof AuthenticatedIpdRouteWithChildren
   AuthenticatedLaboratoryRoute: typeof AuthenticatedLaboratoryRouteWithChildren
   AuthenticatedNurseStationRoute: typeof AuthenticatedNurseStationRoute
@@ -847,9 +928,13 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAmbulanceRoute: AuthenticatedAmbulanceRoute,
   AuthenticatedAppointmentsRoute: AuthenticatedAppointmentsRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRouteWithChildren,
+  AuthenticatedCommunicationsRoute: AuthenticatedCommunicationsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEmergencyRoute: AuthenticatedEmergencyRoute,
+  AuthenticatedInsuranceRoute: AuthenticatedInsuranceRoute,
   AuthenticatedIpdRoute: AuthenticatedIpdRouteWithChildren,
   AuthenticatedLaboratoryRoute: AuthenticatedLaboratoryRouteWithChildren,
   AuthenticatedNurseStationRoute: AuthenticatedNurseStationRoute,

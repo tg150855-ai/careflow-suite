@@ -9,7 +9,11 @@ export type AppRole =
   | "nurse"
   | "pharmacist"
   | "lab_tech"
-  | "accountant";
+  | "accountant"
+  | "surgeon"
+  | "insurance_officer"
+  | "ot_coordinator"
+  | "ambulance_driver";
 
 interface AuthState {
   user: User | null;
