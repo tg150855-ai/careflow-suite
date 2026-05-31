@@ -38,7 +38,7 @@ function InsurancePage() {
 
   useEffect(() => {
     if (!form.patient_id) { setPatIns([]); return; }
-    (supabase as any).from("patient_insurance").select("id,policy_number,company_id,coverage_limit").eq("patient_id", form.patient_id).then(({ data }) => setPatIns(data ?? []));
+    (supabase as any).from("patient_insurance").select("id,policy_number,company_id,coverage_limit").eq("patient_id", form.patient_id).then(({ data }: { data: any }) => setPatIns(data ?? []));
   }, [form.patient_id]);
 
   async function submit() {
