@@ -4,6 +4,7 @@ import type { Session, User } from "@supabase/supabase-js";
 
 export type AppRole =
   | "admin"
+  | "super_admin"
   | "doctor"
   | "receptionist"
   | "nurse"
@@ -13,7 +14,11 @@ export type AppRole =
   | "surgeon"
   | "insurance_officer"
   | "ot_coordinator"
-  | "ambulance_driver";
+  | "ambulance_driver"
+  | "hr_manager"
+  | "finance_manager"
+  | "dept_head"
+  | "procurement_officer";
 
 interface AuthState {
   user: User | null;
