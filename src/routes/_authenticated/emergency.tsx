@@ -38,7 +38,7 @@ function EmergencyPage() {
   async function submit() {
     if (!form.full_name) return toast.error("Name required");
     const user = (await supabase.auth.getUser()).data.user;
-    const { error } = await (supabase as any).from("emergency_cases").insert({ ...form, created_by: user?.id });
+    const { error } = await (supabase as any).from("emergency_cases").insert({ ...form, created_by: user?.id } as any);
     if (error) return toast.error(error.message);
     toast.success("Emergency case registered");
     setOpen(false);
@@ -50,7 +50,7 @@ function EmergencyPage() {
     const patch: Record<string, unknown> = { status };
     if (status === "in_treatment") patch.treatment_start = new Date().toISOString();
     if (status === "discharged" || status === "admitted") patch.treatment_end = new Date().toISOString();
-    await (supabase as any).from("emergency_cases").update(patch).eq("id", id);
+    await (supabase as any).from("emergency_cases").update(patch as any).eq("id", id);
     load();
   }
 
