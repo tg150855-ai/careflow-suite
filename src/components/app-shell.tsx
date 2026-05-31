@@ -4,6 +4,8 @@ import {
   LayoutDashboard, Users, CalendarDays, Stethoscope, BedDouble, Pill, FlaskConical,
   Scissors, HeartPulse, FileBarChart, UserCog, Settings, Bell, LogOut,
   ChevronLeft, Heart, ChevronDown, Ambulance, ShieldCheck, Siren, MessageSquare,
+  Briefcase, Clock, CalendarCheck, Wallet, Boxes, Truck, ShoppingCart, Landmark,
+  BarChart3, Building2, ShieldAlert, Database,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -14,26 +16,38 @@ import { format } from "date-fns";
 import { GlobalSearch } from "@/components/global-search";
 import { NotificationBell } from "@/components/notification-bell";
 
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; roles?: AppRole[]; section?: string };
 
 const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/emergency", label: "Emergency", icon: Siren },
-  { to: "/patients", label: "Patients", icon: Users },
-  { to: "/appointments", label: "Appointments", icon: CalendarDays },
-  { to: "/opd", label: "OPD", icon: Stethoscope },
-  { to: "/ipd", label: "IPD", icon: BedDouble },
-  { to: "/ot", label: "OT / Surgery", icon: Scissors },
-  { to: "/nurse-station", label: "Nurse Station", icon: HeartPulse },
-  { to: "/pharmacy", label: "Pharmacy", icon: Pill },
-  { to: "/laboratory", label: "Laboratory", icon: FlaskConical },
-  { to: "/billing", label: "Billing", icon: FileBarChart },
-  { to: "/insurance", label: "Insurance", icon: ShieldCheck },
-  { to: "/ambulance", label: "Ambulance", icon: Ambulance },
-  { to: "/communications", label: "Communications", icon: MessageSquare },
-  { to: "/reports", label: "Reports", icon: FileBarChart },
-  { to: "/staff", label: "Staff", icon: UserCog, roles: ["admin"] },
-  { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, section: "Clinical" },
+  { to: "/emergency", label: "Emergency", icon: Siren, section: "Clinical" },
+  { to: "/patients", label: "Patients", icon: Users, section: "Clinical" },
+  { to: "/appointments", label: "Appointments", icon: CalendarDays, section: "Clinical" },
+  { to: "/opd", label: "OPD", icon: Stethoscope, section: "Clinical" },
+  { to: "/ipd", label: "IPD", icon: BedDouble, section: "Clinical" },
+  { to: "/ot", label: "OT / Surgery", icon: Scissors, section: "Clinical" },
+  { to: "/nurse-station", label: "Nurse Station", icon: HeartPulse, section: "Clinical" },
+  { to: "/pharmacy", label: "Pharmacy", icon: Pill, section: "Clinical" },
+  { to: "/laboratory", label: "Laboratory", icon: FlaskConical, section: "Clinical" },
+  { to: "/billing", label: "Billing", icon: FileBarChart, section: "Finance" },
+  { to: "/insurance", label: "Insurance", icon: ShieldCheck, section: "Finance" },
+  { to: "/ambulance", label: "Ambulance", icon: Ambulance, section: "Operations" },
+  { to: "/communications", label: "Communications", icon: MessageSquare, section: "Operations" },
+  { to: "/hr/employees", label: "Employees", icon: Briefcase, section: "HR" },
+  { to: "/hr/attendance", label: "Attendance", icon: Clock, section: "HR" },
+  { to: "/hr/leave", label: "Leave", icon: CalendarCheck, section: "HR" },
+  { to: "/hr/payroll", label: "Payroll", icon: Wallet, section: "HR" },
+  { to: "/assets", label: "Assets", icon: Boxes, section: "Operations" },
+  { to: "/vendors", label: "Vendors", icon: Truck, section: "Operations" },
+  { to: "/procurement", label: "Procurement", icon: ShoppingCart, section: "Operations" },
+  { to: "/finance", label: "Finance", icon: Landmark, section: "Finance" },
+  { to: "/bi", label: "BI Dashboard", icon: BarChart3, section: "Admin" },
+  { to: "/reports", label: "Reports", icon: FileBarChart, section: "Admin" },
+  { to: "/branches", label: "Branches", icon: Building2, section: "Admin", roles: ["admin", "super_admin"] },
+  { to: "/audit", label: "Audit & Compliance", icon: ShieldAlert, section: "Admin", roles: ["admin", "super_admin"] },
+  { to: "/backups", label: "Backups", icon: Database, section: "Admin", roles: ["admin", "super_admin"] },
+  { to: "/staff", label: "Staff", icon: UserCog, section: "Admin", roles: ["admin"] },
+  { to: "/settings", label: "Settings", icon: Settings, section: "Admin", roles: ["admin"] },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -67,23 +81,32 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-          {visible.map((item) => {
-            const active = path === item.to || path.startsWith(item.to + "/");
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`group flex items-center gap-3 px-3 h-10 rounded-xl text-sm transition-all ${
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-soft"
-                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
-                }`}
-              >
-                <item.icon className={`size-4.5 shrink-0 ${active ? "text-primary" : ""}`} />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            );
-          })}
+          {Array.from(new Set(visible.map((v) => v.section ?? "Clinical"))).map((section) => (
+            <div key={section} className="mb-2">
+              {!collapsed && (
+                <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  {section}
+                </div>
+              )}
+              {visible.filter((v) => (v.section ?? "Clinical") === section).map((item) => {
+                const active = path === item.to || path.startsWith(item.to + "/");
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={`group flex items-center gap-3 px-3 h-10 rounded-xl text-sm transition-all ${
+                      active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-soft"
+                        : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                    }`}
+                  >
+                    <item.icon className={`size-4.5 shrink-0 ${active ? "text-primary" : ""}`} />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="p-3 border-t border-sidebar-border">
