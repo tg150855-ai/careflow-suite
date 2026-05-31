@@ -2515,6 +2515,11 @@ export type Database = {
         | "insurance_officer"
         | "ot_coordinator"
         | "ambulance_driver"
+        | "super_admin"
+        | "hr_manager"
+        | "finance_manager"
+        | "dept_head"
+        | "procurement_officer"
       appointment_status:
         | "booked"
         | "checked_in"
@@ -2723,6 +2728,11 @@ export const Constants = {
         "insurance_officer",
         "ot_coordinator",
         "ambulance_driver",
+        "super_admin",
+        "hr_manager",
+        "finance_manager",
+        "dept_head",
+        "procurement_officer",
       ],
       appointment_status: [
         "booked",
