@@ -81,23 +81,32 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-          {visible.map((item) => {
-            const active = path === item.to || path.startsWith(item.to + "/");
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`group flex items-center gap-3 px-3 h-10 rounded-xl text-sm transition-all ${
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-soft"
-                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
-                }`}
-              >
-                <item.icon className={`size-4.5 shrink-0 ${active ? "text-primary" : ""}`} />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            );
-          })}
+          {Array.from(new Set(visible.map((v) => v.section ?? "Clinical"))).map((section) => (
+            <div key={section} className="mb-2">
+              {!collapsed && (
+                <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  {section}
+                </div>
+              )}
+              {visible.filter((v) => (v.section ?? "Clinical") === section).map((item) => {
+                const active = path === item.to || path.startsWith(item.to + "/");
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={`group flex items-center gap-3 px-3 h-10 rounded-xl text-sm transition-all ${
+                      active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-soft"
+                        : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                    }`}
+                  >
+                    <item.icon className={`size-4.5 shrink-0 ${active ? "text-primary" : ""}`} />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="p-3 border-t border-sidebar-border">
