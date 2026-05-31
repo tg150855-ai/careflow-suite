@@ -38,7 +38,7 @@ function EmergencyPage() {
   async function submit() {
     if (!form.full_name) return toast.error("Name required");
     const user = (await supabase.auth.getUser()).data.user;
-    const { error } = await (supabase as any).from("emergency_cases").insert({ ...form, created_by: user?.id });
+    const { error } = await (supabase as any).from("emergency_cases").insert({ ...form, created_by: user?.id } as any);
     if (error) return toast.error(error.message);
     toast.success("Emergency case registered");
     setOpen(false);
