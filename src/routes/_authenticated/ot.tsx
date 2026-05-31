@@ -74,7 +74,7 @@ function OTDashboard() {
     const patch: Record<string, unknown> = { status };
     if (status === "in_progress") patch.actual_start = new Date().toISOString();
     if (status === "completed") patch.actual_end = new Date().toISOString();
-    const { error } = await (supabase as any).from("surgeries").update(patch).eq("id", id);
+    const { error } = await (supabase as any).from("surgeries").update(patch as any).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Updated");
     load();

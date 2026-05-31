@@ -38,7 +38,7 @@ function AmbulancePage() {
     const user = (await supabase.auth.getUser()).data.user;
     const { error } = await (supabase as any).from("ambulance_dispatches").insert({ ...form, ambulance_id: form.ambulance_id || null, dispatched_at: new Date().toISOString(), status: "dispatched", created_by: user?.id });
     if (error) return toast.error(error.message);
-    if (form.ambulance_id) await (supabase as any).from("ambulances").update({ status: "on_duty" }).eq("id", form.ambulance_id);
+    if (form.ambulance_id) await (supabase as any).from("ambulances").update({ status: "on_duty" } as any).eq("id", form.ambulance_id);
     toast.success("Ambulance dispatched");
     setOpen(false);
     setForm({ ambulance_id: "", caller_name: "", caller_phone: "", pickup_location: "", destination: "", eta_minutes: 15, fare: 0 });
@@ -49,8 +49,8 @@ function AmbulancePage() {
     const patch: Record<string, unknown> = { status };
     if (status === "arrived") patch.arrived_at = new Date().toISOString();
     if (status === "completed") patch.completed_at = new Date().toISOString();
-    await (supabase as any).from("ambulance_dispatches").update(patch).eq("id", id);
-    if (status === "completed" && ambulance_id) await (supabase as any).from("ambulances").update({ status: "available" }).eq("id", ambulance_id);
+    await (supabase as any).from("ambulance_dispatches").update(patch as any).eq("id", id);
+    if (status === "completed" && ambulance_id) await (supabase as any).from("ambulances").update({ status: "available" } as any).eq("id", ambulance_id);
     load();
   }
 

@@ -50,7 +50,7 @@ function EmergencyPage() {
     const patch: Record<string, unknown> = { status };
     if (status === "in_treatment") patch.treatment_start = new Date().toISOString();
     if (status === "discharged" || status === "admitted") patch.treatment_end = new Date().toISOString();
-    await (supabase as any).from("emergency_cases").update(patch).eq("id", id);
+    await (supabase as any).from("emergency_cases").update(patch as any).eq("id", id);
     load();
   }
 

@@ -64,7 +64,7 @@ function InsurancePage() {
     const patch: Record<string, unknown> = { status };
     if (status === "submitted") patch.submitted_at = new Date().toISOString();
     if (status === "settled") patch.settled_at = new Date().toISOString();
-    await (supabase as any).from("insurance_claims").update(patch).eq("id", id);
+    await (supabase as any).from("insurance_claims").update(patch as any).eq("id", id);
     load();
   }
 
