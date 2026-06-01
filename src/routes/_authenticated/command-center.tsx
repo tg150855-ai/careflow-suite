@@ -29,13 +29,14 @@ function CmdPage() {
 
   async function load() {
     const today = new Date().toISOString().split("T")[0];
+    const sb = supabase as any;
     const [bills, adm, opd, beds, surg, emrg] = await Promise.all([
-      supabase.from("bills").select("net_amount").gte("created_at", today),
-      supabase.from("admissions").select("id").eq("status", "active"),
-      supabase.from("appointments").select("id").eq("appointment_date", today).in("status", ["scheduled", "checked_in"]),
-      supabase.from("beds").select("status"),
-      supabase.from("surgeries").select("id").eq("status", "scheduled"),
-      supabase.from("emergency_visits").select("id, chief_complaint, triage_level").in("triage_level", ["red", "orange"]).order("created_at", { ascending: false }).limit(5),
+      sb.from("bills").select("net_amount").gte("created_at", today),
+      sb.from("admissions").select("id").eq("status", "active"),
+      sb.from("appointments").select("id").gte("scheduled_at", today + "T00:00:00").lte("scheduled_at", today + "T23:59:59"),
+      sb.from("beds").select("status"),
+      sb.from("surgeries").select("id").eq("status", "scheduled"),
+      sb.from("emergency_visits").select("id, chief_complaint, triage_level").in("triage_level", ["red", "orange"]).order("created_at", { ascending: false }).limit(5),
     ]);
     const bedRows = (beds.data ?? []) as any[];
     setS({
