@@ -29,6 +29,7 @@ import { Route as AuthenticatedLaboratoryRouteImport } from './routes/_authentic
 import { Route as AuthenticatedIpdRouteImport } from './routes/_authenticated/ipd'
 import { Route as AuthenticatedInsuranceRouteImport } from './routes/_authenticated/insurance'
 import { Route as AuthenticatedHealthRecordsRouteImport } from './routes/_authenticated/health-records'
+import { Route as AuthenticatedHealthPackagesRouteImport } from './routes/_authenticated/health-packages'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedEmergencyRouteImport } from './routes/_authenticated/emergency'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -170,6 +171,12 @@ const AuthenticatedHealthRecordsRoute =
   AuthenticatedHealthRecordsRouteImport.update({
     id: '/health-records',
     path: '/health-records',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedHealthPackagesRoute =
+  AuthenticatedHealthPackagesRouteImport.update({
+    id: '/health-packages',
+    path: '/health-packages',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
@@ -396,6 +403,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/health-records': typeof AuthenticatedHealthRecordsRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
   '/ipd': typeof AuthenticatedIpdRouteWithChildren
@@ -454,6 +462,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/health-records': typeof AuthenticatedHealthRecordsRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
   '/nurse-station': typeof AuthenticatedNurseStationRoute
@@ -512,6 +521,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/emergency': typeof AuthenticatedEmergencyRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
+  '/_authenticated/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/_authenticated/health-records': typeof AuthenticatedHealthRecordsRoute
   '/_authenticated/insurance': typeof AuthenticatedInsuranceRoute
   '/_authenticated/ipd': typeof AuthenticatedIpdRouteWithChildren
@@ -573,6 +583,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/emergency'
     | '/finance'
+    | '/health-packages'
     | '/health-records'
     | '/insurance'
     | '/ipd'
@@ -631,6 +642,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/emergency'
     | '/finance'
+    | '/health-packages'
     | '/health-records'
     | '/insurance'
     | '/nurse-station'
@@ -688,6 +700,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/emergency'
     | '/_authenticated/finance'
+    | '/_authenticated/health-packages'
     | '/_authenticated/health-records'
     | '/_authenticated/insurance'
     | '/_authenticated/ipd'
@@ -879,6 +892,13 @@ declare module '@tanstack/react-router' {
       path: '/health-records'
       fullPath: '/health-records'
       preLoaderRoute: typeof AuthenticatedHealthRecordsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/health-packages': {
+      id: '/_authenticated/health-packages'
+      path: '/health-packages'
+      fullPath: '/health-packages'
+      preLoaderRoute: typeof AuthenticatedHealthPackagesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/finance': {
@@ -1271,6 +1291,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmergencyRoute: typeof AuthenticatedEmergencyRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
+  AuthenticatedHealthPackagesRoute: typeof AuthenticatedHealthPackagesRoute
   AuthenticatedHealthRecordsRoute: typeof AuthenticatedHealthRecordsRoute
   AuthenticatedInsuranceRoute: typeof AuthenticatedInsuranceRoute
   AuthenticatedIpdRoute: typeof AuthenticatedIpdRouteWithChildren
@@ -1309,6 +1330,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmergencyRoute: AuthenticatedEmergencyRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
+  AuthenticatedHealthPackagesRoute: AuthenticatedHealthPackagesRoute,
   AuthenticatedHealthRecordsRoute: AuthenticatedHealthRecordsRoute,
   AuthenticatedInsuranceRoute: AuthenticatedInsuranceRoute,
   AuthenticatedIpdRoute: AuthenticatedIpdRouteWithChildren,
