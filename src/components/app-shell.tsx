@@ -6,6 +6,7 @@ import {
   ChevronLeft, Heart, ChevronDown, Ambulance, ShieldCheck, Siren, MessageSquare,
   Briefcase, Clock, CalendarCheck, Wallet, Boxes, Truck, ShoppingCart, Landmark,
   BarChart3, Building2, ShieldAlert, Database,
+  Video, Sparkles, Send, UserCheck, FileText, Syringe, Package, Hash, Activity, CreditCard,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,18 @@ const NAV: NavItem[] = [
   { to: "/backups", label: "Backups", icon: Database, section: "Admin", roles: ["admin", "super_admin"] },
   { to: "/staff", label: "Staff", icon: UserCog, section: "Admin", roles: ["admin"] },
   { to: "/settings", label: "Settings", icon: Settings, section: "Admin", roles: ["admin"] },
+  // Phase 6 — Digital Healthcare
+  { to: "/command-center", label: "Command Center", icon: Activity, section: "Admin", roles: ["admin", "super_admin"] },
+  { to: "/telemedicine", label: "Telemedicine", icon: Video, section: "Digital" },
+  { to: "/ai-assistant", label: "AI Assistant", icon: Sparkles, section: "Digital" },
+  { to: "/health-records", label: "Health Records", icon: FileText, section: "Digital" },
+  { to: "/vaccinations", label: "Vaccinations", icon: Syringe, section: "Digital" },
+  { to: "/health-packages", label: "Health Packages", icon: Package, section: "Digital" },
+  { to: "/queue", label: "Queue Tokens", icon: Hash, section: "Digital" },
+  { to: "/whatsapp", label: "WhatsApp Campaigns", icon: Send, section: "Digital" },
+  { to: "/crm", label: "Patient CRM", icon: UserCheck, section: "Digital" },
+  { to: "/payments-online", label: "Online Payments", icon: CreditCard, section: "Digital" },
+  { to: "/patient-portal", label: "Patient Portal", icon: Heart, section: "Patient", roles: ["patient", "admin"] },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -167,7 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          {hasAnyRole(["admin","doctor","receptionist","nurse","pharmacist","lab_tech","accountant"]) ? (
+          {hasAnyRole(["admin","doctor","receptionist","nurse","pharmacist","lab_tech","accountant","patient","super_admin","surgeon","insurance_officer","ot_coordinator","hr_manager","finance_manager","dept_head","procurement_officer"]) ? (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}

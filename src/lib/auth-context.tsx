@@ -18,7 +18,8 @@ export type AppRole =
   | "hr_manager"
   | "finance_manager"
   | "dept_head"
-  | "procurement_officer";
+  | "procurement_officer"
+  | "patient";
 
 interface AuthState {
   user: User | null;

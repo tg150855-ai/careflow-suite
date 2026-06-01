@@ -190,6 +190,36 @@ export type Database = {
           },
         ]
       }
+      ai_insights: {
+        Row: {
+          body: Json
+          category: string
+          confidence: number | null
+          created_by: string | null
+          generated_at: string
+          id: string
+          title: string
+        }
+        Insert: {
+          body?: Json
+          category: string
+          confidence?: number | null
+          created_by?: string | null
+          generated_at?: string
+          id?: string
+          title: string
+        }
+        Update: {
+          body?: Json
+          category?: string
+          confidence?: number | null
+          created_by?: string | null
+          generated_at?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       ambulance_dispatches: {
         Row: {
           ambulance_id: string | null
@@ -810,6 +840,90 @@ export type Database = {
         }
         Relationships: []
       }
+      communication_logs: {
+        Row: {
+          body: string | null
+          channel: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          patient_id: string | null
+          recipient: string
+          sent_at: string | null
+          status: string
+          subject: string | null
+          template: string | null
+        }
+        Insert: {
+          body?: string | null
+          channel: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          patient_id?: string | null
+          recipient: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template?: string | null
+        }
+        Update: {
+          body?: string | null
+          channel?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          patient_id?: string | null
+          recipient?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          template?: string | null
+        }
+        Relationships: []
+      }
+      crm_campaigns: {
+        Row: {
+          audience_filter: Json | null
+          campaign_type: string
+          channel: string
+          created_at: string
+          id: string
+          message: string | null
+          metrics: Json | null
+          name: string
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          audience_filter?: Json | null
+          campaign_type: string
+          channel?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          metrics?: Json | null
+          name: string
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          audience_filter?: Json | null
+          campaign_type?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          metrics?: Json | null
+          name?: string
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           code: string
@@ -1287,6 +1401,125 @@ export type Database = {
           received_at?: string
           received_by?: string | null
           received_quantity?: number
+        }
+        Relationships: []
+      }
+      health_package_bookings: {
+        Row: {
+          amount: number | null
+          booked_for: string | null
+          created_at: string
+          id: string
+          package_id: string
+          patient_id: string
+          status: string
+        }
+        Insert: {
+          amount?: number | null
+          booked_for?: string | null
+          created_at?: string
+          id?: string
+          package_id: string
+          patient_id: string
+          status?: string
+        }
+        Update: {
+          amount?: number | null
+          booked_for?: string | null
+          created_at?: string
+          id?: string
+          package_id?: string
+          patient_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_package_bookings_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "health_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      health_packages: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          description: string | null
+          duration_days: number | null
+          id: string
+          includes: Json | null
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          duration_days?: number | null
+          id?: string
+          includes?: Json | null
+          name: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          duration_days?: number | null
+          id?: string
+          includes?: Json | null
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      health_records: {
+        Row: {
+          attachments: Json | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          patient_id: string
+          record_date: string
+          record_type: string
+          source_id: string | null
+          source_table: string | null
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          attachments?: Json | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          patient_id: string
+          record_date?: string
+          record_type: string
+          source_id?: string | null
+          source_table?: string | null
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          attachments?: Json | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          patient_id?: string
+          record_date?: string
+          record_type?: string
+          source_id?: string | null
+          source_table?: string | null
+          summary?: string | null
+          title?: string
         }
         Relationships: []
       }
@@ -1880,6 +2113,48 @@ export type Database = {
           },
         ]
       }
+      online_payments: {
+        Row: {
+          amount: number
+          bill_id: string | null
+          created_at: string
+          gateway: string | null
+          gateway_ref: string | null
+          id: string
+          method: string
+          paid_at: string | null
+          patient_id: string
+          purpose: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          bill_id?: string | null
+          created_at?: string
+          gateway?: string | null
+          gateway_ref?: string | null
+          id?: string
+          method: string
+          paid_at?: string | null
+          patient_id: string
+          purpose?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          bill_id?: string | null
+          created_at?: string
+          gateway?: string | null
+          gateway_ref?: string | null
+          id?: string
+          method?: string
+          paid_at?: string | null
+          patient_id?: string
+          purpose?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       opd_visits: {
         Row: {
           appointment_id: string | null
@@ -1974,6 +2249,36 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_family_members: {
+        Row: {
+          can_book: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          member_patient_id: string
+          primary_user_id: string
+          relationship: string
+        }
+        Insert: {
+          can_book?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          member_patient_id: string
+          primary_user_id: string
+          relationship: string
+        }
+        Update: {
+          can_book?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          member_patient_id?: string
+          primary_user_id?: string
+          relationship?: string
+        }
+        Relationships: []
+      }
       patient_insurance: {
         Row: {
           active: boolean
@@ -2020,6 +2325,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      patient_portal_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          patient_id: string
+          preferences: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patient_id: string
+          preferences?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patient_id?: string
+          preferences?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       patients: {
         Row: {
@@ -2504,6 +2836,42 @@ export type Database = {
           requested_by?: string | null
           status?: string
           unit?: string | null
+        }
+        Relationships: []
+      }
+      queue_tokens: {
+        Row: {
+          called_at: string | null
+          counter: string
+          estimated_minutes: number | null
+          id: string
+          issued_at: string
+          patient_id: string | null
+          served_at: string | null
+          status: string
+          token_no: number
+        }
+        Insert: {
+          called_at?: string | null
+          counter: string
+          estimated_minutes?: number | null
+          id?: string
+          issued_at?: string
+          patient_id?: string | null
+          served_at?: string | null
+          status?: string
+          token_no?: number
+        }
+        Update: {
+          called_at?: string | null
+          counter?: string
+          estimated_minutes?: number | null
+          id?: string
+          issued_at?: string
+          patient_id?: string | null
+          served_at?: string | null
+          status?: string
+          token_no?: number
         }
         Relationships: []
       }
@@ -3031,6 +3399,86 @@ export type Database = {
           },
         ]
       }
+      telemedicine_messages: {
+        Row: {
+          attachment_url: string | null
+          body: string | null
+          created_at: string
+          id: string
+          sender_id: string
+          session_id: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          sender_id: string
+          session_id: string
+        }
+        Update: {
+          attachment_url?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          sender_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telemedicine_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "telemedicine_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telemedicine_sessions: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          doctor_id: string
+          ended_at: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          room_url: string | null
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          doctor_id: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          room_url?: string | null
+          scheduled_at: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          doctor_id?: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          room_url?: string | null
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           account_id: string | null
@@ -3132,6 +3580,51 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vaccinations: {
+        Row: {
+          administered_by: string | null
+          batch_no: string | null
+          created_at: string
+          dose_number: number | null
+          due_date: string | null
+          given_date: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          status: string
+          updated_at: string
+          vaccine_name: string
+        }
+        Insert: {
+          administered_by?: string | null
+          batch_no?: string | null
+          created_at?: string
+          dose_number?: number | null
+          due_date?: string | null
+          given_date?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          status?: string
+          updated_at?: string
+          vaccine_name: string
+        }
+        Update: {
+          administered_by?: string | null
+          batch_no?: string | null
+          created_at?: string
+          dose_number?: number | null
+          due_date?: string | null
+          given_date?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          status?: string
+          updated_at?: string
+          vaccine_name?: string
         }
         Relationships: []
       }
@@ -3267,6 +3760,48 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_campaigns: {
+        Row: {
+          audience: Json | null
+          created_at: string
+          delivered_count: number | null
+          id: string
+          name: string
+          read_count: number | null
+          sent_count: number | null
+          status: string
+          template: string
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: Json | null
+          created_at?: string
+          delivered_count?: number | null
+          id?: string
+          name: string
+          read_count?: number | null
+          sent_count?: number | null
+          status?: string
+          template: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: Json | null
+          created_at?: string
+          delivered_count?: number | null
+          id?: string
+          name?: string
+          read_count?: number | null
+          sent_count?: number | null
+          status?: string
+          template?: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       whatsapp_logs: {
         Row: {
           body: string
@@ -3336,6 +3871,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       admission_status: "active" | "discharged" | "transferred" | "cancelled"
@@ -3362,6 +3898,7 @@ export type Database = {
         | "finance_manager"
         | "dept_head"
         | "procurement_officer"
+        | "patient"
       appointment_status:
         | "booked"
         | "checked_in"
@@ -3575,6 +4112,7 @@ export const Constants = {
         "finance_manager",
         "dept_head",
         "procurement_officer",
+        "patient",
       ],
       appointment_status: [
         "booked",
