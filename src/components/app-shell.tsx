@@ -167,7 +167,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          {hasAnyRole(["admin","doctor","receptionist","nurse","pharmacist","lab_tech","accountant"]) ? (
+          {hasAnyRole(["admin","doctor","receptionist","nurse","pharmacist","lab_tech","accountant","patient","super_admin","surgeon","insurance_officer","ot_coordinator","hr_manager","finance_manager","dept_head","procurement_officer"]) ? (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
