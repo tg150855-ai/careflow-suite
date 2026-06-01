@@ -22,6 +22,7 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
 import { Route as AuthenticatedProcurementRouteImport } from './routes/_authenticated/procurement'
 import { Route as AuthenticatedPharmacyRouteImport } from './routes/_authenticated/pharmacy'
+import { Route as AuthenticatedPaymentsOnlineRouteImport } from './routes/_authenticated/payments-online'
 import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticated/patients'
 import { Route as AuthenticatedOtRouteImport } from './routes/_authenticated/ot'
 import { Route as AuthenticatedOpdRouteImport } from './routes/_authenticated/opd'
@@ -138,6 +139,12 @@ const AuthenticatedPharmacyRoute = AuthenticatedPharmacyRouteImport.update({
   path: '/pharmacy',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPaymentsOnlineRoute =
+  AuthenticatedPaymentsOnlineRouteImport.update({
+    id: '/payments-online',
+    path: '/payments-online',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPatientsRoute = AuthenticatedPatientsRouteImport.update({
   id: '/patients',
   path: '/patients',
@@ -426,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/opd': typeof AuthenticatedOpdRouteWithChildren
   '/ot': typeof AuthenticatedOtRoute
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
+  '/payments-online': typeof AuthenticatedPaymentsOnlineRoute
   '/pharmacy': typeof AuthenticatedPharmacyRouteWithChildren
   '/procurement': typeof AuthenticatedProcurementRoute
   '/queue': typeof AuthenticatedQueueRoute
@@ -485,6 +493,7 @@ export interface FileRoutesByTo {
   '/opd': typeof AuthenticatedOpdRouteWithChildren
   '/ot': typeof AuthenticatedOtRoute
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
+  '/payments-online': typeof AuthenticatedPaymentsOnlineRoute
   '/procurement': typeof AuthenticatedProcurementRoute
   '/queue': typeof AuthenticatedQueueRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -548,6 +557,7 @@ export interface FileRoutesById {
   '/_authenticated/opd': typeof AuthenticatedOpdRouteWithChildren
   '/_authenticated/ot': typeof AuthenticatedOtRoute
   '/_authenticated/patients': typeof AuthenticatedPatientsRouteWithChildren
+  '/_authenticated/payments-online': typeof AuthenticatedPaymentsOnlineRoute
   '/_authenticated/pharmacy': typeof AuthenticatedPharmacyRouteWithChildren
   '/_authenticated/procurement': typeof AuthenticatedProcurementRoute
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
@@ -612,6 +622,7 @@ export interface FileRouteTypes {
     | '/opd'
     | '/ot'
     | '/patients'
+    | '/payments-online'
     | '/pharmacy'
     | '/procurement'
     | '/queue'
@@ -671,6 +682,7 @@ export interface FileRouteTypes {
     | '/opd'
     | '/ot'
     | '/patients'
+    | '/payments-online'
     | '/procurement'
     | '/queue'
     | '/reports'
@@ -733,6 +745,7 @@ export interface FileRouteTypes {
     | '/_authenticated/opd'
     | '/_authenticated/ot'
     | '/_authenticated/patients'
+    | '/_authenticated/payments-online'
     | '/_authenticated/pharmacy'
     | '/_authenticated/procurement'
     | '/_authenticated/queue'
@@ -868,6 +881,13 @@ declare module '@tanstack/react-router' {
       path: '/pharmacy'
       fullPath: '/pharmacy'
       preLoaderRoute: typeof AuthenticatedPharmacyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/payments-online': {
+      id: '/_authenticated/payments-online'
+      path: '/payments-online'
+      fullPath: '/payments-online'
+      preLoaderRoute: typeof AuthenticatedPaymentsOnlineRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/patients': {
@@ -1340,6 +1360,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedOpdRoute: typeof AuthenticatedOpdRouteWithChildren
   AuthenticatedOtRoute: typeof AuthenticatedOtRoute
   AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRouteWithChildren
+  AuthenticatedPaymentsOnlineRoute: typeof AuthenticatedPaymentsOnlineRoute
   AuthenticatedPharmacyRoute: typeof AuthenticatedPharmacyRouteWithChildren
   AuthenticatedProcurementRoute: typeof AuthenticatedProcurementRoute
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
@@ -1381,6 +1402,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedOpdRoute: AuthenticatedOpdRouteWithChildren,
   AuthenticatedOtRoute: AuthenticatedOtRoute,
   AuthenticatedPatientsRoute: AuthenticatedPatientsRouteWithChildren,
+  AuthenticatedPaymentsOnlineRoute: AuthenticatedPaymentsOnlineRoute,
   AuthenticatedPharmacyRoute: AuthenticatedPharmacyRouteWithChildren,
   AuthenticatedProcurementRoute: AuthenticatedProcurementRoute,
   AuthenticatedQueueRoute: AuthenticatedQueueRoute,
