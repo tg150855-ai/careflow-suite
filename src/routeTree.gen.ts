@@ -38,6 +38,7 @@ import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
 import { Route as AuthenticatedAppointmentsRouteImport } from './routes/_authenticated/appointments'
 import { Route as AuthenticatedAmbulanceRouteImport } from './routes/_authenticated/ambulance'
+import { Route as AuthenticatedAiAssistantRouteImport } from './routes/_authenticated/ai-assistant'
 import { Route as AuthenticatedPharmacyIndexRouteImport } from './routes/_authenticated/pharmacy.index'
 import { Route as AuthenticatedLaboratoryIndexRouteImport } from './routes/_authenticated/laboratory.index'
 import { Route as AuthenticatedIpdIndexRouteImport } from './routes/_authenticated/ipd.index'
@@ -212,6 +213,12 @@ const AuthenticatedAmbulanceRoute = AuthenticatedAmbulanceRouteImport.update({
   path: '/ambulance',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAiAssistantRoute =
+  AuthenticatedAiAssistantRouteImport.update({
+    id: '/ai-assistant',
+    path: '/ai-assistant',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPharmacyIndexRoute =
   AuthenticatedPharmacyIndexRouteImport.update({
     id: '/',
@@ -349,6 +356,7 @@ const AuthenticatedIpdIdDischargeRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/ambulance': typeof AuthenticatedAmbulanceRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/assets': typeof AuthenticatedAssetsRoute
@@ -403,6 +411,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/ambulance': typeof AuthenticatedAmbulanceRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/assets': typeof AuthenticatedAssetsRoute
@@ -455,6 +464,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/_authenticated/ambulance': typeof AuthenticatedAmbulanceRoute
   '/_authenticated/appointments': typeof AuthenticatedAppointmentsRoute
   '/_authenticated/assets': typeof AuthenticatedAssetsRoute
@@ -511,6 +521,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/ai-assistant'
     | '/ambulance'
     | '/appointments'
     | '/assets'
@@ -565,6 +576,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/ai-assistant'
     | '/ambulance'
     | '/appointments'
     | '/assets'
@@ -616,6 +628,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/ai-assistant'
     | '/_authenticated/ambulance'
     | '/_authenticated/appointments'
     | '/_authenticated/assets'
@@ -879,6 +892,13 @@ declare module '@tanstack/react-router' {
       path: '/ambulance'
       fullPath: '/ambulance'
       preLoaderRoute: typeof AuthenticatedAmbulanceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/ai-assistant': {
+      id: '/_authenticated/ai-assistant'
+      path: '/ai-assistant'
+      fullPath: '/ai-assistant'
+      preLoaderRoute: typeof AuthenticatedAiAssistantRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pharmacy/': {
@@ -1159,6 +1179,7 @@ const AuthenticatedPharmacyRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAiAssistantRoute: typeof AuthenticatedAiAssistantRoute
   AuthenticatedAmbulanceRoute: typeof AuthenticatedAmbulanceRoute
   AuthenticatedAppointmentsRoute: typeof AuthenticatedAppointmentsRoute
   AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
@@ -1192,6 +1213,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAiAssistantRoute: AuthenticatedAiAssistantRoute,
   AuthenticatedAmbulanceRoute: AuthenticatedAmbulanceRoute,
   AuthenticatedAppointmentsRoute: AuthenticatedAppointmentsRoute,
   AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
