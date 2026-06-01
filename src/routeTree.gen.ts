@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedTelemedicineRouteImport } from './routes/_authenticated/telemedicine'
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
@@ -29,6 +30,7 @@ import { Route as AuthenticatedInsuranceRouteImport } from './routes/_authentica
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedEmergencyRouteImport } from './routes/_authenticated/emergency'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
 import { Route as AuthenticatedBranchesRouteImport } from './routes/_authenticated/branches'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
@@ -77,6 +79,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
   id: '/vendors',
@@ -164,6 +171,11 @@ const AuthenticatedEmergencyRoute = AuthenticatedEmergencyRouteImport.update({
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedCommunicationsRoute =
@@ -366,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof AuthenticatedBillingRouteWithChildren
   '/branches': typeof AuthenticatedBranchesRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
+  '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/finance': typeof AuthenticatedFinanceRoute
@@ -383,6 +396,7 @@ export interface FileRoutesByFullPath {
   '/staff': typeof AuthenticatedStaffRoute
   '/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/vendors': typeof AuthenticatedVendorsRoute
+  '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/billing/$id': typeof AuthenticatedBillingIdRoute
   '/billing/new': typeof AuthenticatedBillingNewRoute
   '/hr/attendance': typeof AuthenticatedHrAttendanceRoute
@@ -420,6 +434,7 @@ export interface FileRoutesByTo {
   '/bi': typeof AuthenticatedBiRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
+  '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/finance': typeof AuthenticatedFinanceRoute
@@ -434,6 +449,7 @@ export interface FileRoutesByTo {
   '/staff': typeof AuthenticatedStaffRoute
   '/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/vendors': typeof AuthenticatedVendorsRoute
+  '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/billing/$id': typeof AuthenticatedBillingIdRoute
   '/billing/new': typeof AuthenticatedBillingNewRoute
   '/hr/attendance': typeof AuthenticatedHrAttendanceRoute
@@ -474,6 +490,7 @@ export interface FileRoutesById {
   '/_authenticated/billing': typeof AuthenticatedBillingRouteWithChildren
   '/_authenticated/branches': typeof AuthenticatedBranchesRoute
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
+  '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/emergency': typeof AuthenticatedEmergencyRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
@@ -491,6 +508,7 @@ export interface FileRoutesById {
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
+  '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/_authenticated/billing/$id': typeof AuthenticatedBillingIdRoute
   '/_authenticated/billing/new': typeof AuthenticatedBillingNewRoute
   '/_authenticated/hr/attendance': typeof AuthenticatedHrAttendanceRoute
@@ -531,6 +549,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/branches'
     | '/communications'
+    | '/crm'
     | '/dashboard'
     | '/emergency'
     | '/finance'
@@ -548,6 +567,7 @@ export interface FileRouteTypes {
     | '/staff'
     | '/telemedicine'
     | '/vendors'
+    | '/whatsapp'
     | '/billing/$id'
     | '/billing/new'
     | '/hr/attendance'
@@ -585,6 +605,7 @@ export interface FileRouteTypes {
     | '/bi'
     | '/branches'
     | '/communications'
+    | '/crm'
     | '/dashboard'
     | '/emergency'
     | '/finance'
@@ -599,6 +620,7 @@ export interface FileRouteTypes {
     | '/staff'
     | '/telemedicine'
     | '/vendors'
+    | '/whatsapp'
     | '/billing/$id'
     | '/billing/new'
     | '/hr/attendance'
@@ -638,6 +660,7 @@ export interface FileRouteTypes {
     | '/_authenticated/billing'
     | '/_authenticated/branches'
     | '/_authenticated/communications'
+    | '/_authenticated/crm'
     | '/_authenticated/dashboard'
     | '/_authenticated/emergency'
     | '/_authenticated/finance'
@@ -655,6 +678,7 @@ export interface FileRouteTypes {
     | '/_authenticated/staff'
     | '/_authenticated/telemedicine'
     | '/_authenticated/vendors'
+    | '/_authenticated/whatsapp'
     | '/_authenticated/billing/$id'
     | '/_authenticated/billing/new'
     | '/_authenticated/hr/attendance'
@@ -711,6 +735,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/whatsapp': {
+      id: '/_authenticated/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof AuthenticatedWhatsappRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/vendors': {
       id: '/_authenticated/vendors'
@@ -829,6 +860,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/crm': {
+      id: '/_authenticated/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof AuthenticatedCrmRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/communications': {
@@ -1189,6 +1227,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRouteWithChildren
   AuthenticatedBranchesRoute: typeof AuthenticatedBranchesRoute
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
+  AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmergencyRoute: typeof AuthenticatedEmergencyRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
@@ -1206,6 +1245,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
   AuthenticatedTelemedicineRoute: typeof AuthenticatedTelemedicineRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
+  AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedHrAttendanceRoute: typeof AuthenticatedHrAttendanceRoute
   AuthenticatedHrEmployeesRoute: typeof AuthenticatedHrEmployeesRoute
   AuthenticatedHrLeaveRoute: typeof AuthenticatedHrLeaveRoute
@@ -1223,6 +1263,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBillingRoute: AuthenticatedBillingRouteWithChildren,
   AuthenticatedBranchesRoute: AuthenticatedBranchesRoute,
   AuthenticatedCommunicationsRoute: AuthenticatedCommunicationsRoute,
+  AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmergencyRoute: AuthenticatedEmergencyRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
@@ -1240,6 +1281,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,
   AuthenticatedTelemedicineRoute: AuthenticatedTelemedicineRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
+  AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedHrAttendanceRoute: AuthenticatedHrAttendanceRoute,
   AuthenticatedHrEmployeesRoute: AuthenticatedHrEmployeesRoute,
   AuthenticatedHrLeaveRoute: AuthenticatedHrLeaveRoute,
@@ -1260,3 +1302,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
