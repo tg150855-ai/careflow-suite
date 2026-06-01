@@ -6,6 +6,7 @@ import {
   ChevronLeft, Heart, ChevronDown, Ambulance, ShieldCheck, Siren, MessageSquare,
   Briefcase, Clock, CalendarCheck, Wallet, Boxes, Truck, ShoppingCart, Landmark,
   BarChart3, Building2, ShieldAlert, Database,
+  Video, Sparkles, Send, UserCheck, FileText, Syringe, Package, Hash, Activity, CreditCard,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
