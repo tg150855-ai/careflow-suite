@@ -7,6 +7,7 @@ import {
   Briefcase, Clock, CalendarCheck, Wallet, Boxes, Truck, ShoppingCart, Landmark,
   BarChart3, Building2, ShieldAlert, Database,
   Video, Sparkles, Send, UserCheck, FileText, Syringe, Package, Hash, Activity, CreditCard,
+  Scan, Image as ImageIcon, Droplet, Wrench,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
