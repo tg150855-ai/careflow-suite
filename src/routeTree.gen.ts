@@ -37,11 +37,13 @@ import { Route as AuthenticatedHealthRecordsRouteImport } from './routes/_authen
 import { Route as AuthenticatedHealthPackagesRouteImport } from './routes/_authenticated/health-packages'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedEmergencyRouteImport } from './routes/_authenticated/emergency'
+import { Route as AuthenticatedDialysisRouteImport } from './routes/_authenticated/dialysis'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedBranchesRouteImport } from './routes/_authenticated/branches'
+import { Route as AuthenticatedBloodBankRouteImport } from './routes/_authenticated/blood-bank'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedBiRouteImport } from './routes/_authenticated/bi'
 import { Route as AuthenticatedBackupsRouteImport } from './routes/_authenticated/backups'
@@ -222,6 +224,11 @@ const AuthenticatedEmergencyRoute = AuthenticatedEmergencyRouteImport.update({
   path: '/emergency',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDialysisRoute = AuthenticatedDialysisRouteImport.update({
+  id: '/dialysis',
+  path: '/dialysis',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -247,6 +254,11 @@ const AuthenticatedCommandCenterRoute =
 const AuthenticatedBranchesRoute = AuthenticatedBranchesRouteImport.update({
   id: '/branches',
   path: '/branches',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedBloodBankRoute = AuthenticatedBloodBankRouteImport.update({
+  id: '/blood-bank',
+  path: '/blood-bank',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
@@ -436,11 +448,13 @@ export interface FileRoutesByFullPath {
   '/backups': typeof AuthenticatedBackupsRoute
   '/bi': typeof AuthenticatedBiRoute
   '/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dialysis': typeof AuthenticatedDialysisRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/health-packages': typeof AuthenticatedHealthPackagesRoute
@@ -501,11 +515,13 @@ export interface FileRoutesByTo {
   '/audit': typeof AuthenticatedAuditRoute
   '/backups': typeof AuthenticatedBackupsRoute
   '/bi': typeof AuthenticatedBiRoute
+  '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dialysis': typeof AuthenticatedDialysisRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/health-packages': typeof AuthenticatedHealthPackagesRoute
@@ -566,11 +582,13 @@ export interface FileRoutesById {
   '/_authenticated/backups': typeof AuthenticatedBackupsRoute
   '/_authenticated/bi': typeof AuthenticatedBiRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/_authenticated/blood-bank': typeof AuthenticatedBloodBankRoute
   '/_authenticated/branches': typeof AuthenticatedBranchesRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/dialysis': typeof AuthenticatedDialysisRoute
   '/_authenticated/emergency': typeof AuthenticatedEmergencyRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/health-packages': typeof AuthenticatedHealthPackagesRoute
@@ -634,11 +652,13 @@ export interface FileRouteTypes {
     | '/backups'
     | '/bi'
     | '/billing'
+    | '/blood-bank'
     | '/branches'
     | '/command-center'
     | '/communications'
     | '/crm'
     | '/dashboard'
+    | '/dialysis'
     | '/emergency'
     | '/finance'
     | '/health-packages'
@@ -699,11 +719,13 @@ export interface FileRouteTypes {
     | '/audit'
     | '/backups'
     | '/bi'
+    | '/blood-bank'
     | '/branches'
     | '/command-center'
     | '/communications'
     | '/crm'
     | '/dashboard'
+    | '/dialysis'
     | '/emergency'
     | '/finance'
     | '/health-packages'
@@ -763,11 +785,13 @@ export interface FileRouteTypes {
     | '/_authenticated/backups'
     | '/_authenticated/bi'
     | '/_authenticated/billing'
+    | '/_authenticated/blood-bank'
     | '/_authenticated/branches'
     | '/_authenticated/command-center'
     | '/_authenticated/communications'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
+    | '/_authenticated/dialysis'
     | '/_authenticated/emergency'
     | '/_authenticated/finance'
     | '/_authenticated/health-packages'
@@ -1025,6 +1049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEmergencyRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/dialysis': {
+      id: '/_authenticated/dialysis'
+      path: '/dialysis'
+      fullPath: '/dialysis'
+      preLoaderRoute: typeof AuthenticatedDialysisRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -1058,6 +1089,13 @@ declare module '@tanstack/react-router' {
       path: '/branches'
       fullPath: '/branches'
       preLoaderRoute: typeof AuthenticatedBranchesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/blood-bank': {
+      id: '/_authenticated/blood-bank'
+      path: '/blood-bank'
+      fullPath: '/blood-bank'
+      preLoaderRoute: typeof AuthenticatedBloodBankRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/billing': {
@@ -1402,11 +1440,13 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBackupsRoute: typeof AuthenticatedBackupsRoute
   AuthenticatedBiRoute: typeof AuthenticatedBiRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRouteWithChildren
+  AuthenticatedBloodBankRoute: typeof AuthenticatedBloodBankRoute
   AuthenticatedBranchesRoute: typeof AuthenticatedBranchesRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDialysisRoute: typeof AuthenticatedDialysisRoute
   AuthenticatedEmergencyRoute: typeof AuthenticatedEmergencyRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedHealthPackagesRoute: typeof AuthenticatedHealthPackagesRoute
@@ -1447,11 +1487,13 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBackupsRoute: AuthenticatedBackupsRoute,
   AuthenticatedBiRoute: AuthenticatedBiRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRouteWithChildren,
+  AuthenticatedBloodBankRoute: AuthenticatedBloodBankRoute,
   AuthenticatedBranchesRoute: AuthenticatedBranchesRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedCommunicationsRoute: AuthenticatedCommunicationsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDialysisRoute: AuthenticatedDialysisRoute,
   AuthenticatedEmergencyRoute: AuthenticatedEmergencyRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedHealthPackagesRoute: AuthenticatedHealthPackagesRoute,
@@ -1497,3 +1539,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
