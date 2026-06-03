@@ -7,6 +7,7 @@ import {
   Briefcase, Clock, CalendarCheck, Wallet, Boxes, Truck, ShoppingCart, Landmark,
   BarChart3, Building2, ShieldAlert, Database,
   Video, Sparkles, Send, UserCheck, FileText, Syringe, Package, Hash, Activity, CreditCard,
+  Scan, Image as ImageIcon, Droplet, Wrench,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,12 @@ const NAV: NavItem[] = [
   { to: "/nurse-station", label: "Nurse Station", icon: HeartPulse, section: "Clinical" },
   { to: "/pharmacy", label: "Pharmacy", icon: Pill, section: "Clinical" },
   { to: "/laboratory", label: "Laboratory", icon: FlaskConical, section: "Clinical" },
+  { to: "/radiology", label: "Radiology", icon: Scan, section: "Clinical" },
+  { to: "/pacs", label: "PACS / Imaging", icon: ImageIcon, section: "Clinical" },
+  { to: "/blood-bank", label: "Blood Bank", icon: Droplet, section: "Clinical" },
+  { to: "/dialysis", label: "Dialysis", icon: Activity, section: "Clinical" },
+  { to: "/icu", label: "ICU / Critical Care", icon: HeartPulse, section: "Clinical" },
+  { to: "/biomedical", label: "Biomedical", icon: Wrench, section: "Operations" },
   { to: "/billing", label: "Billing", icon: FileBarChart, section: "Finance" },
   { to: "/insurance", label: "Insurance", icon: ShieldCheck, section: "Finance" },
   { to: "/ambulance", label: "Ambulance", icon: Ambulance, section: "Operations" },

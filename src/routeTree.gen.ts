@@ -19,27 +19,33 @@ import { Route as AuthenticatedTelemedicineRouteImport } from './routes/_authent
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedRadiologyRouteImport } from './routes/_authenticated/radiology'
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
 import { Route as AuthenticatedProcurementRouteImport } from './routes/_authenticated/procurement'
 import { Route as AuthenticatedPharmacyRouteImport } from './routes/_authenticated/pharmacy'
 import { Route as AuthenticatedPaymentsOnlineRouteImport } from './routes/_authenticated/payments-online'
 import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticated/patients'
 import { Route as AuthenticatedPatientPortalRouteImport } from './routes/_authenticated/patient-portal'
+import { Route as AuthenticatedPacsRouteImport } from './routes/_authenticated/pacs'
 import { Route as AuthenticatedOtRouteImport } from './routes/_authenticated/ot'
 import { Route as AuthenticatedOpdRouteImport } from './routes/_authenticated/opd'
 import { Route as AuthenticatedNurseStationRouteImport } from './routes/_authenticated/nurse-station'
 import { Route as AuthenticatedLaboratoryRouteImport } from './routes/_authenticated/laboratory'
 import { Route as AuthenticatedIpdRouteImport } from './routes/_authenticated/ipd'
 import { Route as AuthenticatedInsuranceRouteImport } from './routes/_authenticated/insurance'
+import { Route as AuthenticatedIcuRouteImport } from './routes/_authenticated/icu'
 import { Route as AuthenticatedHealthRecordsRouteImport } from './routes/_authenticated/health-records'
 import { Route as AuthenticatedHealthPackagesRouteImport } from './routes/_authenticated/health-packages'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedEmergencyRouteImport } from './routes/_authenticated/emergency'
+import { Route as AuthenticatedDialysisRouteImport } from './routes/_authenticated/dialysis'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedBranchesRouteImport } from './routes/_authenticated/branches'
+import { Route as AuthenticatedBloodBankRouteImport } from './routes/_authenticated/blood-bank'
+import { Route as AuthenticatedBiomedicalRouteImport } from './routes/_authenticated/biomedical'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedBiRouteImport } from './routes/_authenticated/bi'
 import { Route as AuthenticatedBackupsRouteImport } from './routes/_authenticated/backups'
@@ -124,6 +130,11 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedRadiologyRoute = AuthenticatedRadiologyRouteImport.update({
+  id: '/radiology',
+  path: '/radiology',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedQueueRoute = AuthenticatedQueueRouteImport.update({
   id: '/queue',
   path: '/queue',
@@ -157,6 +168,11 @@ const AuthenticatedPatientPortalRoute =
     path: '/patient-portal',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPacsRoute = AuthenticatedPacsRouteImport.update({
+  id: '/pacs',
+  path: '/pacs',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedOtRoute = AuthenticatedOtRouteImport.update({
   id: '/ot',
   path: '/ot',
@@ -188,6 +204,11 @@ const AuthenticatedInsuranceRoute = AuthenticatedInsuranceRouteImport.update({
   path: '/insurance',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedIcuRoute = AuthenticatedIcuRouteImport.update({
+  id: '/icu',
+  path: '/icu',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedHealthRecordsRoute =
   AuthenticatedHealthRecordsRouteImport.update({
     id: '/health-records',
@@ -208,6 +229,11 @@ const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
 const AuthenticatedEmergencyRoute = AuthenticatedEmergencyRouteImport.update({
   id: '/emergency',
   path: '/emergency',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDialysisRoute = AuthenticatedDialysisRouteImport.update({
+  id: '/dialysis',
+  path: '/dialysis',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -235,6 +261,16 @@ const AuthenticatedCommandCenterRoute =
 const AuthenticatedBranchesRoute = AuthenticatedBranchesRouteImport.update({
   id: '/branches',
   path: '/branches',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedBloodBankRoute = AuthenticatedBloodBankRouteImport.update({
+  id: '/blood-bank',
+  path: '/blood-bank',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedBiomedicalRoute = AuthenticatedBiomedicalRouteImport.update({
+  id: '/biomedical',
+  path: '/biomedical',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
@@ -424,27 +460,33 @@ export interface FileRoutesByFullPath {
   '/backups': typeof AuthenticatedBackupsRoute
   '/bi': typeof AuthenticatedBiRoute
   '/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/biomedical': typeof AuthenticatedBiomedicalRoute
+  '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dialysis': typeof AuthenticatedDialysisRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/health-records': typeof AuthenticatedHealthRecordsRoute
+  '/icu': typeof AuthenticatedIcuRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
   '/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
   '/nurse-station': typeof AuthenticatedNurseStationRoute
   '/opd': typeof AuthenticatedOpdRouteWithChildren
   '/ot': typeof AuthenticatedOtRoute
+  '/pacs': typeof AuthenticatedPacsRoute
   '/patient-portal': typeof AuthenticatedPatientPortalRoute
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/payments-online': typeof AuthenticatedPaymentsOnlineRoute
   '/pharmacy': typeof AuthenticatedPharmacyRouteWithChildren
   '/procurement': typeof AuthenticatedProcurementRoute
   '/queue': typeof AuthenticatedQueueRoute
+  '/radiology': typeof AuthenticatedRadiologyRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/staff': typeof AuthenticatedStaffRoute
@@ -487,24 +529,30 @@ export interface FileRoutesByTo {
   '/audit': typeof AuthenticatedAuditRoute
   '/backups': typeof AuthenticatedBackupsRoute
   '/bi': typeof AuthenticatedBiRoute
+  '/biomedical': typeof AuthenticatedBiomedicalRoute
+  '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dialysis': typeof AuthenticatedDialysisRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/finance': typeof AuthenticatedFinanceRoute
   '/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/health-records': typeof AuthenticatedHealthRecordsRoute
+  '/icu': typeof AuthenticatedIcuRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
   '/nurse-station': typeof AuthenticatedNurseStationRoute
   '/opd': typeof AuthenticatedOpdRouteWithChildren
   '/ot': typeof AuthenticatedOtRoute
+  '/pacs': typeof AuthenticatedPacsRoute
   '/patient-portal': typeof AuthenticatedPatientPortalRoute
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/payments-online': typeof AuthenticatedPaymentsOnlineRoute
   '/procurement': typeof AuthenticatedProcurementRoute
   '/queue': typeof AuthenticatedQueueRoute
+  '/radiology': typeof AuthenticatedRadiologyRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/staff': typeof AuthenticatedStaffRoute
@@ -550,27 +598,33 @@ export interface FileRoutesById {
   '/_authenticated/backups': typeof AuthenticatedBackupsRoute
   '/_authenticated/bi': typeof AuthenticatedBiRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/_authenticated/biomedical': typeof AuthenticatedBiomedicalRoute
+  '/_authenticated/blood-bank': typeof AuthenticatedBloodBankRoute
   '/_authenticated/branches': typeof AuthenticatedBranchesRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/dialysis': typeof AuthenticatedDialysisRoute
   '/_authenticated/emergency': typeof AuthenticatedEmergencyRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/_authenticated/health-records': typeof AuthenticatedHealthRecordsRoute
+  '/_authenticated/icu': typeof AuthenticatedIcuRoute
   '/_authenticated/insurance': typeof AuthenticatedInsuranceRoute
   '/_authenticated/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/_authenticated/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
   '/_authenticated/nurse-station': typeof AuthenticatedNurseStationRoute
   '/_authenticated/opd': typeof AuthenticatedOpdRouteWithChildren
   '/_authenticated/ot': typeof AuthenticatedOtRoute
+  '/_authenticated/pacs': typeof AuthenticatedPacsRoute
   '/_authenticated/patient-portal': typeof AuthenticatedPatientPortalRoute
   '/_authenticated/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/_authenticated/payments-online': typeof AuthenticatedPaymentsOnlineRoute
   '/_authenticated/pharmacy': typeof AuthenticatedPharmacyRouteWithChildren
   '/_authenticated/procurement': typeof AuthenticatedProcurementRoute
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
+  '/_authenticated/radiology': typeof AuthenticatedRadiologyRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
@@ -616,27 +670,33 @@ export interface FileRouteTypes {
     | '/backups'
     | '/bi'
     | '/billing'
+    | '/biomedical'
+    | '/blood-bank'
     | '/branches'
     | '/command-center'
     | '/communications'
     | '/crm'
     | '/dashboard'
+    | '/dialysis'
     | '/emergency'
     | '/finance'
     | '/health-packages'
     | '/health-records'
+    | '/icu'
     | '/insurance'
     | '/ipd'
     | '/laboratory'
     | '/nurse-station'
     | '/opd'
     | '/ot'
+    | '/pacs'
     | '/patient-portal'
     | '/patients'
     | '/payments-online'
     | '/pharmacy'
     | '/procurement'
     | '/queue'
+    | '/radiology'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -679,24 +739,30 @@ export interface FileRouteTypes {
     | '/audit'
     | '/backups'
     | '/bi'
+    | '/biomedical'
+    | '/blood-bank'
     | '/branches'
     | '/command-center'
     | '/communications'
     | '/crm'
     | '/dashboard'
+    | '/dialysis'
     | '/emergency'
     | '/finance'
     | '/health-packages'
     | '/health-records'
+    | '/icu'
     | '/insurance'
     | '/nurse-station'
     | '/opd'
     | '/ot'
+    | '/pacs'
     | '/patient-portal'
     | '/patients'
     | '/payments-online'
     | '/procurement'
     | '/queue'
+    | '/radiology'
     | '/reports'
     | '/settings'
     | '/staff'
@@ -741,27 +807,33 @@ export interface FileRouteTypes {
     | '/_authenticated/backups'
     | '/_authenticated/bi'
     | '/_authenticated/billing'
+    | '/_authenticated/biomedical'
+    | '/_authenticated/blood-bank'
     | '/_authenticated/branches'
     | '/_authenticated/command-center'
     | '/_authenticated/communications'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
+    | '/_authenticated/dialysis'
     | '/_authenticated/emergency'
     | '/_authenticated/finance'
     | '/_authenticated/health-packages'
     | '/_authenticated/health-records'
+    | '/_authenticated/icu'
     | '/_authenticated/insurance'
     | '/_authenticated/ipd'
     | '/_authenticated/laboratory'
     | '/_authenticated/nurse-station'
     | '/_authenticated/opd'
     | '/_authenticated/ot'
+    | '/_authenticated/pacs'
     | '/_authenticated/patient-portal'
     | '/_authenticated/patients'
     | '/_authenticated/payments-online'
     | '/_authenticated/pharmacy'
     | '/_authenticated/procurement'
     | '/_authenticated/queue'
+    | '/_authenticated/radiology'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
     | '/_authenticated/staff'
@@ -875,6 +947,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/radiology': {
+      id: '/_authenticated/radiology'
+      path: '/radiology'
+      fullPath: '/radiology'
+      preLoaderRoute: typeof AuthenticatedRadiologyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/queue': {
       id: '/_authenticated/queue'
       path: '/queue'
@@ -915,6 +994,13 @@ declare module '@tanstack/react-router' {
       path: '/patient-portal'
       fullPath: '/patient-portal'
       preLoaderRoute: typeof AuthenticatedPatientPortalRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pacs': {
+      id: '/_authenticated/pacs'
+      path: '/pacs'
+      fullPath: '/pacs'
+      preLoaderRoute: typeof AuthenticatedPacsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/ot': {
@@ -959,6 +1045,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInsuranceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/icu': {
+      id: '/_authenticated/icu'
+      path: '/icu'
+      fullPath: '/icu'
+      preLoaderRoute: typeof AuthenticatedIcuRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/health-records': {
       id: '/_authenticated/health-records'
       path: '/health-records'
@@ -985,6 +1078,13 @@ declare module '@tanstack/react-router' {
       path: '/emergency'
       fullPath: '/emergency'
       preLoaderRoute: typeof AuthenticatedEmergencyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dialysis': {
+      id: '/_authenticated/dialysis'
+      path: '/dialysis'
+      fullPath: '/dialysis'
+      preLoaderRoute: typeof AuthenticatedDialysisRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard': {
@@ -1020,6 +1120,20 @@ declare module '@tanstack/react-router' {
       path: '/branches'
       fullPath: '/branches'
       preLoaderRoute: typeof AuthenticatedBranchesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/blood-bank': {
+      id: '/_authenticated/blood-bank'
+      path: '/blood-bank'
+      fullPath: '/blood-bank'
+      preLoaderRoute: typeof AuthenticatedBloodBankRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/biomedical': {
+      id: '/_authenticated/biomedical'
+      path: '/biomedical'
+      fullPath: '/biomedical'
+      preLoaderRoute: typeof AuthenticatedBiomedicalRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/billing': {
@@ -1364,27 +1478,33 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBackupsRoute: typeof AuthenticatedBackupsRoute
   AuthenticatedBiRoute: typeof AuthenticatedBiRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRouteWithChildren
+  AuthenticatedBiomedicalRoute: typeof AuthenticatedBiomedicalRoute
+  AuthenticatedBloodBankRoute: typeof AuthenticatedBloodBankRoute
   AuthenticatedBranchesRoute: typeof AuthenticatedBranchesRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDialysisRoute: typeof AuthenticatedDialysisRoute
   AuthenticatedEmergencyRoute: typeof AuthenticatedEmergencyRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedHealthPackagesRoute: typeof AuthenticatedHealthPackagesRoute
   AuthenticatedHealthRecordsRoute: typeof AuthenticatedHealthRecordsRoute
+  AuthenticatedIcuRoute: typeof AuthenticatedIcuRoute
   AuthenticatedInsuranceRoute: typeof AuthenticatedInsuranceRoute
   AuthenticatedIpdRoute: typeof AuthenticatedIpdRouteWithChildren
   AuthenticatedLaboratoryRoute: typeof AuthenticatedLaboratoryRouteWithChildren
   AuthenticatedNurseStationRoute: typeof AuthenticatedNurseStationRoute
   AuthenticatedOpdRoute: typeof AuthenticatedOpdRouteWithChildren
   AuthenticatedOtRoute: typeof AuthenticatedOtRoute
+  AuthenticatedPacsRoute: typeof AuthenticatedPacsRoute
   AuthenticatedPatientPortalRoute: typeof AuthenticatedPatientPortalRoute
   AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRouteWithChildren
   AuthenticatedPaymentsOnlineRoute: typeof AuthenticatedPaymentsOnlineRoute
   AuthenticatedPharmacyRoute: typeof AuthenticatedPharmacyRouteWithChildren
   AuthenticatedProcurementRoute: typeof AuthenticatedProcurementRoute
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
+  AuthenticatedRadiologyRoute: typeof AuthenticatedRadiologyRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
@@ -1407,27 +1527,33 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBackupsRoute: AuthenticatedBackupsRoute,
   AuthenticatedBiRoute: AuthenticatedBiRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRouteWithChildren,
+  AuthenticatedBiomedicalRoute: AuthenticatedBiomedicalRoute,
+  AuthenticatedBloodBankRoute: AuthenticatedBloodBankRoute,
   AuthenticatedBranchesRoute: AuthenticatedBranchesRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedCommunicationsRoute: AuthenticatedCommunicationsRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDialysisRoute: AuthenticatedDialysisRoute,
   AuthenticatedEmergencyRoute: AuthenticatedEmergencyRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedHealthPackagesRoute: AuthenticatedHealthPackagesRoute,
   AuthenticatedHealthRecordsRoute: AuthenticatedHealthRecordsRoute,
+  AuthenticatedIcuRoute: AuthenticatedIcuRoute,
   AuthenticatedInsuranceRoute: AuthenticatedInsuranceRoute,
   AuthenticatedIpdRoute: AuthenticatedIpdRouteWithChildren,
   AuthenticatedLaboratoryRoute: AuthenticatedLaboratoryRouteWithChildren,
   AuthenticatedNurseStationRoute: AuthenticatedNurseStationRoute,
   AuthenticatedOpdRoute: AuthenticatedOpdRouteWithChildren,
   AuthenticatedOtRoute: AuthenticatedOtRoute,
+  AuthenticatedPacsRoute: AuthenticatedPacsRoute,
   AuthenticatedPatientPortalRoute: AuthenticatedPatientPortalRoute,
   AuthenticatedPatientsRoute: AuthenticatedPatientsRouteWithChildren,
   AuthenticatedPaymentsOnlineRoute: AuthenticatedPaymentsOnlineRoute,
   AuthenticatedPharmacyRoute: AuthenticatedPharmacyRouteWithChildren,
   AuthenticatedProcurementRoute: AuthenticatedProcurementRoute,
   AuthenticatedQueueRoute: AuthenticatedQueueRoute,
+  AuthenticatedRadiologyRoute: AuthenticatedRadiologyRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,
