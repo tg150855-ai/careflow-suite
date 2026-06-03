@@ -33,6 +33,7 @@ import { Route as AuthenticatedNurseStationRouteImport } from './routes/_authent
 import { Route as AuthenticatedLaboratoryRouteImport } from './routes/_authenticated/laboratory'
 import { Route as AuthenticatedIpdRouteImport } from './routes/_authenticated/ipd'
 import { Route as AuthenticatedInsuranceRouteImport } from './routes/_authenticated/insurance'
+import { Route as AuthenticatedIcuRouteImport } from './routes/_authenticated/icu'
 import { Route as AuthenticatedHealthRecordsRouteImport } from './routes/_authenticated/health-records'
 import { Route as AuthenticatedHealthPackagesRouteImport } from './routes/_authenticated/health-packages'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
@@ -44,6 +45,7 @@ import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authe
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedBranchesRouteImport } from './routes/_authenticated/branches'
 import { Route as AuthenticatedBloodBankRouteImport } from './routes/_authenticated/blood-bank'
+import { Route as AuthenticatedBiomedicalRouteImport } from './routes/_authenticated/biomedical'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedBiRouteImport } from './routes/_authenticated/bi'
 import { Route as AuthenticatedBackupsRouteImport } from './routes/_authenticated/backups'
@@ -202,6 +204,11 @@ const AuthenticatedInsuranceRoute = AuthenticatedInsuranceRouteImport.update({
   path: '/insurance',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedIcuRoute = AuthenticatedIcuRouteImport.update({
+  id: '/icu',
+  path: '/icu',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedHealthRecordsRoute =
   AuthenticatedHealthRecordsRouteImport.update({
     id: '/health-records',
@@ -259,6 +266,11 @@ const AuthenticatedBranchesRoute = AuthenticatedBranchesRouteImport.update({
 const AuthenticatedBloodBankRoute = AuthenticatedBloodBankRouteImport.update({
   id: '/blood-bank',
   path: '/blood-bank',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedBiomedicalRoute = AuthenticatedBiomedicalRouteImport.update({
+  id: '/biomedical',
+  path: '/biomedical',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
@@ -448,6 +460,7 @@ export interface FileRoutesByFullPath {
   '/backups': typeof AuthenticatedBackupsRoute
   '/bi': typeof AuthenticatedBiRoute
   '/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/biomedical': typeof AuthenticatedBiomedicalRoute
   '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
@@ -459,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/finance': typeof AuthenticatedFinanceRoute
   '/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/health-records': typeof AuthenticatedHealthRecordsRoute
+  '/icu': typeof AuthenticatedIcuRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
   '/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
@@ -515,6 +529,7 @@ export interface FileRoutesByTo {
   '/audit': typeof AuthenticatedAuditRoute
   '/backups': typeof AuthenticatedBackupsRoute
   '/bi': typeof AuthenticatedBiRoute
+  '/biomedical': typeof AuthenticatedBiomedicalRoute
   '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
@@ -526,6 +541,7 @@ export interface FileRoutesByTo {
   '/finance': typeof AuthenticatedFinanceRoute
   '/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/health-records': typeof AuthenticatedHealthRecordsRoute
+  '/icu': typeof AuthenticatedIcuRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
   '/nurse-station': typeof AuthenticatedNurseStationRoute
   '/opd': typeof AuthenticatedOpdRouteWithChildren
@@ -582,6 +598,7 @@ export interface FileRoutesById {
   '/_authenticated/backups': typeof AuthenticatedBackupsRoute
   '/_authenticated/bi': typeof AuthenticatedBiRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/_authenticated/biomedical': typeof AuthenticatedBiomedicalRoute
   '/_authenticated/blood-bank': typeof AuthenticatedBloodBankRoute
   '/_authenticated/branches': typeof AuthenticatedBranchesRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
@@ -593,6 +610,7 @@ export interface FileRoutesById {
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/_authenticated/health-records': typeof AuthenticatedHealthRecordsRoute
+  '/_authenticated/icu': typeof AuthenticatedIcuRoute
   '/_authenticated/insurance': typeof AuthenticatedInsuranceRoute
   '/_authenticated/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/_authenticated/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
@@ -652,6 +670,7 @@ export interface FileRouteTypes {
     | '/backups'
     | '/bi'
     | '/billing'
+    | '/biomedical'
     | '/blood-bank'
     | '/branches'
     | '/command-center'
@@ -663,6 +682,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/health-packages'
     | '/health-records'
+    | '/icu'
     | '/insurance'
     | '/ipd'
     | '/laboratory'
@@ -719,6 +739,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/backups'
     | '/bi'
+    | '/biomedical'
     | '/blood-bank'
     | '/branches'
     | '/command-center'
@@ -730,6 +751,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/health-packages'
     | '/health-records'
+    | '/icu'
     | '/insurance'
     | '/nurse-station'
     | '/opd'
@@ -785,6 +807,7 @@ export interface FileRouteTypes {
     | '/_authenticated/backups'
     | '/_authenticated/bi'
     | '/_authenticated/billing'
+    | '/_authenticated/biomedical'
     | '/_authenticated/blood-bank'
     | '/_authenticated/branches'
     | '/_authenticated/command-center'
@@ -796,6 +819,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance'
     | '/_authenticated/health-packages'
     | '/_authenticated/health-records'
+    | '/_authenticated/icu'
     | '/_authenticated/insurance'
     | '/_authenticated/ipd'
     | '/_authenticated/laboratory'
@@ -1021,6 +1045,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInsuranceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/icu': {
+      id: '/_authenticated/icu'
+      path: '/icu'
+      fullPath: '/icu'
+      preLoaderRoute: typeof AuthenticatedIcuRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/health-records': {
       id: '/_authenticated/health-records'
       path: '/health-records'
@@ -1096,6 +1127,13 @@ declare module '@tanstack/react-router' {
       path: '/blood-bank'
       fullPath: '/blood-bank'
       preLoaderRoute: typeof AuthenticatedBloodBankRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/biomedical': {
+      id: '/_authenticated/biomedical'
+      path: '/biomedical'
+      fullPath: '/biomedical'
+      preLoaderRoute: typeof AuthenticatedBiomedicalRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/billing': {
@@ -1440,6 +1478,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBackupsRoute: typeof AuthenticatedBackupsRoute
   AuthenticatedBiRoute: typeof AuthenticatedBiRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRouteWithChildren
+  AuthenticatedBiomedicalRoute: typeof AuthenticatedBiomedicalRoute
   AuthenticatedBloodBankRoute: typeof AuthenticatedBloodBankRoute
   AuthenticatedBranchesRoute: typeof AuthenticatedBranchesRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
@@ -1451,6 +1490,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedHealthPackagesRoute: typeof AuthenticatedHealthPackagesRoute
   AuthenticatedHealthRecordsRoute: typeof AuthenticatedHealthRecordsRoute
+  AuthenticatedIcuRoute: typeof AuthenticatedIcuRoute
   AuthenticatedInsuranceRoute: typeof AuthenticatedInsuranceRoute
   AuthenticatedIpdRoute: typeof AuthenticatedIpdRouteWithChildren
   AuthenticatedLaboratoryRoute: typeof AuthenticatedLaboratoryRouteWithChildren
@@ -1487,6 +1527,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBackupsRoute: AuthenticatedBackupsRoute,
   AuthenticatedBiRoute: AuthenticatedBiRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRouteWithChildren,
+  AuthenticatedBiomedicalRoute: AuthenticatedBiomedicalRoute,
   AuthenticatedBloodBankRoute: AuthenticatedBloodBankRoute,
   AuthenticatedBranchesRoute: AuthenticatedBranchesRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
@@ -1498,6 +1539,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedHealthPackagesRoute: AuthenticatedHealthPackagesRoute,
   AuthenticatedHealthRecordsRoute: AuthenticatedHealthRecordsRoute,
+  AuthenticatedIcuRoute: AuthenticatedIcuRoute,
   AuthenticatedInsuranceRoute: AuthenticatedInsuranceRoute,
   AuthenticatedIpdRoute: AuthenticatedIpdRouteWithChildren,
   AuthenticatedLaboratoryRoute: AuthenticatedLaboratoryRouteWithChildren,
@@ -1539,3 +1581,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
