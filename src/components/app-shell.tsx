@@ -32,7 +32,7 @@ const NAV: NavItem[] = [
   { to: "/ot", label: "OT / Surgery", icon: Scissors, section: "Clinical" },
   { to: "/nurse-station", label: "Nurse Station", icon: HeartPulse, section: "Clinical" },
   { to: "/pharmacy", label: "Pharmacy", icon: Pill, section: "Clinical" },
-  { to: "/laboratory", label: "Laboratory", icon: FlaskConical, section: "Clinical" },
+  { to: "/laboratory", label: "Laboratory", icon: Flask, section: "Clinical" },
   { to: "/radiology", label: "Radiology", icon: Scan, section: "Clinical" },
   { to: "/pacs", label: "PACS / Imaging", icon: ImageIcon, section: "Clinical" },
   { to: "/blood-bank", label: "Blood Bank", icon: Droplet, section: "Clinical" },
