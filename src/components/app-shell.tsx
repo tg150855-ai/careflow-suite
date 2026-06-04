@@ -8,6 +8,8 @@ import {
   BarChart3, Building2, ShieldAlert, Database,
   Video, Sparkles, Send, UserCheck, FileText, Syringe, Package, Hash, Activity, CreditCard,
   Scan, Image as ImageIcon, Droplet, Wrench,
+  Network, Globe, Bug, AlertTriangle, ClipboardCheck, FileSignature, Archive,
+  History, Lightbulb, FlaskConical, Share2,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
