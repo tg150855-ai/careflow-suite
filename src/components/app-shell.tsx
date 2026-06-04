@@ -1,13 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import {
-  LayoutDashboard, Users, CalendarDays, Stethoscope, BedDouble, Pill, FlaskConical,
+  LayoutDashboard, Users, CalendarDays, Stethoscope, BedDouble, Pill, FlaskConical as Flask,
   Scissors, HeartPulse, FileBarChart, UserCog, Settings, Bell, LogOut,
   ChevronLeft, Heart, ChevronDown, Ambulance, ShieldCheck, Siren, MessageSquare,
   Briefcase, Clock, CalendarCheck, Wallet, Boxes, Truck, ShoppingCart, Landmark,
   BarChart3, Building2, ShieldAlert, Database,
   Video, Sparkles, Send, UserCheck, FileText, Syringe, Package, Hash, Activity, CreditCard,
   Scan, Image as ImageIcon, Droplet, Wrench,
+  Network, Globe, Bug, AlertTriangle, ClipboardCheck, FileSignature, Archive,
+  History, Lightbulb, FlaskConical, Share2,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -30,7 +32,7 @@ const NAV: NavItem[] = [
   { to: "/ot", label: "OT / Surgery", icon: Scissors, section: "Clinical" },
   { to: "/nurse-station", label: "Nurse Station", icon: HeartPulse, section: "Clinical" },
   { to: "/pharmacy", label: "Pharmacy", icon: Pill, section: "Clinical" },
-  { to: "/laboratory", label: "Laboratory", icon: FlaskConical, section: "Clinical" },
+  { to: "/laboratory", label: "Laboratory", icon: Flask, section: "Clinical" },
   { to: "/radiology", label: "Radiology", icon: Scan, section: "Clinical" },
   { to: "/pacs", label: "PACS / Imaging", icon: ImageIcon, section: "Clinical" },
   { to: "/blood-bank", label: "Blood Bank", icon: Droplet, section: "Clinical" },
@@ -68,6 +70,26 @@ const NAV: NavItem[] = [
   { to: "/crm", label: "Patient CRM", icon: UserCheck, section: "Digital" },
   { to: "/payments-online", label: "Online Payments", icon: CreditCard, section: "Digital" },
   { to: "/patient-portal", label: "Patient Portal", icon: Heart, section: "Patient", roles: ["patient", "admin"] },
+  // Phase 8 — Compliance & EMR
+  { to: "/emr", label: "EMR Timeline", icon: FileText, section: "Compliance" },
+  { to: "/ehr", label: "EHR Sharing", icon: Share2, section: "Compliance" },
+  { to: "/hl7", label: "HL7 Engine", icon: Network, section: "Compliance" },
+  { to: "/fhir", label: "FHIR Resources", icon: Globe, section: "Compliance" },
+  { to: "/nabh", label: "NABH", icon: ShieldCheck, section: "Compliance" },
+  { to: "/jci", label: "JCI", icon: Globe, section: "Compliance" },
+  { to: "/quality", label: "Quality Dashboard", icon: Activity, section: "Compliance" },
+  { to: "/infection-control", label: "Infection Control", icon: Bug, section: "Compliance" },
+  { to: "/incidents", label: "Incidents & Risk", icon: AlertTriangle, section: "Compliance" },
+  { to: "/patient-safety", label: "Patient Safety", icon: ShieldAlert, section: "Compliance" },
+  { to: "/clinical-audits", label: "Clinical Audits", icon: ClipboardCheck, section: "Compliance" },
+  { to: "/consents", label: "Consent Forms", icon: FileSignature, section: "Compliance" },
+  { to: "/mrd", label: "MRD Archive", icon: Archive, section: "Compliance" },
+  { to: "/regulatory", label: "Regulatory Reports", icon: FileBarChart, section: "Compliance" },
+  { to: "/privacy", label: "Data Privacy", icon: ShieldCheck, section: "Compliance" },
+  { to: "/audit-trail", label: "Audit Trail", icon: History, section: "Compliance" },
+  { to: "/cdss", label: "Clinical Decision Support", icon: Lightbulb, section: "Compliance" },
+  { to: "/research", label: "Research Studies", icon: FlaskConical, section: "Compliance" },
+  { to: "/compliance-dashboard", label: "Compliance Overview", icon: ShieldCheck, section: "Compliance", roles: ["admin","super_admin"] },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
