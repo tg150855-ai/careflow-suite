@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import {
-  LayoutDashboard, Users, CalendarDays, Stethoscope, BedDouble, Pill, FlaskConical,
+  LayoutDashboard, Users, CalendarDays, Stethoscope, BedDouble, Pill, FlaskConical as Flask,
   Scissors, HeartPulse, FileBarChart, UserCog, Settings, Bell, LogOut,
   ChevronLeft, Heart, ChevronDown, Ambulance, ShieldCheck, Siren, MessageSquare,
   Briefcase, Clock, CalendarCheck, Wallet, Boxes, Truck, ShoppingCart, Landmark,
