@@ -70,6 +70,26 @@ const NAV: NavItem[] = [
   { to: "/crm", label: "Patient CRM", icon: UserCheck, section: "Digital" },
   { to: "/payments-online", label: "Online Payments", icon: CreditCard, section: "Digital" },
   { to: "/patient-portal", label: "Patient Portal", icon: Heart, section: "Patient", roles: ["patient", "admin"] },
+  // Phase 8 — Compliance & EMR
+  { to: "/emr", label: "EMR Timeline", icon: FileText, section: "Compliance" },
+  { to: "/ehr", label: "EHR Sharing", icon: Share2, section: "Compliance" },
+  { to: "/hl7", label: "HL7 Engine", icon: Network, section: "Compliance" },
+  { to: "/fhir", label: "FHIR Resources", icon: Globe, section: "Compliance" },
+  { to: "/nabh", label: "NABH", icon: ShieldCheck, section: "Compliance" },
+  { to: "/jci", label: "JCI", icon: Globe, section: "Compliance" },
+  { to: "/quality", label: "Quality Dashboard", icon: Activity, section: "Compliance" },
+  { to: "/infection-control", label: "Infection Control", icon: Bug, section: "Compliance" },
+  { to: "/incidents", label: "Incidents & Risk", icon: AlertTriangle, section: "Compliance" },
+  { to: "/patient-safety", label: "Patient Safety", icon: ShieldAlert, section: "Compliance" },
+  { to: "/clinical-audits", label: "Clinical Audits", icon: ClipboardCheck, section: "Compliance" },
+  { to: "/consents", label: "Consent Forms", icon: FileSignature, section: "Compliance" },
+  { to: "/mrd", label: "MRD Archive", icon: Archive, section: "Compliance" },
+  { to: "/regulatory", label: "Regulatory Reports", icon: FileBarChart, section: "Compliance" },
+  { to: "/privacy", label: "Data Privacy", icon: ShieldCheck, section: "Compliance" },
+  { to: "/audit-trail", label: "Audit Trail", icon: History, section: "Compliance" },
+  { to: "/cdss", label: "Clinical Decision Support", icon: Lightbulb, section: "Compliance" },
+  { to: "/research", label: "Research Studies", icon: FlaskConical, section: "Compliance" },
+  { to: "/compliance-dashboard", label: "Compliance Overview", icon: ShieldCheck, section: "Compliance", roles: ["admin","super_admin"] },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
