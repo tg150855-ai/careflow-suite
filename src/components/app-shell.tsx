@@ -10,6 +10,7 @@ import {
   Scan, Image as ImageIcon, Droplet, Wrench,
   Network, Globe, Bug, AlertTriangle, ClipboardCheck, FileSignature, Archive,
   History, Lightbulb, FlaskConical, Share2,
+  MonitorSmartphone, Smartphone, TrendingUp, Files,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
