@@ -91,6 +91,12 @@ const NAV: NavItem[] = [
   { to: "/cdss", label: "Clinical Decision Support", icon: Lightbulb, section: "Compliance" },
   { to: "/research", label: "Research Studies", icon: FlaskConical, section: "Compliance" },
   { to: "/compliance-dashboard", label: "Compliance Overview", icon: ShieldCheck, section: "Compliance", roles: ["admin","super_admin"] },
+  // Phase 9 — Advanced Hospital Capabilities
+  { to: "/documents", label: "Documents", icon: Files, section: "Operations" },
+  { to: "/kiosk", label: "Self Check-In", icon: MonitorSmartphone, section: "Operations" },
+  { to: "/queue-display", label: "Queue Display", icon: Hash, section: "Operations" },
+  { to: "/predictions", label: "Predictive Analytics", icon: TrendingUp, section: "Admin" },
+  { to: "/mobile-api", label: "Mobile API & Push", icon: Smartphone, section: "Admin", roles: ["admin","super_admin"] },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
