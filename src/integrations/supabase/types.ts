@@ -190,6 +190,36 @@ export type Database = {
           },
         ]
       }
+      ai_conversations: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          messages: Json | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          messages?: Json | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          messages?: Json | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_insights: {
         Row: {
           body: Json
@@ -216,6 +246,45 @@ export type Database = {
           created_by?: string | null
           generated_at?: string
           id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      ai_recommendations: {
+        Row: {
+          category: string
+          confidence: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          recommendation: string
+          status: string | null
+          target_id: string | null
+          target_type: string | null
+          title: string
+        }
+        Insert: {
+          category: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          recommendation: string
+          status?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          title: string
+        }
+        Update: {
+          category?: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          recommendation?: string
+          status?: string | null
+          target_id?: string | null
+          target_type?: string | null
           title?: string
         }
         Relationships: []
@@ -1195,6 +1264,39 @@ export type Database = {
         }
         Relationships: []
       }
+      compliance_assessments: {
+        Row: {
+          action_items: Json | null
+          area: string
+          assessed_at: string
+          assessed_by: string | null
+          findings: string | null
+          id: string
+          score: number | null
+          standard: string
+        }
+        Insert: {
+          action_items?: Json | null
+          area: string
+          assessed_at?: string
+          assessed_by?: string | null
+          findings?: string | null
+          id?: string
+          score?: number | null
+          standard: string
+        }
+        Update: {
+          action_items?: Json | null
+          area?: string
+          assessed_at?: string
+          assessed_by?: string | null
+          findings?: string | null
+          id?: string
+          score?: number | null
+          standard?: string
+        }
+        Relationships: []
+      }
       compliance_documents: {
         Row: {
           content: string | null
@@ -1396,6 +1498,51 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      device_readings: {
+        Row: {
+          device_id: string | null
+          id: string
+          is_alert: boolean | null
+          patient_id: string | null
+          payload: Json
+          reading_type: string | null
+          recorded_at: string
+        }
+        Insert: {
+          device_id?: string | null
+          id?: string
+          is_alert?: boolean | null
+          patient_id?: string | null
+          payload: Json
+          reading_type?: string | null
+          recorded_at?: string
+        }
+        Update: {
+          device_id?: string | null
+          id?: string
+          is_alert?: boolean | null
+          patient_id?: string | null
+          payload?: Json
+          reading_type?: string | null
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_readings_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "iot_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_readings_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dialysis_sessions: {
         Row: {
@@ -2255,6 +2402,47 @@ export type Database = {
           },
         ]
       }
+      forecast_results: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          domain: string
+          forecast_date: string
+          id: string
+          metric: string
+          model_id: string | null
+          value: number
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          domain: string
+          forecast_date: string
+          id?: string
+          metric: string
+          model_id?: string | null
+          value: number
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          domain?: string
+          forecast_date?: string
+          id?: string
+          metric?: string
+          model_id?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_results_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "prediction_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goods_receipts: {
         Row: {
           accepted: boolean
@@ -2922,6 +3110,81 @@ export type Database = {
           },
         ]
       }
+      integration_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          endpoint: string | null
+          error: string | null
+          id: string
+          integration_name: string
+          method: string | null
+          request_payload: Json | null
+          response_payload: Json | null
+          status_code: number | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          endpoint?: string | null
+          error?: string | null
+          id?: string
+          integration_name: string
+          method?: string | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status_code?: number | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          endpoint?: string | null
+          error?: string | null
+          id?: string
+          integration_name?: string
+          method?: string | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status_code?: number | null
+        }
+        Relationships: []
+      }
+      iot_devices: {
+        Row: {
+          config: Json | null
+          created_at: string
+          device_name: string
+          device_type: string
+          id: string
+          last_seen_at: string | null
+          location: string | null
+          serial_no: string | null
+          status: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          device_name: string
+          device_type: string
+          id?: string
+          last_seen_at?: string | null
+          location?: string | null
+          serial_no?: string | null
+          status?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          device_name?: string
+          device_type?: string
+          id?: string
+          last_seen_at?: string | null
+          location?: string | null
+          serial_no?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       jci_audits: {
         Row: {
           audit_date: string
@@ -3050,6 +3313,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      knowledge_base: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
       }
       lab_orders: {
         Row: {
@@ -3773,6 +4072,47 @@ export type Database = {
           },
         ]
       }
+      patient_engagement_logs: {
+        Row: {
+          channel: string | null
+          content: string | null
+          created_at: string
+          engagement_type: string
+          id: string
+          metadata: Json | null
+          patient_id: string | null
+          status: string | null
+        }
+        Insert: {
+          channel?: string | null
+          content?: string | null
+          created_at?: string
+          engagement_type: string
+          id?: string
+          metadata?: Json | null
+          patient_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          channel?: string | null
+          content?: string | null
+          created_at?: string
+          engagement_type?: string
+          id?: string
+          metadata?: Json | null
+          patient_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_engagement_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_family_members: {
         Row: {
           can_book: boolean
@@ -4070,6 +4410,50 @@ export type Database = {
         }
         Relationships: []
       }
+      pharmacy_forecasts: {
+        Row: {
+          created_at: string
+          current_stock: number | null
+          expiry_risk: number | null
+          forecast_date: string
+          id: string
+          medicine_id: string | null
+          notes: string | null
+          predicted_demand: number | null
+          reorder_qty: number | null
+        }
+        Insert: {
+          created_at?: string
+          current_stock?: number | null
+          expiry_risk?: number | null
+          forecast_date: string
+          id?: string
+          medicine_id?: string | null
+          notes?: string | null
+          predicted_demand?: number | null
+          reorder_qty?: number | null
+        }
+        Update: {
+          created_at?: string
+          current_stock?: number | null
+          expiry_risk?: number | null
+          forecast_date?: string
+          id?: string
+          medicine_id?: string | null
+          notes?: string | null
+          predicted_demand?: number | null
+          reorder_qty?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pharmacy_forecasts_medicine_id_fkey"
+            columns: ["medicine_id"]
+            isOneToOne: false
+            referencedRelation: "medicines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pharmacy_sale_items: {
         Row: {
           amount: number
@@ -4174,6 +4558,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      prediction_models: {
+        Row: {
+          active: boolean | null
+          config: Json | null
+          created_at: string
+          description: string | null
+          domain: string
+          id: string
+          name: string
+        }
+        Insert: {
+          active?: boolean | null
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          domain: string
+          id?: string
+          name: string
+        }
+        Update: {
+          active?: boolean | null
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          domain?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       predictive_forecasts: {
         Row: {
@@ -4705,6 +5119,36 @@ export type Database = {
           },
         ]
       }
+      recovery_logs: {
+        Row: {
+          created_at: string
+          data_size_mb: number | null
+          duration_seconds: number | null
+          id: string
+          notes: string | null
+          recovery_type: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          data_size_mb?: number | null
+          duration_seconds?: number | null
+          id?: string
+          notes?: string | null
+          recovery_type: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          data_size_mb?: number | null
+          duration_seconds?: number | null
+          id?: string
+          notes?: string | null
+          recovery_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
       recovery_notes: {
         Row: {
           created_at: string
@@ -4745,6 +5189,50 @@ export type Database = {
             columns: ["surgery_id"]
             isOneToOne: false
             referencedRelation: "surgeries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      remote_monitoring: {
+        Row: {
+          alert: boolean | null
+          followup_status: string | null
+          id: string
+          medication_compliance: number | null
+          notes: string | null
+          patient_id: string | null
+          program_type: string
+          recorded_at: string
+          vitals: Json | null
+        }
+        Insert: {
+          alert?: boolean | null
+          followup_status?: string | null
+          id?: string
+          medication_compliance?: number | null
+          notes?: string | null
+          patient_id?: string | null
+          program_type: string
+          recorded_at?: string
+          vitals?: Json | null
+        }
+        Update: {
+          alert?: boolean | null
+          followup_status?: string | null
+          id?: string
+          medication_compliance?: number | null
+          notes?: string | null
+          patient_id?: string | null
+          program_type?: string
+          recorded_at?: string
+          vitals?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remote_monitoring_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]
@@ -4837,6 +5325,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "resource_schedules_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      risk_assessments: {
+        Row: {
+          created_at: string
+          factors: Json | null
+          id: string
+          patient_id: string | null
+          recommendation: string | null
+          risk_level: string
+          risk_type: string
+          score: number | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          factors?: Json | null
+          id?: string
+          patient_id?: string | null
+          recommendation?: string | null
+          risk_level: string
+          risk_type: string
+          score?: number | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          factors?: Json | null
+          id?: string
+          patient_id?: string | null
+          recommendation?: string | null
+          risk_level?: string
+          risk_type?: string
+          score?: number | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_assessments_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
@@ -5078,6 +5610,42 @@ export type Database = {
         }
         Relationships: []
       }
+      security_monitoring: {
+        Row: {
+          created_at: string
+          details: Json | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          risk_score: number | null
+          severity: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          risk_score?: number | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          risk_score?: number | null
+          severity?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       sms_logs: {
         Row: {
           body: string
@@ -5117,6 +5685,42 @@ export type Database = {
           reference_id?: string | null
           reference_type?: string | null
           status?: Database["public"]["Enums"]["comm_status"]
+        }
+        Relationships: []
+      }
+      staffing_forecasts: {
+        Row: {
+          created_at: string
+          department: string
+          forecast_date: string
+          id: string
+          notes: string | null
+          required_doctors: number | null
+          required_nurses: number | null
+          required_support: number | null
+          workload_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          forecast_date: string
+          id?: string
+          notes?: string | null
+          required_doctors?: number | null
+          required_nurses?: number | null
+          required_support?: number | null
+          workload_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          forecast_date?: string
+          id?: string
+          notes?: string | null
+          required_doctors?: number | null
+          required_nurses?: number | null
+          required_support?: number | null
+          workload_score?: number | null
         }
         Relationships: []
       }
