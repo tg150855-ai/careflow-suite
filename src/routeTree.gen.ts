@@ -13,14 +13,20 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
+import { Route as AuthenticatedVoiceHmisRouteImport } from './routes/_authenticated/voice-hmis'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedVaccinationsRouteImport } from './routes/_authenticated/vaccinations'
 import { Route as AuthenticatedTelemedicineRouteImport } from './routes/_authenticated/telemedicine'
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
+import { Route as AuthenticatedSmartStaffingRouteImport } from './routes/_authenticated/smart-staffing'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedSecurityCenterRouteImport } from './routes/_authenticated/security-center'
+import { Route as AuthenticatedRiskDetectionRouteImport } from './routes/_authenticated/risk-detection'
 import { Route as AuthenticatedResearchRouteImport } from './routes/_authenticated/research'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedRemoteCareRouteImport } from './routes/_authenticated/remote-care'
 import { Route as AuthenticatedRegulatoryRouteImport } from './routes/_authenticated/regulatory'
+import { Route as AuthenticatedRecoveryRouteImport } from './routes/_authenticated/recovery'
 import { Route as AuthenticatedRadiologyRouteImport } from './routes/_authenticated/radiology'
 import { Route as AuthenticatedQueueDisplayRouteImport } from './routes/_authenticated/queue-display'
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
@@ -28,7 +34,9 @@ import { Route as AuthenticatedQualityRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedProcurementRouteImport } from './routes/_authenticated/procurement'
 import { Route as AuthenticatedPrivacyRouteImport } from './routes/_authenticated/privacy'
 import { Route as AuthenticatedPredictionsRouteImport } from './routes/_authenticated/predictions'
+import { Route as AuthenticatedPharmacyIntelRouteImport } from './routes/_authenticated/pharmacy-intel'
 import { Route as AuthenticatedPharmacyRouteImport } from './routes/_authenticated/pharmacy'
+import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenticated/performance'
 import { Route as AuthenticatedPaymentsOnlineRouteImport } from './routes/_authenticated/payments-online'
 import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticated/patients'
 import { Route as AuthenticatedPatientSafetyRouteImport } from './routes/_authenticated/patient-safety'
@@ -41,9 +49,11 @@ import { Route as AuthenticatedNabhRouteImport } from './routes/_authenticated/n
 import { Route as AuthenticatedMrdRouteImport } from './routes/_authenticated/mrd'
 import { Route as AuthenticatedMobileApiRouteImport } from './routes/_authenticated/mobile-api'
 import { Route as AuthenticatedLaboratoryRouteImport } from './routes/_authenticated/laboratory'
+import { Route as AuthenticatedKnowledgeRouteImport } from './routes/_authenticated/knowledge'
 import { Route as AuthenticatedKioskRouteImport } from './routes/_authenticated/kiosk'
 import { Route as AuthenticatedJciRouteImport } from './routes/_authenticated/jci'
 import { Route as AuthenticatedIpdRouteImport } from './routes/_authenticated/ipd'
+import { Route as AuthenticatedIotDevicesRouteImport } from './routes/_authenticated/iot-devices'
 import { Route as AuthenticatedInsuranceRouteImport } from './routes/_authenticated/insurance'
 import { Route as AuthenticatedInfectionControlRouteImport } from './routes/_authenticated/infection-control'
 import { Route as AuthenticatedIncidentsRouteImport } from './routes/_authenticated/incidents'
@@ -51,17 +61,22 @@ import { Route as AuthenticatedIcuRouteImport } from './routes/_authenticated/ic
 import { Route as AuthenticatedHl7RouteImport } from './routes/_authenticated/hl7'
 import { Route as AuthenticatedHealthRecordsRouteImport } from './routes/_authenticated/health-records'
 import { Route as AuthenticatedHealthPackagesRouteImport } from './routes/_authenticated/health-packages'
+import { Route as AuthenticatedForecastRouteImport } from './routes/_authenticated/forecast'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedFhirRouteImport } from './routes/_authenticated/fhir'
+import { Route as AuthenticatedEngagementRouteImport } from './routes/_authenticated/engagement'
 import { Route as AuthenticatedEmrRouteImport } from './routes/_authenticated/emr'
 import { Route as AuthenticatedEmergencyRouteImport } from './routes/_authenticated/emergency'
 import { Route as AuthenticatedEhrRouteImport } from './routes/_authenticated/ehr'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedDigitalTwinRouteImport } from './routes/_authenticated/digital-twin'
 import { Route as AuthenticatedDialysisRouteImport } from './routes/_authenticated/dialysis'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedCopilotRouteImport } from './routes/_authenticated/copilot'
 import { Route as AuthenticatedConsentsRouteImport } from './routes/_authenticated/consents'
 import { Route as AuthenticatedComplianceDashboardRouteImport } from './routes/_authenticated/compliance-dashboard'
+import { Route as AuthenticatedComplianceAiRouteImport } from './routes/_authenticated/compliance-ai'
 import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedClinicalAuditsRouteImport } from './routes/_authenticated/clinical-audits'
@@ -76,6 +91,7 @@ import { Route as AuthenticatedAuditTrailRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
 import { Route as AuthenticatedAppointmentsRouteImport } from './routes/_authenticated/appointments'
+import { Route as AuthenticatedApiGatewayRouteImport } from './routes/_authenticated/api-gateway'
 import { Route as AuthenticatedAmbulanceRouteImport } from './routes/_authenticated/ambulance'
 import { Route as AuthenticatedAiAssistantRouteImport } from './routes/_authenticated/ai-assistant'
 import { Route as AuthenticatedPharmacyIndexRouteImport } from './routes/_authenticated/pharmacy.index'
@@ -123,6 +139,11 @@ const AuthenticatedWhatsappRoute = AuthenticatedWhatsappRouteImport.update({
   path: '/whatsapp',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedVoiceHmisRoute = AuthenticatedVoiceHmisRouteImport.update({
+  id: '/voice-hmis',
+  path: '/voice-hmis',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
@@ -145,11 +166,29 @@ const AuthenticatedStaffRoute = AuthenticatedStaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSmartStaffingRoute =
+  AuthenticatedSmartStaffingRouteImport.update({
+    id: '/smart-staffing',
+    path: '/smart-staffing',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSecurityCenterRoute =
+  AuthenticatedSecurityCenterRouteImport.update({
+    id: '/security-center',
+    path: '/security-center',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedRiskDetectionRoute =
+  AuthenticatedRiskDetectionRouteImport.update({
+    id: '/risk-detection',
+    path: '/risk-detection',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedResearchRoute = AuthenticatedResearchRouteImport.update({
   id: '/research',
   path: '/research',
@@ -160,9 +199,19 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedRemoteCareRoute = AuthenticatedRemoteCareRouteImport.update({
+  id: '/remote-care',
+  path: '/remote-care',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedRegulatoryRoute = AuthenticatedRegulatoryRouteImport.update({
   id: '/regulatory',
   path: '/regulatory',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRecoveryRoute = AuthenticatedRecoveryRouteImport.update({
+  id: '/recovery',
+  path: '/recovery',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedRadiologyRoute = AuthenticatedRadiologyRouteImport.update({
@@ -203,11 +252,23 @@ const AuthenticatedPredictionsRoute =
     path: '/predictions',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPharmacyIntelRoute =
+  AuthenticatedPharmacyIntelRouteImport.update({
+    id: '/pharmacy-intel',
+    path: '/pharmacy-intel',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPharmacyRoute = AuthenticatedPharmacyRouteImport.update({
   id: '/pharmacy',
   path: '/pharmacy',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPerformanceRoute =
+  AuthenticatedPerformanceRouteImport.update({
+    id: '/performance',
+    path: '/performance',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPaymentsOnlineRoute =
   AuthenticatedPaymentsOnlineRouteImport.update({
     id: '/payments-online',
@@ -272,6 +333,11 @@ const AuthenticatedLaboratoryRoute = AuthenticatedLaboratoryRouteImport.update({
   path: '/laboratory',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedKnowledgeRoute = AuthenticatedKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedKioskRoute = AuthenticatedKioskRouteImport.update({
   id: '/kiosk',
   path: '/kiosk',
@@ -285,6 +351,11 @@ const AuthenticatedJciRoute = AuthenticatedJciRouteImport.update({
 const AuthenticatedIpdRoute = AuthenticatedIpdRouteImport.update({
   id: '/ipd',
   path: '/ipd',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedIotDevicesRoute = AuthenticatedIotDevicesRouteImport.update({
+  id: '/iot-devices',
+  path: '/iot-devices',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedInsuranceRoute = AuthenticatedInsuranceRouteImport.update({
@@ -325,6 +396,11 @@ const AuthenticatedHealthPackagesRoute =
     path: '/health-packages',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedForecastRoute = AuthenticatedForecastRouteImport.update({
+  id: '/forecast',
+  path: '/forecast',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
   id: '/finance',
   path: '/finance',
@@ -333,6 +409,11 @@ const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
 const AuthenticatedFhirRoute = AuthenticatedFhirRouteImport.update({
   id: '/fhir',
   path: '/fhir',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedEngagementRoute = AuthenticatedEngagementRouteImport.update({
+  id: '/engagement',
+  path: '/engagement',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedEmrRoute = AuthenticatedEmrRouteImport.update({
@@ -355,6 +436,12 @@ const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDigitalTwinRoute =
+  AuthenticatedDigitalTwinRouteImport.update({
+    id: '/digital-twin',
+    path: '/digital-twin',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDialysisRoute = AuthenticatedDialysisRouteImport.update({
   id: '/dialysis',
   path: '/dialysis',
@@ -370,6 +457,11 @@ const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   path: '/crm',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCopilotRoute = AuthenticatedCopilotRouteImport.update({
+  id: '/copilot',
+  path: '/copilot',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedConsentsRoute = AuthenticatedConsentsRouteImport.update({
   id: '/consents',
   path: '/consents',
@@ -379,6 +471,12 @@ const AuthenticatedComplianceDashboardRoute =
   AuthenticatedComplianceDashboardRouteImport.update({
     id: '/compliance-dashboard',
     path: '/compliance-dashboard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedComplianceAiRoute =
+  AuthenticatedComplianceAiRouteImport.update({
+    id: '/compliance-ai',
+    path: '/compliance-ai',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCommunicationsRoute =
@@ -455,6 +553,11 @@ const AuthenticatedAppointmentsRoute =
     path: '/appointments',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedApiGatewayRoute = AuthenticatedApiGatewayRouteImport.update({
+  id: '/api-gateway',
+  path: '/api-gateway',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAmbulanceRoute = AuthenticatedAmbulanceRouteImport.update({
   id: '/ambulance',
   path: '/ambulance',
@@ -610,6 +713,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/ambulance': typeof AuthenticatedAmbulanceRoute
+  '/api-gateway': typeof AuthenticatedApiGatewayRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/assets': typeof AuthenticatedAssetsRoute
   '/audit': typeof AuthenticatedAuditRoute
@@ -624,17 +728,22 @@ export interface FileRoutesByFullPath {
   '/clinical-audits': typeof AuthenticatedClinicalAuditsRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
+  '/compliance-ai': typeof AuthenticatedComplianceAiRoute
   '/compliance-dashboard': typeof AuthenticatedComplianceDashboardRoute
   '/consents': typeof AuthenticatedConsentsRoute
+  '/copilot': typeof AuthenticatedCopilotRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dialysis': typeof AuthenticatedDialysisRoute
+  '/digital-twin': typeof AuthenticatedDigitalTwinRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/ehr': typeof AuthenticatedEhrRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/emr': typeof AuthenticatedEmrRoute
+  '/engagement': typeof AuthenticatedEngagementRoute
   '/fhir': typeof AuthenticatedFhirRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/forecast': typeof AuthenticatedForecastRoute
   '/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/health-records': typeof AuthenticatedHealthRecordsRoute
   '/hl7': typeof AuthenticatedHl7Route
@@ -642,9 +751,11 @@ export interface FileRoutesByFullPath {
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/infection-control': typeof AuthenticatedInfectionControlRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
+  '/iot-devices': typeof AuthenticatedIotDevicesRoute
   '/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/jci': typeof AuthenticatedJciRoute
   '/kiosk': typeof AuthenticatedKioskRoute
+  '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
   '/mobile-api': typeof AuthenticatedMobileApiRoute
   '/mrd': typeof AuthenticatedMrdRoute
@@ -657,7 +768,9 @@ export interface FileRoutesByFullPath {
   '/patient-safety': typeof AuthenticatedPatientSafetyRoute
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/payments-online': typeof AuthenticatedPaymentsOnlineRoute
+  '/performance': typeof AuthenticatedPerformanceRoute
   '/pharmacy': typeof AuthenticatedPharmacyRouteWithChildren
+  '/pharmacy-intel': typeof AuthenticatedPharmacyIntelRoute
   '/predictions': typeof AuthenticatedPredictionsRoute
   '/privacy': typeof AuthenticatedPrivacyRoute
   '/procurement': typeof AuthenticatedProcurementRoute
@@ -665,14 +778,20 @@ export interface FileRoutesByFullPath {
   '/queue': typeof AuthenticatedQueueRoute
   '/queue-display': typeof AuthenticatedQueueDisplayRoute
   '/radiology': typeof AuthenticatedRadiologyRoute
+  '/recovery': typeof AuthenticatedRecoveryRoute
   '/regulatory': typeof AuthenticatedRegulatoryRoute
+  '/remote-care': typeof AuthenticatedRemoteCareRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/research': typeof AuthenticatedResearchRoute
+  '/risk-detection': typeof AuthenticatedRiskDetectionRoute
+  '/security-center': typeof AuthenticatedSecurityCenterRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/smart-staffing': typeof AuthenticatedSmartStaffingRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/vaccinations': typeof AuthenticatedVaccinationsRoute
   '/vendors': typeof AuthenticatedVendorsRoute
+  '/voice-hmis': typeof AuthenticatedVoiceHmisRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/billing/$id': typeof AuthenticatedBillingIdRoute
   '/billing/new': typeof AuthenticatedBillingNewRoute
@@ -705,6 +824,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/ambulance': typeof AuthenticatedAmbulanceRoute
+  '/api-gateway': typeof AuthenticatedApiGatewayRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
   '/assets': typeof AuthenticatedAssetsRoute
   '/audit': typeof AuthenticatedAuditRoute
@@ -718,17 +838,22 @@ export interface FileRoutesByTo {
   '/clinical-audits': typeof AuthenticatedClinicalAuditsRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
+  '/compliance-ai': typeof AuthenticatedComplianceAiRoute
   '/compliance-dashboard': typeof AuthenticatedComplianceDashboardRoute
   '/consents': typeof AuthenticatedConsentsRoute
+  '/copilot': typeof AuthenticatedCopilotRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dialysis': typeof AuthenticatedDialysisRoute
+  '/digital-twin': typeof AuthenticatedDigitalTwinRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/ehr': typeof AuthenticatedEhrRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/emr': typeof AuthenticatedEmrRoute
+  '/engagement': typeof AuthenticatedEngagementRoute
   '/fhir': typeof AuthenticatedFhirRoute
   '/finance': typeof AuthenticatedFinanceRoute
+  '/forecast': typeof AuthenticatedForecastRoute
   '/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/health-records': typeof AuthenticatedHealthRecordsRoute
   '/hl7': typeof AuthenticatedHl7Route
@@ -736,8 +861,10 @@ export interface FileRoutesByTo {
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/infection-control': typeof AuthenticatedInfectionControlRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
+  '/iot-devices': typeof AuthenticatedIotDevicesRoute
   '/jci': typeof AuthenticatedJciRoute
   '/kiosk': typeof AuthenticatedKioskRoute
+  '/knowledge': typeof AuthenticatedKnowledgeRoute
   '/mobile-api': typeof AuthenticatedMobileApiRoute
   '/mrd': typeof AuthenticatedMrdRoute
   '/nabh': typeof AuthenticatedNabhRoute
@@ -749,6 +876,8 @@ export interface FileRoutesByTo {
   '/patient-safety': typeof AuthenticatedPatientSafetyRoute
   '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/payments-online': typeof AuthenticatedPaymentsOnlineRoute
+  '/performance': typeof AuthenticatedPerformanceRoute
+  '/pharmacy-intel': typeof AuthenticatedPharmacyIntelRoute
   '/predictions': typeof AuthenticatedPredictionsRoute
   '/privacy': typeof AuthenticatedPrivacyRoute
   '/procurement': typeof AuthenticatedProcurementRoute
@@ -756,14 +885,20 @@ export interface FileRoutesByTo {
   '/queue': typeof AuthenticatedQueueRoute
   '/queue-display': typeof AuthenticatedQueueDisplayRoute
   '/radiology': typeof AuthenticatedRadiologyRoute
+  '/recovery': typeof AuthenticatedRecoveryRoute
   '/regulatory': typeof AuthenticatedRegulatoryRoute
+  '/remote-care': typeof AuthenticatedRemoteCareRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/research': typeof AuthenticatedResearchRoute
+  '/risk-detection': typeof AuthenticatedRiskDetectionRoute
+  '/security-center': typeof AuthenticatedSecurityCenterRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/smart-staffing': typeof AuthenticatedSmartStaffingRoute
   '/staff': typeof AuthenticatedStaffRoute
   '/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/vaccinations': typeof AuthenticatedVaccinationsRoute
   '/vendors': typeof AuthenticatedVendorsRoute
+  '/voice-hmis': typeof AuthenticatedVoiceHmisRoute
   '/whatsapp': typeof AuthenticatedWhatsappRoute
   '/billing/$id': typeof AuthenticatedBillingIdRoute
   '/billing/new': typeof AuthenticatedBillingNewRoute
@@ -798,6 +933,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/_authenticated/ambulance': typeof AuthenticatedAmbulanceRoute
+  '/_authenticated/api-gateway': typeof AuthenticatedApiGatewayRoute
   '/_authenticated/appointments': typeof AuthenticatedAppointmentsRoute
   '/_authenticated/assets': typeof AuthenticatedAssetsRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
@@ -812,17 +948,22 @@ export interface FileRoutesById {
   '/_authenticated/clinical-audits': typeof AuthenticatedClinicalAuditsRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
+  '/_authenticated/compliance-ai': typeof AuthenticatedComplianceAiRoute
   '/_authenticated/compliance-dashboard': typeof AuthenticatedComplianceDashboardRoute
   '/_authenticated/consents': typeof AuthenticatedConsentsRoute
+  '/_authenticated/copilot': typeof AuthenticatedCopilotRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dialysis': typeof AuthenticatedDialysisRoute
+  '/_authenticated/digital-twin': typeof AuthenticatedDigitalTwinRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/ehr': typeof AuthenticatedEhrRoute
   '/_authenticated/emergency': typeof AuthenticatedEmergencyRoute
   '/_authenticated/emr': typeof AuthenticatedEmrRoute
+  '/_authenticated/engagement': typeof AuthenticatedEngagementRoute
   '/_authenticated/fhir': typeof AuthenticatedFhirRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
+  '/_authenticated/forecast': typeof AuthenticatedForecastRoute
   '/_authenticated/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/_authenticated/health-records': typeof AuthenticatedHealthRecordsRoute
   '/_authenticated/hl7': typeof AuthenticatedHl7Route
@@ -830,9 +971,11 @@ export interface FileRoutesById {
   '/_authenticated/incidents': typeof AuthenticatedIncidentsRoute
   '/_authenticated/infection-control': typeof AuthenticatedInfectionControlRoute
   '/_authenticated/insurance': typeof AuthenticatedInsuranceRoute
+  '/_authenticated/iot-devices': typeof AuthenticatedIotDevicesRoute
   '/_authenticated/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/_authenticated/jci': typeof AuthenticatedJciRoute
   '/_authenticated/kiosk': typeof AuthenticatedKioskRoute
+  '/_authenticated/knowledge': typeof AuthenticatedKnowledgeRoute
   '/_authenticated/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
   '/_authenticated/mobile-api': typeof AuthenticatedMobileApiRoute
   '/_authenticated/mrd': typeof AuthenticatedMrdRoute
@@ -845,7 +988,9 @@ export interface FileRoutesById {
   '/_authenticated/patient-safety': typeof AuthenticatedPatientSafetyRoute
   '/_authenticated/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/_authenticated/payments-online': typeof AuthenticatedPaymentsOnlineRoute
+  '/_authenticated/performance': typeof AuthenticatedPerformanceRoute
   '/_authenticated/pharmacy': typeof AuthenticatedPharmacyRouteWithChildren
+  '/_authenticated/pharmacy-intel': typeof AuthenticatedPharmacyIntelRoute
   '/_authenticated/predictions': typeof AuthenticatedPredictionsRoute
   '/_authenticated/privacy': typeof AuthenticatedPrivacyRoute
   '/_authenticated/procurement': typeof AuthenticatedProcurementRoute
@@ -853,14 +998,20 @@ export interface FileRoutesById {
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
   '/_authenticated/queue-display': typeof AuthenticatedQueueDisplayRoute
   '/_authenticated/radiology': typeof AuthenticatedRadiologyRoute
+  '/_authenticated/recovery': typeof AuthenticatedRecoveryRoute
   '/_authenticated/regulatory': typeof AuthenticatedRegulatoryRoute
+  '/_authenticated/remote-care': typeof AuthenticatedRemoteCareRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/research': typeof AuthenticatedResearchRoute
+  '/_authenticated/risk-detection': typeof AuthenticatedRiskDetectionRoute
+  '/_authenticated/security-center': typeof AuthenticatedSecurityCenterRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/smart-staffing': typeof AuthenticatedSmartStaffingRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRoute
   '/_authenticated/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/_authenticated/vaccinations': typeof AuthenticatedVaccinationsRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
+  '/_authenticated/voice-hmis': typeof AuthenticatedVoiceHmisRoute
   '/_authenticated/whatsapp': typeof AuthenticatedWhatsappRoute
   '/_authenticated/billing/$id': typeof AuthenticatedBillingIdRoute
   '/_authenticated/billing/new': typeof AuthenticatedBillingNewRoute
@@ -895,6 +1046,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/ai-assistant'
     | '/ambulance'
+    | '/api-gateway'
     | '/appointments'
     | '/assets'
     | '/audit'
@@ -909,17 +1061,22 @@ export interface FileRouteTypes {
     | '/clinical-audits'
     | '/command-center'
     | '/communications'
+    | '/compliance-ai'
     | '/compliance-dashboard'
     | '/consents'
+    | '/copilot'
     | '/crm'
     | '/dashboard'
     | '/dialysis'
+    | '/digital-twin'
     | '/documents'
     | '/ehr'
     | '/emergency'
     | '/emr'
+    | '/engagement'
     | '/fhir'
     | '/finance'
+    | '/forecast'
     | '/health-packages'
     | '/health-records'
     | '/hl7'
@@ -927,9 +1084,11 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/infection-control'
     | '/insurance'
+    | '/iot-devices'
     | '/ipd'
     | '/jci'
     | '/kiosk'
+    | '/knowledge'
     | '/laboratory'
     | '/mobile-api'
     | '/mrd'
@@ -942,7 +1101,9 @@ export interface FileRouteTypes {
     | '/patient-safety'
     | '/patients'
     | '/payments-online'
+    | '/performance'
     | '/pharmacy'
+    | '/pharmacy-intel'
     | '/predictions'
     | '/privacy'
     | '/procurement'
@@ -950,14 +1111,20 @@ export interface FileRouteTypes {
     | '/queue'
     | '/queue-display'
     | '/radiology'
+    | '/recovery'
     | '/regulatory'
+    | '/remote-care'
     | '/reports'
     | '/research'
+    | '/risk-detection'
+    | '/security-center'
     | '/settings'
+    | '/smart-staffing'
     | '/staff'
     | '/telemedicine'
     | '/vaccinations'
     | '/vendors'
+    | '/voice-hmis'
     | '/whatsapp'
     | '/billing/$id'
     | '/billing/new'
@@ -990,6 +1157,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/ai-assistant'
     | '/ambulance'
+    | '/api-gateway'
     | '/appointments'
     | '/assets'
     | '/audit'
@@ -1003,17 +1171,22 @@ export interface FileRouteTypes {
     | '/clinical-audits'
     | '/command-center'
     | '/communications'
+    | '/compliance-ai'
     | '/compliance-dashboard'
     | '/consents'
+    | '/copilot'
     | '/crm'
     | '/dashboard'
     | '/dialysis'
+    | '/digital-twin'
     | '/documents'
     | '/ehr'
     | '/emergency'
     | '/emr'
+    | '/engagement'
     | '/fhir'
     | '/finance'
+    | '/forecast'
     | '/health-packages'
     | '/health-records'
     | '/hl7'
@@ -1021,8 +1194,10 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/infection-control'
     | '/insurance'
+    | '/iot-devices'
     | '/jci'
     | '/kiosk'
+    | '/knowledge'
     | '/mobile-api'
     | '/mrd'
     | '/nabh'
@@ -1034,6 +1209,8 @@ export interface FileRouteTypes {
     | '/patient-safety'
     | '/patients'
     | '/payments-online'
+    | '/performance'
+    | '/pharmacy-intel'
     | '/predictions'
     | '/privacy'
     | '/procurement'
@@ -1041,14 +1218,20 @@ export interface FileRouteTypes {
     | '/queue'
     | '/queue-display'
     | '/radiology'
+    | '/recovery'
     | '/regulatory'
+    | '/remote-care'
     | '/reports'
     | '/research'
+    | '/risk-detection'
+    | '/security-center'
     | '/settings'
+    | '/smart-staffing'
     | '/staff'
     | '/telemedicine'
     | '/vaccinations'
     | '/vendors'
+    | '/voice-hmis'
     | '/whatsapp'
     | '/billing/$id'
     | '/billing/new'
@@ -1082,6 +1265,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/ai-assistant'
     | '/_authenticated/ambulance'
+    | '/_authenticated/api-gateway'
     | '/_authenticated/appointments'
     | '/_authenticated/assets'
     | '/_authenticated/audit'
@@ -1096,17 +1280,22 @@ export interface FileRouteTypes {
     | '/_authenticated/clinical-audits'
     | '/_authenticated/command-center'
     | '/_authenticated/communications'
+    | '/_authenticated/compliance-ai'
     | '/_authenticated/compliance-dashboard'
     | '/_authenticated/consents'
+    | '/_authenticated/copilot'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
     | '/_authenticated/dialysis'
+    | '/_authenticated/digital-twin'
     | '/_authenticated/documents'
     | '/_authenticated/ehr'
     | '/_authenticated/emergency'
     | '/_authenticated/emr'
+    | '/_authenticated/engagement'
     | '/_authenticated/fhir'
     | '/_authenticated/finance'
+    | '/_authenticated/forecast'
     | '/_authenticated/health-packages'
     | '/_authenticated/health-records'
     | '/_authenticated/hl7'
@@ -1114,9 +1303,11 @@ export interface FileRouteTypes {
     | '/_authenticated/incidents'
     | '/_authenticated/infection-control'
     | '/_authenticated/insurance'
+    | '/_authenticated/iot-devices'
     | '/_authenticated/ipd'
     | '/_authenticated/jci'
     | '/_authenticated/kiosk'
+    | '/_authenticated/knowledge'
     | '/_authenticated/laboratory'
     | '/_authenticated/mobile-api'
     | '/_authenticated/mrd'
@@ -1129,7 +1320,9 @@ export interface FileRouteTypes {
     | '/_authenticated/patient-safety'
     | '/_authenticated/patients'
     | '/_authenticated/payments-online'
+    | '/_authenticated/performance'
     | '/_authenticated/pharmacy'
+    | '/_authenticated/pharmacy-intel'
     | '/_authenticated/predictions'
     | '/_authenticated/privacy'
     | '/_authenticated/procurement'
@@ -1137,14 +1330,20 @@ export interface FileRouteTypes {
     | '/_authenticated/queue'
     | '/_authenticated/queue-display'
     | '/_authenticated/radiology'
+    | '/_authenticated/recovery'
     | '/_authenticated/regulatory'
+    | '/_authenticated/remote-care'
     | '/_authenticated/reports'
     | '/_authenticated/research'
+    | '/_authenticated/risk-detection'
+    | '/_authenticated/security-center'
     | '/_authenticated/settings'
+    | '/_authenticated/smart-staffing'
     | '/_authenticated/staff'
     | '/_authenticated/telemedicine'
     | '/_authenticated/vaccinations'
     | '/_authenticated/vendors'
+    | '/_authenticated/voice-hmis'
     | '/_authenticated/whatsapp'
     | '/_authenticated/billing/$id'
     | '/_authenticated/billing/new'
@@ -1212,6 +1411,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWhatsappRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/voice-hmis': {
+      id: '/_authenticated/voice-hmis'
+      path: '/voice-hmis'
+      fullPath: '/voice-hmis'
+      preLoaderRoute: typeof AuthenticatedVoiceHmisRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/vendors': {
       id: '/_authenticated/vendors'
       path: '/vendors'
@@ -1240,11 +1446,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStaffRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/smart-staffing': {
+      id: '/_authenticated/smart-staffing'
+      path: '/smart-staffing'
+      fullPath: '/smart-staffing'
+      preLoaderRoute: typeof AuthenticatedSmartStaffingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/security-center': {
+      id: '/_authenticated/security-center'
+      path: '/security-center'
+      fullPath: '/security-center'
+      preLoaderRoute: typeof AuthenticatedSecurityCenterRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/risk-detection': {
+      id: '/_authenticated/risk-detection'
+      path: '/risk-detection'
+      fullPath: '/risk-detection'
+      preLoaderRoute: typeof AuthenticatedRiskDetectionRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/research': {
@@ -1261,11 +1488,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/remote-care': {
+      id: '/_authenticated/remote-care'
+      path: '/remote-care'
+      fullPath: '/remote-care'
+      preLoaderRoute: typeof AuthenticatedRemoteCareRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/regulatory': {
       id: '/_authenticated/regulatory'
       path: '/regulatory'
       fullPath: '/regulatory'
       preLoaderRoute: typeof AuthenticatedRegulatoryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/recovery': {
+      id: '/_authenticated/recovery'
+      path: '/recovery'
+      fullPath: '/recovery'
+      preLoaderRoute: typeof AuthenticatedRecoveryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/radiology': {
@@ -1317,11 +1558,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPredictionsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/pharmacy-intel': {
+      id: '/_authenticated/pharmacy-intel'
+      path: '/pharmacy-intel'
+      fullPath: '/pharmacy-intel'
+      preLoaderRoute: typeof AuthenticatedPharmacyIntelRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/pharmacy': {
       id: '/_authenticated/pharmacy'
       path: '/pharmacy'
       fullPath: '/pharmacy'
       preLoaderRoute: typeof AuthenticatedPharmacyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/performance': {
+      id: '/_authenticated/performance'
+      path: '/performance'
+      fullPath: '/performance'
+      preLoaderRoute: typeof AuthenticatedPerformanceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/payments-online': {
@@ -1408,6 +1663,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLaboratoryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/knowledge': {
+      id: '/_authenticated/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof AuthenticatedKnowledgeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/kiosk': {
       id: '/_authenticated/kiosk'
       path: '/kiosk'
@@ -1427,6 +1689,13 @@ declare module '@tanstack/react-router' {
       path: '/ipd'
       fullPath: '/ipd'
       preLoaderRoute: typeof AuthenticatedIpdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/iot-devices': {
+      id: '/_authenticated/iot-devices'
+      path: '/iot-devices'
+      fullPath: '/iot-devices'
+      preLoaderRoute: typeof AuthenticatedIotDevicesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/insurance': {
@@ -1478,6 +1747,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHealthPackagesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/forecast': {
+      id: '/_authenticated/forecast'
+      path: '/forecast'
+      fullPath: '/forecast'
+      preLoaderRoute: typeof AuthenticatedForecastRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/finance': {
       id: '/_authenticated/finance'
       path: '/finance'
@@ -1490,6 +1766,13 @@ declare module '@tanstack/react-router' {
       path: '/fhir'
       fullPath: '/fhir'
       preLoaderRoute: typeof AuthenticatedFhirRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/engagement': {
+      id: '/_authenticated/engagement'
+      path: '/engagement'
+      fullPath: '/engagement'
+      preLoaderRoute: typeof AuthenticatedEngagementRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/emr': {
@@ -1520,6 +1803,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/digital-twin': {
+      id: '/_authenticated/digital-twin'
+      path: '/digital-twin'
+      fullPath: '/digital-twin'
+      preLoaderRoute: typeof AuthenticatedDigitalTwinRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dialysis': {
       id: '/_authenticated/dialysis'
       path: '/dialysis'
@@ -1541,6 +1831,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/copilot': {
+      id: '/_authenticated/copilot'
+      path: '/copilot'
+      fullPath: '/copilot'
+      preLoaderRoute: typeof AuthenticatedCopilotRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/consents': {
       id: '/_authenticated/consents'
       path: '/consents'
@@ -1553,6 +1850,13 @@ declare module '@tanstack/react-router' {
       path: '/compliance-dashboard'
       fullPath: '/compliance-dashboard'
       preLoaderRoute: typeof AuthenticatedComplianceDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/compliance-ai': {
+      id: '/_authenticated/compliance-ai'
+      path: '/compliance-ai'
+      fullPath: '/compliance-ai'
+      preLoaderRoute: typeof AuthenticatedComplianceAiRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/communications': {
@@ -1651,6 +1955,13 @@ declare module '@tanstack/react-router' {
       path: '/appointments'
       fullPath: '/appointments'
       preLoaderRoute: typeof AuthenticatedAppointmentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/api-gateway': {
+      id: '/_authenticated/api-gateway'
+      path: '/api-gateway'
+      fullPath: '/api-gateway'
+      preLoaderRoute: typeof AuthenticatedApiGatewayRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/ambulance': {
@@ -1954,6 +2265,7 @@ const AuthenticatedPharmacyRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedAiAssistantRoute: typeof AuthenticatedAiAssistantRoute
   AuthenticatedAmbulanceRoute: typeof AuthenticatedAmbulanceRoute
+  AuthenticatedApiGatewayRoute: typeof AuthenticatedApiGatewayRoute
   AuthenticatedAppointmentsRoute: typeof AuthenticatedAppointmentsRoute
   AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
@@ -1968,17 +2280,22 @@ interface AuthenticatedRouteChildren {
   AuthenticatedClinicalAuditsRoute: typeof AuthenticatedClinicalAuditsRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
+  AuthenticatedComplianceAiRoute: typeof AuthenticatedComplianceAiRoute
   AuthenticatedComplianceDashboardRoute: typeof AuthenticatedComplianceDashboardRoute
   AuthenticatedConsentsRoute: typeof AuthenticatedConsentsRoute
+  AuthenticatedCopilotRoute: typeof AuthenticatedCopilotRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDialysisRoute: typeof AuthenticatedDialysisRoute
+  AuthenticatedDigitalTwinRoute: typeof AuthenticatedDigitalTwinRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedEhrRoute: typeof AuthenticatedEhrRoute
   AuthenticatedEmergencyRoute: typeof AuthenticatedEmergencyRoute
   AuthenticatedEmrRoute: typeof AuthenticatedEmrRoute
+  AuthenticatedEngagementRoute: typeof AuthenticatedEngagementRoute
   AuthenticatedFhirRoute: typeof AuthenticatedFhirRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
+  AuthenticatedForecastRoute: typeof AuthenticatedForecastRoute
   AuthenticatedHealthPackagesRoute: typeof AuthenticatedHealthPackagesRoute
   AuthenticatedHealthRecordsRoute: typeof AuthenticatedHealthRecordsRoute
   AuthenticatedHl7Route: typeof AuthenticatedHl7Route
@@ -1986,9 +2303,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIncidentsRoute: typeof AuthenticatedIncidentsRoute
   AuthenticatedInfectionControlRoute: typeof AuthenticatedInfectionControlRoute
   AuthenticatedInsuranceRoute: typeof AuthenticatedInsuranceRoute
+  AuthenticatedIotDevicesRoute: typeof AuthenticatedIotDevicesRoute
   AuthenticatedIpdRoute: typeof AuthenticatedIpdRouteWithChildren
   AuthenticatedJciRoute: typeof AuthenticatedJciRoute
   AuthenticatedKioskRoute: typeof AuthenticatedKioskRoute
+  AuthenticatedKnowledgeRoute: typeof AuthenticatedKnowledgeRoute
   AuthenticatedLaboratoryRoute: typeof AuthenticatedLaboratoryRouteWithChildren
   AuthenticatedMobileApiRoute: typeof AuthenticatedMobileApiRoute
   AuthenticatedMrdRoute: typeof AuthenticatedMrdRoute
@@ -2001,7 +2320,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPatientSafetyRoute: typeof AuthenticatedPatientSafetyRoute
   AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRouteWithChildren
   AuthenticatedPaymentsOnlineRoute: typeof AuthenticatedPaymentsOnlineRoute
+  AuthenticatedPerformanceRoute: typeof AuthenticatedPerformanceRoute
   AuthenticatedPharmacyRoute: typeof AuthenticatedPharmacyRouteWithChildren
+  AuthenticatedPharmacyIntelRoute: typeof AuthenticatedPharmacyIntelRoute
   AuthenticatedPredictionsRoute: typeof AuthenticatedPredictionsRoute
   AuthenticatedPrivacyRoute: typeof AuthenticatedPrivacyRoute
   AuthenticatedProcurementRoute: typeof AuthenticatedProcurementRoute
@@ -2009,14 +2330,20 @@ interface AuthenticatedRouteChildren {
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
   AuthenticatedQueueDisplayRoute: typeof AuthenticatedQueueDisplayRoute
   AuthenticatedRadiologyRoute: typeof AuthenticatedRadiologyRoute
+  AuthenticatedRecoveryRoute: typeof AuthenticatedRecoveryRoute
   AuthenticatedRegulatoryRoute: typeof AuthenticatedRegulatoryRoute
+  AuthenticatedRemoteCareRoute: typeof AuthenticatedRemoteCareRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedResearchRoute: typeof AuthenticatedResearchRoute
+  AuthenticatedRiskDetectionRoute: typeof AuthenticatedRiskDetectionRoute
+  AuthenticatedSecurityCenterRoute: typeof AuthenticatedSecurityCenterRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSmartStaffingRoute: typeof AuthenticatedSmartStaffingRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
   AuthenticatedTelemedicineRoute: typeof AuthenticatedTelemedicineRoute
   AuthenticatedVaccinationsRoute: typeof AuthenticatedVaccinationsRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
+  AuthenticatedVoiceHmisRoute: typeof AuthenticatedVoiceHmisRoute
   AuthenticatedWhatsappRoute: typeof AuthenticatedWhatsappRoute
   AuthenticatedHrAttendanceRoute: typeof AuthenticatedHrAttendanceRoute
   AuthenticatedHrEmployeesRoute: typeof AuthenticatedHrEmployeesRoute
@@ -2027,6 +2354,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAiAssistantRoute: AuthenticatedAiAssistantRoute,
   AuthenticatedAmbulanceRoute: AuthenticatedAmbulanceRoute,
+  AuthenticatedApiGatewayRoute: AuthenticatedApiGatewayRoute,
   AuthenticatedAppointmentsRoute: AuthenticatedAppointmentsRoute,
   AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
@@ -2041,17 +2369,22 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedClinicalAuditsRoute: AuthenticatedClinicalAuditsRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedCommunicationsRoute: AuthenticatedCommunicationsRoute,
+  AuthenticatedComplianceAiRoute: AuthenticatedComplianceAiRoute,
   AuthenticatedComplianceDashboardRoute: AuthenticatedComplianceDashboardRoute,
   AuthenticatedConsentsRoute: AuthenticatedConsentsRoute,
+  AuthenticatedCopilotRoute: AuthenticatedCopilotRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDialysisRoute: AuthenticatedDialysisRoute,
+  AuthenticatedDigitalTwinRoute: AuthenticatedDigitalTwinRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedEhrRoute: AuthenticatedEhrRoute,
   AuthenticatedEmergencyRoute: AuthenticatedEmergencyRoute,
   AuthenticatedEmrRoute: AuthenticatedEmrRoute,
+  AuthenticatedEngagementRoute: AuthenticatedEngagementRoute,
   AuthenticatedFhirRoute: AuthenticatedFhirRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
+  AuthenticatedForecastRoute: AuthenticatedForecastRoute,
   AuthenticatedHealthPackagesRoute: AuthenticatedHealthPackagesRoute,
   AuthenticatedHealthRecordsRoute: AuthenticatedHealthRecordsRoute,
   AuthenticatedHl7Route: AuthenticatedHl7Route,
@@ -2059,9 +2392,11 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIncidentsRoute: AuthenticatedIncidentsRoute,
   AuthenticatedInfectionControlRoute: AuthenticatedInfectionControlRoute,
   AuthenticatedInsuranceRoute: AuthenticatedInsuranceRoute,
+  AuthenticatedIotDevicesRoute: AuthenticatedIotDevicesRoute,
   AuthenticatedIpdRoute: AuthenticatedIpdRouteWithChildren,
   AuthenticatedJciRoute: AuthenticatedJciRoute,
   AuthenticatedKioskRoute: AuthenticatedKioskRoute,
+  AuthenticatedKnowledgeRoute: AuthenticatedKnowledgeRoute,
   AuthenticatedLaboratoryRoute: AuthenticatedLaboratoryRouteWithChildren,
   AuthenticatedMobileApiRoute: AuthenticatedMobileApiRoute,
   AuthenticatedMrdRoute: AuthenticatedMrdRoute,
@@ -2074,7 +2409,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPatientSafetyRoute: AuthenticatedPatientSafetyRoute,
   AuthenticatedPatientsRoute: AuthenticatedPatientsRouteWithChildren,
   AuthenticatedPaymentsOnlineRoute: AuthenticatedPaymentsOnlineRoute,
+  AuthenticatedPerformanceRoute: AuthenticatedPerformanceRoute,
   AuthenticatedPharmacyRoute: AuthenticatedPharmacyRouteWithChildren,
+  AuthenticatedPharmacyIntelRoute: AuthenticatedPharmacyIntelRoute,
   AuthenticatedPredictionsRoute: AuthenticatedPredictionsRoute,
   AuthenticatedPrivacyRoute: AuthenticatedPrivacyRoute,
   AuthenticatedProcurementRoute: AuthenticatedProcurementRoute,
@@ -2082,14 +2419,20 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedQueueRoute: AuthenticatedQueueRoute,
   AuthenticatedQueueDisplayRoute: AuthenticatedQueueDisplayRoute,
   AuthenticatedRadiologyRoute: AuthenticatedRadiologyRoute,
+  AuthenticatedRecoveryRoute: AuthenticatedRecoveryRoute,
   AuthenticatedRegulatoryRoute: AuthenticatedRegulatoryRoute,
+  AuthenticatedRemoteCareRoute: AuthenticatedRemoteCareRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedResearchRoute: AuthenticatedResearchRoute,
+  AuthenticatedRiskDetectionRoute: AuthenticatedRiskDetectionRoute,
+  AuthenticatedSecurityCenterRoute: AuthenticatedSecurityCenterRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSmartStaffingRoute: AuthenticatedSmartStaffingRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRoute,
   AuthenticatedTelemedicineRoute: AuthenticatedTelemedicineRoute,
   AuthenticatedVaccinationsRoute: AuthenticatedVaccinationsRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
+  AuthenticatedVoiceHmisRoute: AuthenticatedVoiceHmisRoute,
   AuthenticatedWhatsappRoute: AuthenticatedWhatsappRoute,
   AuthenticatedHrAttendanceRoute: AuthenticatedHrAttendanceRoute,
   AuthenticatedHrEmployeesRoute: AuthenticatedHrEmployeesRoute,

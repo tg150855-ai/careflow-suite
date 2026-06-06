@@ -11,6 +11,7 @@ import {
   Network, Globe, Bug, AlertTriangle, ClipboardCheck, FileSignature, Archive,
   History, Lightbulb, FlaskConical, Share2,
   MonitorSmartphone, Smartphone, TrendingUp, Files,
+  Bot, Cpu, BookOpen, HeartHandshake, Home as HomeIcon, Mic,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,23 @@ const NAV: NavItem[] = [
   { to: "/queue-display", label: "Queue Display", icon: Hash, section: "Operations" },
   { to: "/predictions", label: "Predictive Analytics", icon: TrendingUp, section: "Admin" },
   { to: "/mobile-api", label: "Mobile API & Push", icon: Smartphone, section: "Admin", roles: ["admin","super_admin"] },
+  // Phase 10 — Smart Hospital OS
+  { to: "/copilot", label: "Hospital Copilot", icon: Bot, section: "Smart OS" },
+  { to: "/voice-hmis", label: "Voice HMIS", icon: Mic, section: "Smart OS" },
+  { to: "/iot-devices", label: "IoT Devices", icon: Cpu, section: "Smart OS" },
+  { to: "/forecast", label: "Forecast Engine", icon: TrendingUp, section: "Smart OS" },
+  { to: "/smart-staffing", label: "Smart Staffing", icon: Users, section: "Smart OS" },
+  { to: "/digital-twin", label: "Digital Twin", icon: Building2, section: "Smart OS" },
+  { to: "/risk-detection", label: "Risk Detection", icon: ShieldAlert, section: "Smart OS" },
+  { to: "/pharmacy-intel", label: "Pharmacy Intel", icon: Pill, section: "Smart OS" },
+  { to: "/performance", label: "Performance KPIs", icon: BarChart3, section: "Smart OS" },
+  { to: "/security-center", label: "Security Center", icon: ShieldAlert, section: "Smart OS", roles: ["admin","super_admin"] },
+  { to: "/engagement", label: "Patient Engagement", icon: HeartHandshake, section: "Smart OS" },
+  { to: "/remote-care", label: "Remote Care", icon: HomeIcon, section: "Smart OS" },
+  { to: "/compliance-ai", label: "Compliance AI", icon: ShieldCheck, section: "Smart OS" },
+  { to: "/recovery", label: "Disaster Recovery", icon: Database, section: "Smart OS", roles: ["admin","super_admin"] },
+  { to: "/knowledge", label: "Knowledge Base", icon: BookOpen, section: "Smart OS" },
+  { to: "/api-gateway", label: "API Gateway", icon: Network, section: "Smart OS", roles: ["admin","super_admin"] },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
