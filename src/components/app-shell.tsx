@@ -11,6 +11,7 @@ import {
   Network, Globe, Bug, AlertTriangle, ClipboardCheck, FileSignature, Archive,
   History, Lightbulb, FlaskConical, Share2,
   MonitorSmartphone, Smartphone, TrendingUp, Files,
+  Bot, Cpu, BookOpen, HeartHandshake, Home as HomeIcon, Mic,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
