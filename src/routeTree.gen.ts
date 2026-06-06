@@ -60,6 +60,7 @@ import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDialysisRouteImport } from './routes/_authenticated/dialysis'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedCopilotRouteImport } from './routes/_authenticated/copilot'
 import { Route as AuthenticatedConsentsRouteImport } from './routes/_authenticated/consents'
 import { Route as AuthenticatedComplianceDashboardRouteImport } from './routes/_authenticated/compliance-dashboard'
 import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
@@ -370,6 +371,11 @@ const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   path: '/crm',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCopilotRoute = AuthenticatedCopilotRouteImport.update({
+  id: '/copilot',
+  path: '/copilot',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedConsentsRoute = AuthenticatedConsentsRouteImport.update({
   id: '/consents',
   path: '/consents',
@@ -626,6 +632,7 @@ export interface FileRoutesByFullPath {
   '/communications': typeof AuthenticatedCommunicationsRoute
   '/compliance-dashboard': typeof AuthenticatedComplianceDashboardRoute
   '/consents': typeof AuthenticatedConsentsRoute
+  '/copilot': typeof AuthenticatedCopilotRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dialysis': typeof AuthenticatedDialysisRoute
@@ -720,6 +727,7 @@ export interface FileRoutesByTo {
   '/communications': typeof AuthenticatedCommunicationsRoute
   '/compliance-dashboard': typeof AuthenticatedComplianceDashboardRoute
   '/consents': typeof AuthenticatedConsentsRoute
+  '/copilot': typeof AuthenticatedCopilotRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dialysis': typeof AuthenticatedDialysisRoute
@@ -814,6 +822,7 @@ export interface FileRoutesById {
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
   '/_authenticated/compliance-dashboard': typeof AuthenticatedComplianceDashboardRoute
   '/_authenticated/consents': typeof AuthenticatedConsentsRoute
+  '/_authenticated/copilot': typeof AuthenticatedCopilotRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dialysis': typeof AuthenticatedDialysisRoute
@@ -911,6 +920,7 @@ export interface FileRouteTypes {
     | '/communications'
     | '/compliance-dashboard'
     | '/consents'
+    | '/copilot'
     | '/crm'
     | '/dashboard'
     | '/dialysis'
@@ -1005,6 +1015,7 @@ export interface FileRouteTypes {
     | '/communications'
     | '/compliance-dashboard'
     | '/consents'
+    | '/copilot'
     | '/crm'
     | '/dashboard'
     | '/dialysis'
@@ -1098,6 +1109,7 @@ export interface FileRouteTypes {
     | '/_authenticated/communications'
     | '/_authenticated/compliance-dashboard'
     | '/_authenticated/consents'
+    | '/_authenticated/copilot'
     | '/_authenticated/crm'
     | '/_authenticated/dashboard'
     | '/_authenticated/dialysis'
@@ -1541,6 +1553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/copilot': {
+      id: '/_authenticated/copilot'
+      path: '/copilot'
+      fullPath: '/copilot'
+      preLoaderRoute: typeof AuthenticatedCopilotRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/consents': {
       id: '/_authenticated/consents'
       path: '/consents'
@@ -1970,6 +1989,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
   AuthenticatedComplianceDashboardRoute: typeof AuthenticatedComplianceDashboardRoute
   AuthenticatedConsentsRoute: typeof AuthenticatedConsentsRoute
+  AuthenticatedCopilotRoute: typeof AuthenticatedCopilotRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDialysisRoute: typeof AuthenticatedDialysisRoute
@@ -2043,6 +2063,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCommunicationsRoute: AuthenticatedCommunicationsRoute,
   AuthenticatedComplianceDashboardRoute: AuthenticatedComplianceDashboardRoute,
   AuthenticatedConsentsRoute: AuthenticatedConsentsRoute,
+  AuthenticatedCopilotRoute: AuthenticatedCopilotRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDialysisRoute: AuthenticatedDialysisRoute,
