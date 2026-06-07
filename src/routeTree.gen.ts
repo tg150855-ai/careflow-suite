@@ -87,6 +87,7 @@ import { Route as AuthenticatedBiomedicalRouteImport } from './routes/_authentic
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedBiRouteImport } from './routes/_authenticated/bi'
 import { Route as AuthenticatedBackupsRouteImport } from './routes/_authenticated/backups'
+import { Route as AuthenticatedAuthorityRouteImport } from './routes/_authenticated/authority'
 import { Route as AuthenticatedAuditTrailRouteImport } from './routes/_authenticated/audit-trail'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
@@ -532,6 +533,11 @@ const AuthenticatedBackupsRoute = AuthenticatedBackupsRouteImport.update({
   path: '/backups',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAuthorityRoute = AuthenticatedAuthorityRouteImport.update({
+  id: '/authority',
+  path: '/authority',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAuditTrailRoute = AuthenticatedAuditTrailRouteImport.update({
   id: '/audit-trail',
   path: '/audit-trail',
@@ -718,6 +724,7 @@ export interface FileRoutesByFullPath {
   '/assets': typeof AuthenticatedAssetsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/audit-trail': typeof AuthenticatedAuditTrailRoute
+  '/authority': typeof AuthenticatedAuthorityRoute
   '/backups': typeof AuthenticatedBackupsRoute
   '/bi': typeof AuthenticatedBiRoute
   '/billing': typeof AuthenticatedBillingRouteWithChildren
@@ -829,6 +836,7 @@ export interface FileRoutesByTo {
   '/assets': typeof AuthenticatedAssetsRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/audit-trail': typeof AuthenticatedAuditTrailRoute
+  '/authority': typeof AuthenticatedAuthorityRoute
   '/backups': typeof AuthenticatedBackupsRoute
   '/bi': typeof AuthenticatedBiRoute
   '/biomedical': typeof AuthenticatedBiomedicalRoute
@@ -938,6 +946,7 @@ export interface FileRoutesById {
   '/_authenticated/assets': typeof AuthenticatedAssetsRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/audit-trail': typeof AuthenticatedAuditTrailRoute
+  '/_authenticated/authority': typeof AuthenticatedAuthorityRoute
   '/_authenticated/backups': typeof AuthenticatedBackupsRoute
   '/_authenticated/bi': typeof AuthenticatedBiRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRouteWithChildren
@@ -1051,6 +1060,7 @@ export interface FileRouteTypes {
     | '/assets'
     | '/audit'
     | '/audit-trail'
+    | '/authority'
     | '/backups'
     | '/bi'
     | '/billing'
@@ -1162,6 +1172,7 @@ export interface FileRouteTypes {
     | '/assets'
     | '/audit'
     | '/audit-trail'
+    | '/authority'
     | '/backups'
     | '/bi'
     | '/biomedical'
@@ -1270,6 +1281,7 @@ export interface FileRouteTypes {
     | '/_authenticated/assets'
     | '/_authenticated/audit'
     | '/_authenticated/audit-trail'
+    | '/_authenticated/authority'
     | '/_authenticated/backups'
     | '/_authenticated/bi'
     | '/_authenticated/billing'
@@ -1929,6 +1941,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBackupsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/authority': {
+      id: '/_authenticated/authority'
+      path: '/authority'
+      fullPath: '/authority'
+      preLoaderRoute: typeof AuthenticatedAuthorityRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/audit-trail': {
       id: '/_authenticated/audit-trail'
       path: '/audit-trail'
@@ -2270,6 +2289,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedAuditTrailRoute: typeof AuthenticatedAuditTrailRoute
+  AuthenticatedAuthorityRoute: typeof AuthenticatedAuthorityRoute
   AuthenticatedBackupsRoute: typeof AuthenticatedBackupsRoute
   AuthenticatedBiRoute: typeof AuthenticatedBiRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRouteWithChildren
@@ -2359,6 +2379,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedAuditTrailRoute: AuthenticatedAuditTrailRoute,
+  AuthenticatedAuthorityRoute: AuthenticatedAuthorityRoute,
   AuthenticatedBackupsRoute: AuthenticatedBackupsRoute,
   AuthenticatedBiRoute: AuthenticatedBiRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRouteWithChildren,
@@ -2455,13 +2476,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
