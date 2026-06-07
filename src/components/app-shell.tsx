@@ -115,6 +115,7 @@ const NAV: NavItem[] = [
   { to: "/recovery", label: "Disaster Recovery", icon: Database, section: "Smart OS", roles: ["admin","super_admin"] },
   { to: "/knowledge", label: "Knowledge Base", icon: BookOpen, section: "Smart OS" },
   { to: "/api-gateway", label: "API Gateway", icon: Network, section: "Smart OS", roles: ["admin","super_admin"] },
+  { to: "/authority", label: "Authority & Workflow", icon: ShieldCheck, section: "Admin" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
