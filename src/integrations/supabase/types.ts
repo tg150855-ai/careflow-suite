@@ -5376,6 +5376,30 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          module: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          module: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          module?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       salary_slips: {
         Row: {
           allowances: number
@@ -6447,6 +6471,10 @@ export type Database = {
       gen_surgery_no: { Args: never; Returns: string }
       generate_uhid: { Args: never; Returns: string }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
+      has_module_permission: {
+        Args: { _action?: string; _module: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -6455,6 +6483,16 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      log_audit_event: {
+        Args: {
+          _action: string
+          _after?: Json
+          _before?: Json
+          _entity: string
+          _entity_id?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       admission_status: "active" | "discharged" | "transferred" | "cancelled"
