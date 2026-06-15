@@ -40,9 +40,15 @@ function NewPatient() {
       const { error: insuranceError } = await (supabase as any)
         .from("patient_insurance")
         .insert({ ...payload.insurance, patient_id: data.id });
-      if (insuranceError) toast.warning(`Patient saved, insurance not saved: ${insuranceError.message}`);
+      if (insuranceError)
+        toast.warning(`Patient saved, insurance not saved: ${insuranceError.message}`);
     }
-    await logAudit({ action: "create", entity: "patients", entityId: data.id, after: payload.patient });
+    await logAudit({
+      action: "create",
+      entity: "patients",
+      entityId: data.id,
+      after: payload.patient,
+    });
     toast.success(`Patient registered · ${data.uhid}`);
     navigate({ to: "/patients/$id", params: { id: data.id } });
   }
@@ -50,7 +56,11 @@ function NewPatient() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
-        <Button asChild variant="ghost" size="icon"><Link to="/patients"><ArrowLeft className="size-4" /></Link></Button>
+        <Button asChild variant="ghost" size="icon">
+          <Link to="/patients">
+            <ArrowLeft className="size-4" />
+          </Link>
+        </Button>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New patient registration</h1>
           <p className="text-sm text-muted-foreground">UHID is generated automatically.</p>
