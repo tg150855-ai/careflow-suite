@@ -128,6 +128,32 @@ function PatientWorkspace() {
     return { opd: !!recentVisit, ipd: !!activeAdm, icu: hasIcu, discharged };
   }, [bundle]);
 
+  async function savePatient(payload: PatientSubmission) {
+    const before = patient;
+    const { error } = await (supabase as any).from("patients").update(payload.patient).eq("id", id);
+    if (error) return toast.error(error.message);
+
+    const currentInsurance = insuranceRows[0];
+    if (payload.insurance) {
+      const insurancePayload = { ...payload.insurance, patient_id: id };
+      const result = currentInsurance
+        ? await (supabase as any).from("patient_insurance").update(insurancePayload).eq("id", currentInsurance.id)
+        : await (supabase as any).from("patient_insurance").insert(insurancePayload);
+      if (result.error) toast.warning(`Patient saved, insurance not saved: ${result.error.message}`);
+    } else if (currentInsurance) {
+      await (supabase as any).from("patient_insurance").update({ active: false }).eq("id", currentInsurance.id);
+    }
+
+    await logAudit({ action: "update", entity: "patients", entityId: id, before, after: payload.patient });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["patient", id] }),
+      queryClient.invalidateQueries({ queryKey: ["patient-insurance", id] }),
+      queryClient.invalidateQueries({ queryKey: ["patients"] }),
+    ]);
+    setEditOpen(false);
+    toast.success("Patient record updated");
+  }
+
   if (!patient) return <div className="p-8 text-sm text-muted-foreground">Loading patient workspace…</div>;
 
   const age = patient.dob ? differenceInYears(new Date(), new Date(patient.dob)) : null;
