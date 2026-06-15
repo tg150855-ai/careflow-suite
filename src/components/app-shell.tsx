@@ -154,10 +154,6 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
-// fallback icon (Monitor) to keep imports tidy
-function MonitorIcon(props: React.SVGProps<SVGSVGElement>) {
-  return <Hash {...props} />;
-}
 
 const STORAGE_KEY = "medicore.sidebar.expanded";
 
