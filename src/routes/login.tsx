@@ -76,8 +76,8 @@ function LoginPage() {
       <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden text-primary-foreground"
            style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 255), oklch(0.4 0.16 200), oklch(0.55 0.16 160))" }}>
         <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-white p-3 shadow-elevated">
-            <BrandLogo size={44} />
+          <div className="rounded-2xl bg-white px-5 py-3 shadow-elevated">
+            <BrandLogo size={72} />
           </div>
         </div>
 
