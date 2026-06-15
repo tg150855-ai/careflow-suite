@@ -1,4 +1,4 @@
-// Centralized Role → Module/Action permission matrix for MediCore HMIS.
+// Centralized Role → Module/Action permission matrix for SBG Arogya Plus.
 // Single source of truth used by the sidebar, route guards, and the
 // Authority Matrix visualization. Edit here to change access globally.
 

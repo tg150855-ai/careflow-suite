@@ -1,7 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, Loader2, ShieldCheck, Activity, Stethoscope } from "lucide-react";
+import { Loader2, ShieldCheck, Activity, Stethoscope } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { BRAND, BrandLogo } from "@/components/brand";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -73,14 +74,10 @@ function LoginPage() {
     <div className="min-h-screen w-full grid lg:grid-cols-2 bg-background">
       {/* Left brand panel */}
       <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden text-primary-foreground"
-           style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 255), oklch(0.35 0.15 255))" }}>
+           style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 255), oklch(0.4 0.16 200), oklch(0.55 0.16 160))" }}>
         <div className="flex items-center gap-3">
-          <div className="size-11 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center">
-            <Heart className="size-6" />
-          </div>
-          <div>
-            <div className="text-xl font-semibold tracking-tight">MediCore</div>
-            <div className="text-xs uppercase tracking-[0.18em] opacity-70">HMIS · Enterprise</div>
+          <div className="rounded-2xl bg-white p-3 shadow-elevated">
+            <BrandLogo size={44} />
           </div>
         </div>
 
@@ -94,7 +91,7 @@ function LoginPage() {
             Care, clarified.
           </h1>
           <p className="text-base opacity-80 leading-relaxed">
-            A single calm workspace for OPD, IPD, pharmacy, lab and billing — built for multi-specialty hospitals.
+            {BRAND.name} — a single calm workspace for OPD, IPD, pharmacy, lab and billing, built for multi-specialty hospitals.
           </p>
 
           <div className="grid grid-cols-3 gap-3 pt-4">
@@ -132,17 +129,11 @@ function LoginPage() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="w-full max-w-md"
         >
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="size-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
-              <Heart className="size-5" />
-            </div>
-            <div>
-              <div className="font-semibold">MediCore HMIS</div>
-              <div className="text-xs text-muted-foreground">Hospital Management</div>
-            </div>
+          <div className="lg:hidden flex items-center justify-center mb-8">
+            <BrandLogo size={56} />
           </div>
 
-          <h2 className="text-3xl font-semibold tracking-tight">Welcome</h2>
+          <h2 className="text-3xl font-semibold tracking-tight">Welcome to {BRAND.name}</h2>
           <p className="text-muted-foreground mt-1">Sign in to your hospital workspace.</p>
 
           <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")} className="mt-8">

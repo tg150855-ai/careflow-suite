@@ -21,7 +21,7 @@ function AuthorityPage() {
     <div className="space-y-6">
       <PageHeader
         title="Authority & Workflow"
-        subtitle="Role hierarchy, permission matrix and clinical workflows across MediCore HMIS."
+        subtitle="Role hierarchy, permission matrix and clinical workflows across SBG Arogya Plus."
         icon={ShieldCheck}
       />
 
