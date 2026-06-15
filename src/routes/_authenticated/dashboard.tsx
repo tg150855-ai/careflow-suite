@@ -245,15 +245,15 @@ function AdminDashboard() {
       const t = todayISO();
       const [opd, ipd, adm, dis, revenue, pending, bedsOcc, bedsTot, otToday, emerg] = await Promise.all([
         countTable("opd_visits", (q) => q.gte("created_at", t)),
-        countTable("admissions", (q) => q.is("discharge_date", null)),
-        countTable("admissions", (q) => q.gte("admission_date", t)),
-        countTable("admissions", (q) => q.gte("discharge_date", t)),
-        sumColumn("bills", "total_amount", (q) => q.gte("created_at", t)),
-        sumColumn("bills", "balance_amount", (q) => q.gt("balance_amount", 0)),
+        countTable("admissions", (q) => q.is("discharged_at", null)),
+        countTable("admissions", (q) => q.gte("admitted_at", t)),
+        countTable("admissions", (q) => q.gte("discharged_at", t)),
+        sumColumn("bills", "total", (q) => q.gte("created_at", t)),
+        sumColumn("bills", "pending", (q) => q.gt("pending", 0)),
         countTable("beds", (q) => q.eq("status", "occupied")),
         countTable("beds"),
-        countTable("surgeries", (q) => q.gte("scheduled_at", t)),
-        countTable("emergency_visits", (q) => q.gte("created_at", t)),
+        countTable("surgeries", (q) => q.gte("scheduled_start", t)),
+        countTable("emergency_cases", (q) => q.gte("created_at", t)),
       ]);
       return { opd, ipd, adm, dis, revenue, pending, bedsOcc, bedsTot, otToday, emerg };
     },
@@ -370,7 +370,7 @@ function NurseDashboard() {
     queryFn: async () => {
       const t = todayISO();
       const [assigned, medsDue, vitalsPending, alerts] = await Promise.all([
-        countTable("admissions", (q) => q.is("discharge_date", null)),
+        countTable("admissions", (q) => q.is("discharged_at", null)),
         countTable("medication_administration", (q) => q.eq("status", "pending")).catch(() => 0),
         countTable("vitals", (q) => q.gte("recorded_at", t)).catch(() => 0),
         countTable("clinical_alerts", (q) => q.eq("resolved", false)).catch(() => 0),
