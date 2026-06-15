@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import logoAsset from "@/assets/sbg-arogya-plus-logo.png.asset.json";
 
 function NotFoundComponent() {
   return (
@@ -67,10 +68,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "MediCore HMIS — Hospital Management" },
-      { name: "description", content: "Premium Hospital Management Information System for modern multi-specialty hospitals." },
+      { title: "SBG Arogya Plus — Hospital Management Suite" },
+      { name: "description", content: "SBG Arogya Plus — a modern Hospital Management & Healthcare ERP platform for multi-specialty hospitals." },
+      { name: "theme-color", content: "#1e40af" },
+      { property: "og:title", content: "SBG Arogya Plus" },
+      { property: "og:description", content: "Modern Hospital Management & Healthcare ERP." },
+      { property: "og:image", content: logoAsset.url },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: logoAsset.url },
+      { rel: "apple-touch-icon", href: logoAsset.url },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

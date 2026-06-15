@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { GlobalSearch } from "@/components/global-search";
 import { NotificationBell } from "@/components/notification-bell";
+import { BRAND, BrandLogo, BrandMark } from "@/components/brand";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
 type NavGroup = { key: string; label: string; icon: typeof LayoutDashboard; roles?: AppRole[]; items: NavItem[] };
@@ -197,18 +198,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           transition={{ duration: 0.25, ease: "easeOut" }}
           className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shrink-0 h-screen"
         >
-          <div className="h-16 flex items-center gap-3 px-5 border-b border-sidebar-border shrink-0">
-            <div className="size-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-              <Heart className="size-4.5" />
-            </div>
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <div className="font-semibold leading-tight">MediCore</div>
-                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">HMIS</div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="h-16 flex items-center gap-2 px-4 border-b border-sidebar-border shrink-0 bg-white">
+            {collapsed ? (
+              <BrandMark size={36} className="rounded-lg shrink-0" />
+            ) : (
+              <BrandLogo size={40} className="shrink-0" />
+            )}
           </div>
 
           <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
@@ -309,7 +304,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <GlobalSearch />
 
             <div className="hidden lg:flex flex-col items-center text-center px-6 border-l border-r">
-              <div className="text-sm font-semibold">MediCore General Hospital</div>
+              <div className="text-sm font-semibold">{BRAND.name}</div>
               <div className="text-xs text-muted-foreground">{format(now, "EEEE, dd MMM yyyy")}</div>
             </div>
 
