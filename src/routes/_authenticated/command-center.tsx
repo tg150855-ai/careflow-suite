@@ -31,16 +31,16 @@ function CmdPage() {
     const today = new Date().toISOString().split("T")[0];
     const sb = supabase as any;
     const [bills, adm, opd, beds, surg, emrg] = await Promise.all([
-      sb.from("bills").select("net_amount").gte("created_at", today),
-      sb.from("admissions").select("id").eq("status", "active"),
+      sb.from("bills").select("total").gte("created_at", today),
+      sb.from("admissions").select("id").is("discharged_at", null),
       sb.from("appointments").select("id").gte("scheduled_at", today + "T00:00:00").lte("scheduled_at", today + "T23:59:59"),
       sb.from("beds").select("status"),
       sb.from("surgeries").select("id").eq("status", "scheduled"),
-      sb.from("emergency_visits").select("id, chief_complaint, triage_level").in("triage_level", ["red", "orange"]).order("created_at", { ascending: false }).limit(5),
+      sb.from("emergency_cases").select("id, chief_complaint, triage").in("triage", ["red", "orange"]).order("created_at", { ascending: false }).limit(5),
     ]);
     const bedRows = (beds.data ?? []) as any[];
     setS({
-      revenue: ((bills.data ?? []) as any[]).reduce((a, b) => a + Number(b.net_amount || 0), 0),
+      revenue: ((bills.data ?? []) as any[]).reduce((a, b) => a + Number(b.total || 0), 0),
       admissions: (adm.data ?? []).length,
       opdQueue: (opd.data ?? []).length,
       bedsOcc: bedRows.filter((b) => b.status === "occupied").length,
@@ -83,7 +83,7 @@ function CmdPage() {
                   <div>
                     <div className="font-medium">{a.chief_complaint || "Emergency case"}</div>
                   </div>
-                  <Badge variant="destructive" className="uppercase">{a.triage_level}</Badge>
+                  <Badge variant="destructive" className="uppercase">{a.triage}</Badge>
                 </div>
               ))}
             </div>
