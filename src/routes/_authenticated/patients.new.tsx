@@ -27,7 +27,7 @@ function NewPatient() {
   });
 
   async function onSubmit(payload: PatientSubmission) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("patients")
       .insert({ ...payload.patient, created_by: user?.id })
       .select("id, uhid")
