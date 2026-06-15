@@ -196,6 +196,22 @@ function PatientWorkspace() {
                 )}
               </div>
               <div className="flex flex-wrap gap-2 justify-end">
+                <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline"><Pencil className="size-4 mr-1.5" />Edit</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader><DialogTitle>Edit patient registration</DialogTitle></DialogHeader>
+                    <PatientForm
+                      initialPatient={patient}
+                      initialInsurance={insuranceRows[0]}
+                      insuranceCompanies={insuranceCompanies}
+                      submitLabel="Save patient"
+                      onSubmit={savePatient}
+                      onCancel={() => setEditOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
                 <Button asChild size="sm" variant="outline"><Link to="/opd"><Stethoscope className="size-4 mr-1.5" />Consult</Link></Button>
                 <Button asChild size="sm" variant="outline"><Link to="/laboratory/new"><FlaskConical className="size-4 mr-1.5" />Lab</Link></Button>
                 <Button asChild size="sm" variant="outline"><Link to="/radiology"><Scan className="size-4 mr-1.5" />Imaging</Link></Button>
