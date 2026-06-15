@@ -50,7 +50,10 @@ function PatientsPage() {
   async function deletePatient(patient: any) {
     const { data: before } = await (supabase as any).from("patients").select("*").eq("id", patient.id).maybeSingle();
     const { error } = await supabase.from("patients").delete().eq("id", patient.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     await logAudit({ action: "delete", entity: "patients", entityId: patient.id, before });
     toast.success("Patient record deleted");
     queryClient.invalidateQueries({ queryKey: ["patients"] });
@@ -120,7 +123,7 @@ function PatientsPage() {
                 </Button>
                 {canEdit && (
                   <Button asChild variant="outline" size="sm">
-                    <Link to="/patients/$id" params={{ id: p.id }}>Edit</Link>
+                    <Link to="/patients/$id" params={{ id: p.id }} search={{ edit: "1" } as any}>Edit</Link>
                   </Button>
                 )}
                 {canDelete && (
