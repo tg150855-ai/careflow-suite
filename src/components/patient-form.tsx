@@ -78,6 +78,33 @@ export type PatientSubmission = {
   insurance: Record<string, unknown> | null;
 };
 
+type PatientDefaultsSource = Partial<{
+  full_name: string | null;
+  mobile: string | null;
+  email: string | null;
+  gender: PatientFormValues["gender"] | null;
+  dob: string | null;
+  blood_group: string | null;
+  address_line: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  aadhaar: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_mobile: string | null;
+  allergies: string | null;
+  chronic_diseases: string | null;
+}>;
+
+type InsuranceDefaultsSource = Partial<{
+  company_id: string | null;
+  policy_number: string | null;
+  coverage_limit: string | number | null;
+  valid_from: string | null;
+  valid_to: string | null;
+  authorization_number: string | null;
+}>;
+
 const EMPTY_VALUES: PatientFormValues = {
   full_name: "",
   mobile: "",
@@ -153,7 +180,10 @@ export function buildPatientSubmission(values: PatientFormValues): PatientSubmis
   return { patient, insurance };
 }
 
-export function patientDefaults(patient?: any | null, insurance?: any | null): PatientFormValues {
+export function patientDefaults(
+  patient?: PatientDefaultsSource | null,
+  insurance?: InsuranceDefaultsSource | null,
+): PatientFormValues {
   return {
     ...EMPTY_VALUES,
     full_name: patient?.full_name ?? "",
@@ -188,8 +218,8 @@ export function PatientForm({
   onSubmit,
   onCancel,
 }: {
-  initialPatient?: any | null;
-  initialInsurance?: any | null;
+  initialPatient?: PatientDefaultsSource | null;
+  initialInsurance?: InsuranceDefaultsSource | null;
   insuranceCompanies?: InsuranceCompanyOption[];
   submitLabel: string;
   onSubmit: (payload: PatientSubmission) => Promise<void>;
