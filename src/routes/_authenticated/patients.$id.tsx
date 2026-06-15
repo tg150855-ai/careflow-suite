@@ -131,7 +131,10 @@ function PatientWorkspace() {
   async function savePatient(payload: PatientSubmission) {
     const before = patient;
     const { error } = await (supabase as any).from("patients").update(payload.patient).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
 
     const currentInsurance = insuranceRows[0];
     if (payload.insurance) {
