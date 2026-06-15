@@ -471,8 +471,8 @@ function PharmacistDashboard() {
       const t = todayISO();
       const [scripts, sales, lowStock, expiring] = await Promise.all([
         countTable("prescriptions", (q) => q.gte("created_at", t)),
-        sumColumn("pharmacy_sales", "total_amount", (q) => q.gte("created_at", t)),
-        countTable("medicines", (q) => q.lt("current_stock", 20)),
+        sumColumn("pharmacy_sales", "total", (q) => q.gte("created_at", t)),
+        countTable("medicine_batches", (q) => q.lt("quantity", 20)),
         countTable("medicine_batches", (q) => q.lt("expiry_date",
           new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10))).catch(() => 0),
       ]);
@@ -546,9 +546,9 @@ function AccountsDashboard() {
     queryFn: async () => {
       const t = todayISO(); const m = monthStartISO();
       const [revDay, revMonth, pending, expenses] = await Promise.all([
-        sumColumn("bills", "total_amount", (q) => q.gte("created_at", t)),
-        sumColumn("bills", "total_amount", (q) => q.gte("created_at", m)),
-        sumColumn("bills", "balance_amount", (q) => q.gt("balance_amount", 0)),
+        sumColumn("bills", "total", (q) => q.gte("created_at", t)),
+        sumColumn("bills", "total", (q) => q.gte("created_at", m)),
+        sumColumn("bills", "pending", (q) => q.gt("pending", 0)),
         sumColumn("transactions", "amount", (q) => q.eq("type", "debit").gte("created_at", m)).catch(() => 0),
       ]);
       return { revDay, revMonth, pending, expenses };
@@ -646,14 +646,14 @@ function OwnerDashboard() {
     queryFn: async () => {
       const t = todayISO(); const m = monthStartISO();
       const [revDay, revMonth, opd, ipd, occ, occTot, otToday, emerg] = await Promise.all([
-        sumColumn("bills", "total_amount", (q) => q.gte("created_at", t)),
-        sumColumn("bills", "total_amount", (q) => q.gte("created_at", m)),
+        sumColumn("bills", "total", (q) => q.gte("created_at", t)),
+        sumColumn("bills", "total", (q) => q.gte("created_at", m)),
         countTable("opd_visits", (q) => q.gte("created_at", t)),
-        countTable("admissions", (q) => q.is("discharge_date", null)),
+        countTable("admissions", (q) => q.is("discharged_at", null)),
         countTable("beds", (q) => q.eq("status", "occupied")),
         countTable("beds"),
-        countTable("surgeries", (q) => q.gte("scheduled_at", t)),
-        countTable("emergency_visits", (q) => q.gte("created_at", t)),
+        countTable("surgeries", (q) => q.gte("scheduled_start", t)),
+        countTable("emergency_cases", (q) => q.gte("created_at", t)),
       ]);
       return { revDay, revMonth, opd, ipd, occ, occTot, otToday, emerg };
     },
