@@ -271,7 +271,7 @@ function TimelineTab({ bundle }: { bundle: any }) {
     bundle.visits.forEach((v: any) => out.push({ id: `v-${v.id}`, kind: "opd", at: v.created_at, title: v.diagnosis || v.chief_complaints || "OPD Consultation", subtitle: v.doctors?.name }));
     bundle.admissions.forEach((a: any) => out.push({ id: `a-${a.id}`, kind: "ipd", at: a.admitted_at, title: `Admitted · ${a.reason ?? a.initial_diagnosis ?? "IPD"}`, subtitle: `${a.wards?.name ?? ""} ${a.beds?.bed_number ? `· Bed ${a.beds.bed_number}` : ""}`, badge: a.status }));
     bundle.admissions.filter((a: any) => a.discharged_at).forEach((a: any) => out.push({ id: `d-${a.id}`, kind: "ipd", at: a.discharged_at, title: `Discharged · ${a.admission_no}`, subtitle: a.doctors?.name }));
-    bundle.surgeries.forEach((s: any) => out.push({ id: `s-${s.id}`, kind: "surgery", at: s.actual_start ?? s.scheduled_start ?? s.scheduled_end, title: `Surgery · ${s.procedure_name}`, subtitle: s.doctors?.name, badge: s.status }));
+    bundle.surgeries.forEach((s: any) => out.push({ id: `s-${s.id}`, kind: "surgery", at: s.actual_start ?? s.scheduled_start ?? s.scheduled_end, title: `Surgery · ${s.procedure_name}`, subtitle: s.surgeon_name, badge: s.status }));
     bundle.labs.forEach((l: any) => out.push({ id: `l-${l.id}`, kind: "lab", at: l.created_at, title: `Lab order ${l.order_no}`, subtitle: l.doctors?.name, badge: l.status }));
     bundle.rad.forEach((r: any) => out.push({ id: `r-${r.id}`, kind: "radiology", at: r.scheduled_at ?? r.performed_at, title: `${r.modality} · ${r.investigation}`, subtitle: r.doctors?.name, badge: r.status }));
     bundle.rx.forEach((p: any) => out.push({ id: `p-${p.id}`, kind: "prescription", at: p.created_at, title: "Prescription issued", subtitle: p.opd_visits?.doctors?.name }));
@@ -520,7 +520,7 @@ function SurgeryTab({ rows }: { rows: any[] }) {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <div className="font-medium">{s.procedure_name}</div>
-                <div className="text-xs text-muted-foreground">{s.surgery_no} · {s.doctors?.name ?? "—"}</div>
+                <div className="text-xs text-muted-foreground">{s.surgery_no} · {s.surgeon_name ?? "—"}</div>
               </div>
               <Badge variant="outline" className="capitalize">{s.status}</Badge>
             </div>
