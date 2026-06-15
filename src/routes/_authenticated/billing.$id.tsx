@@ -92,7 +92,7 @@ function BillView() {
       <Card className="p-8 print:shadow-none print:border-0">
         <div className="flex justify-between items-start pb-6 border-b">
           <div>
-            <div className="text-xl font-bold">MediCore General Hospital</div>
+            <div className="text-xl font-bold">SBG Arogya Plus</div>
             <div className="text-sm text-muted-foreground">123 Health Street · +91 98765 43210</div>
           </div>
           <div className="text-right">

@@ -73,7 +73,7 @@ function LabOrderView() {
       <Card className="p-8 print:shadow-none print:border-0">
         <div className="flex justify-between items-start pb-6 border-b">
           <div>
-            <div className="text-xl font-bold">MediCore Laboratory</div>
+            <div className="text-xl font-bold">SBG Arogya Plus Laboratory</div>
             <div className="text-sm text-muted-foreground">Pathology & Diagnostics</div>
           </div>
           <div className="text-right">

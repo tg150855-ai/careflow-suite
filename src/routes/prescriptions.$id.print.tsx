@@ -38,7 +38,7 @@ function PrintRx() {
         <div className="flex items-center gap-3">
           <div className="size-12 rounded-xl bg-black text-white flex items-center justify-center"><Heart className="size-6" /></div>
           <div>
-            <div className="text-xl font-bold">MediCore General Hospital</div>
+            <div className="text-xl font-bold">SBG Arogya Plus</div>
             <div className="text-xs">Multi-Specialty · 24×7 Emergency · +91 80000 00000</div>
           </div>
         </div>

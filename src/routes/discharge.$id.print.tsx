@@ -32,7 +32,7 @@ function PrintDischarge() {
         </div>
 
         <div className="border-b-2 border-black pb-4 mb-6">
-          <h2 className="text-2xl font-bold text-center">MediCore General Hospital</h2>
+          <h2 className="text-2xl font-bold text-center">SBG Arogya Plus</h2>
           <div className="text-center text-sm">Discharge Summary</div>
         </div>
 
