@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { logAudit } from "@/lib/audit";
@@ -11,13 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   ArrowLeft, Phone, Mail, MapPin, AlertTriangle, Plus, Stethoscope, Pill,
   FlaskConical, Scan, BedDouble, Activity, Receipt, FileText, Printer,
-  HeartPulse, Calendar, Clock, ShieldAlert, Download, Filter,
+  HeartPulse, Calendar, Clock, ShieldAlert, Download, Filter, Pencil,
 } from "lucide-react";
 import { format, differenceInYears } from "date-fns";
 import { inr } from "@/lib/format";
+import { PatientForm, type PatientSubmission } from "@/components/patient-form";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/patients/$id")({ component: PatientWorkspace });
 
@@ -28,6 +31,8 @@ type TimelineEvent = {
 
 function PatientWorkspace() {
   const { id } = Route.useParams();
+  const queryClient = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
 
   // Audit: opening a patient record
   useEffect(() => {
@@ -37,6 +42,22 @@ function PatientWorkspace() {
   const { data: patient } = useQuery({
     queryKey: ["patient", id],
     queryFn: async () => (await supabase.from("patients").select("*").eq("id", id).maybeSingle()).data,
+  });
+
+  const { data: insuranceRows = [] } = useQuery({
+    queryKey: ["patient-insurance", id],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("patient_insurance").select("*").eq("patient_id", id).eq("active", true).order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const { data: insuranceCompanies = [] } = useQuery({
+    queryKey: ["insurance-companies", "patient-workspace"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("insurance_companies").select("id, name, policy_type").eq("active", true).order("name");
+      return data ?? [];
+    },
   });
 
   const { data: bundle } = useQuery({
