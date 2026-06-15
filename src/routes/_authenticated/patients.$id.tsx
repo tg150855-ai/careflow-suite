@@ -76,13 +76,21 @@ function PatientWorkspace() {
         const { data } = await sb.from("payments").select("id, bill_id, amount, method, paid_at, reference").in("bill_id", billIds);
         pays = data ?? [];
       }
+      // resolve surgeon names
+      const surgeonIds = Array.from(new Set((surgeries.data ?? []).map((s: any) => s.primary_surgeon_id).filter(Boolean)));
+      let doctorMap: Record<string, string> = {};
+      if (surgeonIds.length) {
+        const { data } = await sb.from("doctors").select("id, name").in("id", surgeonIds);
+        (data ?? []).forEach((d: any) => { doctorMap[d.id] = d.name; });
+      }
+      const surgeriesWithNames = (surgeries.data ?? []).map((s: any) => ({ ...s, surgeon_name: doctorMap[s.primary_surgeon_id] ?? null }));
       return {
         appts: appts.data ?? [], visits: visits.data ?? [], admissions: admissions.data ?? [],
         bills: bills.data ?? [], payments: pays, sales: sales.data ?? [],
         labs: labs.data ?? [], labResults: labResults.data ?? [],
         rx: rx.data ?? [], rxItems: rxItems.data ?? [],
         rad: rad.data ?? [], radReports: radReports.data ?? [],
-        surgeries: surgeries.data ?? [], vitals: vitals.data ?? [],
+        surgeries: surgeriesWithNames, vitals: vitals.data ?? [],
         icu: icu.data ?? [], icuAlerts: icuAlerts.data ?? [],
         alerts: alerts.data ?? [], claims: claims.data ?? [], docs: docs.data ?? [],
         medsAdmin: medsAdmin.data ?? [],
