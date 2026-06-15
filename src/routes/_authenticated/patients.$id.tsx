@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft, Phone, Mail, MapPin, AlertTriangle, Plus, Stethoscope, Pill,
   FlaskConical, Scan, BedDouble, Activity, Receipt, FileText, Printer,
-  HeartPulse, Syringe, Calendar, Clock, ShieldAlert, Download, Filter,
+  HeartPulse, Calendar, Clock, ShieldAlert, Download, Filter,
 } from "lucide-react";
 import { format, differenceInYears } from "date-fns";
 import { inr } from "@/lib/format";
