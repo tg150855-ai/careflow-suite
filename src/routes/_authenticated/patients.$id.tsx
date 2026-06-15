@@ -22,7 +22,12 @@ import { inr } from "@/lib/format";
 import { PatientForm, type PatientSubmission } from "@/components/patient-form";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/patients/$id")({ component: PatientWorkspace });
+export const Route = createFileRoute("/_authenticated/patients/$id")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    edit: typeof search.edit === "string" ? search.edit : undefined,
+  }),
+  component: PatientWorkspace,
+});
 
 type TimelineEvent = {
   id: string; kind: string; at: string; title: string; subtitle?: string;
@@ -31,8 +36,13 @@ type TimelineEvent = {
 
 function PatientWorkspace() {
   const { id } = Route.useParams();
+  const search = Route.useSearch();
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
+
+  useEffect(() => {
+    if (search.edit === "1") setEditOpen(true);
+  }, [search.edit]);
 
   // Audit: opening a patient record
   useEffect(() => {
