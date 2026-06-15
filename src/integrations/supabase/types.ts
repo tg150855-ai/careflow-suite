@@ -4188,6 +4188,13 @@ export type Database = {
             referencedRelation: "insurance_companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "patient_insurance_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
         ]
       }
       patient_portal_accounts: {
