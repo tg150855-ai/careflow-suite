@@ -25,7 +25,7 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   roles: AppRole[];
-  profile: { full_name: string | null; phone: string | null } | null;
+  profile: { full_name: string | null; phone: string | null; password_changed?: boolean; login_disabled?: boolean } | null;
   loading: boolean;
   hasRole: (r: AppRole) => boolean;
   hasAnyRole: (rs: AppRole[]) => boolean;
