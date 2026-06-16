@@ -210,6 +210,12 @@ export function patientDefaults(
   };
 }
 
+export type PatientFormAction = {
+  value: string;
+  label: string;
+  variant?: "default" | "outline" | "secondary";
+};
+
 export function PatientForm({
   initialPatient,
   initialInsurance,
@@ -217,13 +223,15 @@ export function PatientForm({
   submitLabel,
   onSubmit,
   onCancel,
+  actions,
 }: {
   initialPatient?: PatientDefaultsSource | null;
   initialInsurance?: InsuranceDefaultsSource | null;
   insuranceCompanies?: InsuranceCompanyOption[];
   submitLabel: string;
-  onSubmit: (payload: PatientSubmission) => Promise<void>;
+  onSubmit: (payload: PatientSubmission, action?: string) => Promise<void>;
   onCancel?: () => void;
+  actions?: PatientFormAction[];
 }) {
   const defaultValues = useMemo(
     () => patientDefaults(initialPatient, initialInsurance),
@@ -234,9 +242,11 @@ export function PatientForm({
     defaultValues,
     values: defaultValues,
   });
+  const pendingActionRef = useRef<string | undefined>(undefined);
 
   async function submit(values: PatientFormValues) {
-    await onSubmit(buildPatientSubmission(values));
+    await onSubmit(buildPatientSubmission(values), pendingActionRef.current);
+    pendingActionRef.current = undefined;
   }
 
   return (
