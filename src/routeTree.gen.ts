@@ -102,6 +102,7 @@ import { Route as AuthenticatedBillingIndexRouteImport } from './routes/_authent
 import { Route as PrescriptionsIdPrintRouteImport } from './routes/prescriptions.$id.print'
 import { Route as PatientCardIdPrintRouteImport } from './routes/patient-card.$id.print'
 import { Route as DischargeIdPrintRouteImport } from './routes/discharge.$id.print'
+import { Route as AuthenticatedStaffIdRouteImport } from './routes/_authenticated/staff.$id'
 import { Route as AuthenticatedPharmacyMedicinesRouteImport } from './routes/_authenticated/pharmacy.medicines'
 import { Route as AuthenticatedPatientsNewRouteImport } from './routes/_authenticated/patients.new'
 import { Route as AuthenticatedPatientsIdRouteImport } from './routes/_authenticated/patients.$id'
@@ -614,6 +615,11 @@ const DischargeIdPrintRoute = DischargeIdPrintRouteImport.update({
   path: '/discharge/$id/print',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedStaffIdRoute = AuthenticatedStaffIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedStaffRoute,
+} as any)
 const AuthenticatedPharmacyMedicinesRoute =
   AuthenticatedPharmacyMedicinesRouteImport.update({
     id: '/medicines',
@@ -800,7 +806,7 @@ export interface FileRoutesByFullPath {
   '/security-center': typeof AuthenticatedSecurityCenterRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/smart-staffing': typeof AuthenticatedSmartStaffingRoute
-  '/staff': typeof AuthenticatedStaffRoute
+  '/staff': typeof AuthenticatedStaffRouteWithChildren
   '/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/vaccinations': typeof AuthenticatedVaccinationsRoute
   '/vendors': typeof AuthenticatedVendorsRoute
@@ -822,6 +828,7 @@ export interface FileRoutesByFullPath {
   '/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/patients/new': typeof AuthenticatedPatientsNewRoute
   '/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
+  '/staff/$id': typeof AuthenticatedStaffIdRoute
   '/discharge/$id/print': typeof DischargeIdPrintRoute
   '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
@@ -909,7 +916,7 @@ export interface FileRoutesByTo {
   '/security-center': typeof AuthenticatedSecurityCenterRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/smart-staffing': typeof AuthenticatedSmartStaffingRoute
-  '/staff': typeof AuthenticatedStaffRoute
+  '/staff': typeof AuthenticatedStaffRouteWithChildren
   '/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/vaccinations': typeof AuthenticatedVaccinationsRoute
   '/vendors': typeof AuthenticatedVendorsRoute
@@ -931,6 +938,7 @@ export interface FileRoutesByTo {
   '/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/patients/new': typeof AuthenticatedPatientsNewRoute
   '/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
+  '/staff/$id': typeof AuthenticatedStaffIdRoute
   '/discharge/$id/print': typeof DischargeIdPrintRoute
   '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
@@ -1024,7 +1032,7 @@ export interface FileRoutesById {
   '/_authenticated/security-center': typeof AuthenticatedSecurityCenterRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/smart-staffing': typeof AuthenticatedSmartStaffingRoute
-  '/_authenticated/staff': typeof AuthenticatedStaffRoute
+  '/_authenticated/staff': typeof AuthenticatedStaffRouteWithChildren
   '/_authenticated/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/_authenticated/vaccinations': typeof AuthenticatedVaccinationsRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
@@ -1046,6 +1054,7 @@ export interface FileRoutesById {
   '/_authenticated/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/_authenticated/patients/new': typeof AuthenticatedPatientsNewRoute
   '/_authenticated/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
+  '/_authenticated/staff/$id': typeof AuthenticatedStaffIdRoute
   '/discharge/$id/print': typeof DischargeIdPrintRoute
   '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
@@ -1161,6 +1170,7 @@ export interface FileRouteTypes {
     | '/patients/$id'
     | '/patients/new'
     | '/pharmacy/medicines'
+    | '/staff/$id'
     | '/discharge/$id/print'
     | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
@@ -1270,6 +1280,7 @@ export interface FileRouteTypes {
     | '/patients/$id'
     | '/patients/new'
     | '/pharmacy/medicines'
+    | '/staff/$id'
     | '/discharge/$id/print'
     | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
@@ -1384,6 +1395,7 @@ export interface FileRouteTypes {
     | '/_authenticated/patients/$id'
     | '/_authenticated/patients/new'
     | '/_authenticated/pharmacy/medicines'
+    | '/_authenticated/staff/$id'
     | '/discharge/$id/print'
     | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
@@ -2059,6 +2071,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DischargeIdPrintRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/staff/$id': {
+      id: '/_authenticated/staff/$id'
+      path: '/$id'
+      fullPath: '/staff/$id'
+      preLoaderRoute: typeof AuthenticatedStaffIdRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
+    }
     '/_authenticated/pharmacy/medicines': {
       id: '/_authenticated/pharmacy/medicines'
       path: '/medicines'
@@ -2301,6 +2320,17 @@ const AuthenticatedPharmacyRouteWithChildren =
     AuthenticatedPharmacyRouteChildren,
   )
 
+interface AuthenticatedStaffRouteChildren {
+  AuthenticatedStaffIdRoute: typeof AuthenticatedStaffIdRoute
+}
+
+const AuthenticatedStaffRouteChildren: AuthenticatedStaffRouteChildren = {
+  AuthenticatedStaffIdRoute: AuthenticatedStaffIdRoute,
+}
+
+const AuthenticatedStaffRouteWithChildren =
+  AuthenticatedStaffRoute._addFileChildren(AuthenticatedStaffRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAiAssistantRoute: typeof AuthenticatedAiAssistantRoute
   AuthenticatedAmbulanceRoute: typeof AuthenticatedAmbulanceRoute
@@ -2379,7 +2409,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSecurityCenterRoute: typeof AuthenticatedSecurityCenterRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSmartStaffingRoute: typeof AuthenticatedSmartStaffingRoute
-  AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
+  AuthenticatedStaffRoute: typeof AuthenticatedStaffRouteWithChildren
   AuthenticatedTelemedicineRoute: typeof AuthenticatedTelemedicineRoute
   AuthenticatedVaccinationsRoute: typeof AuthenticatedVaccinationsRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
@@ -2469,7 +2499,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSecurityCenterRoute: AuthenticatedSecurityCenterRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSmartStaffingRoute: AuthenticatedSmartStaffingRoute,
-  AuthenticatedStaffRoute: AuthenticatedStaffRoute,
+  AuthenticatedStaffRoute: AuthenticatedStaffRouteWithChildren,
   AuthenticatedTelemedicineRoute: AuthenticatedTelemedicineRoute,
   AuthenticatedVaccinationsRoute: AuthenticatedVaccinationsRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
