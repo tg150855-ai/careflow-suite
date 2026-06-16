@@ -161,6 +161,8 @@ const STORAGE_KEY = "medicore.sidebar.expanded";
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [now] = useState(new Date());
+  const { hasAnyRole, hasRole, profile, user, signOut, roles } = useAuth();
+  const path = useRouterState({ select: (s) => s.location.pathname });
 
   // Force first-login password change
   useEffect(() => {
@@ -168,6 +170,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       window.location.replace("/change-password");
     }
   }, [profile, path]);
+
 
 
   const visibleGroups = GROUPS
