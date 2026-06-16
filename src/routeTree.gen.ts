@@ -80,6 +80,7 @@ import { Route as AuthenticatedComplianceAiRouteImport } from './routes/_authent
 import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedClinicalAuditsRouteImport } from './routes/_authenticated/clinical-audits'
+import { Route as AuthenticatedChangePasswordRouteImport } from './routes/_authenticated/change-password'
 import { Route as AuthenticatedCdssRouteImport } from './routes/_authenticated/cdss'
 import { Route as AuthenticatedBranchesRouteImport } from './routes/_authenticated/branches'
 import { Route as AuthenticatedBloodBankRouteImport } from './routes/_authenticated/blood-bank'
@@ -500,6 +501,12 @@ const AuthenticatedClinicalAuditsRoute =
     path: '/clinical-audits',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedChangePasswordRoute =
+  AuthenticatedChangePasswordRouteImport.update({
+    id: '/change-password',
+    path: '/change-password',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCdssRoute = AuthenticatedCdssRouteImport.update({
   id: '/cdss',
   path: '/cdss',
@@ -744,6 +751,7 @@ export interface FileRoutesByFullPath {
   '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/cdss': typeof AuthenticatedCdssRoute
+  '/change-password': typeof AuthenticatedChangePasswordRoute
   '/clinical-audits': typeof AuthenticatedClinicalAuditsRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
@@ -857,6 +865,7 @@ export interface FileRoutesByTo {
   '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/cdss': typeof AuthenticatedCdssRoute
+  '/change-password': typeof AuthenticatedChangePasswordRoute
   '/clinical-audits': typeof AuthenticatedClinicalAuditsRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
@@ -970,6 +979,7 @@ export interface FileRoutesById {
   '/_authenticated/blood-bank': typeof AuthenticatedBloodBankRoute
   '/_authenticated/branches': typeof AuthenticatedBranchesRoute
   '/_authenticated/cdss': typeof AuthenticatedCdssRoute
+  '/_authenticated/change-password': typeof AuthenticatedChangePasswordRoute
   '/_authenticated/clinical-audits': typeof AuthenticatedClinicalAuditsRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
@@ -1086,6 +1096,7 @@ export interface FileRouteTypes {
     | '/blood-bank'
     | '/branches'
     | '/cdss'
+    | '/change-password'
     | '/clinical-audits'
     | '/command-center'
     | '/communications'
@@ -1199,6 +1210,7 @@ export interface FileRouteTypes {
     | '/blood-bank'
     | '/branches'
     | '/cdss'
+    | '/change-password'
     | '/clinical-audits'
     | '/command-center'
     | '/communications'
@@ -1311,6 +1323,7 @@ export interface FileRouteTypes {
     | '/_authenticated/blood-bank'
     | '/_authenticated/branches'
     | '/_authenticated/cdss'
+    | '/_authenticated/change-password'
     | '/_authenticated/clinical-audits'
     | '/_authenticated/command-center'
     | '/_authenticated/communications'
@@ -1917,6 +1930,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClinicalAuditsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/change-password': {
+      id: '/_authenticated/change-password'
+      path: '/change-password'
+      fullPath: '/change-password'
+      preLoaderRoute: typeof AuthenticatedChangePasswordRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/cdss': {
       id: '/_authenticated/cdss'
       path: '/cdss'
@@ -2347,6 +2367,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBloodBankRoute: typeof AuthenticatedBloodBankRoute
   AuthenticatedBranchesRoute: typeof AuthenticatedBranchesRoute
   AuthenticatedCdssRoute: typeof AuthenticatedCdssRoute
+  AuthenticatedChangePasswordRoute: typeof AuthenticatedChangePasswordRoute
   AuthenticatedClinicalAuditsRoute: typeof AuthenticatedClinicalAuditsRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
@@ -2437,6 +2458,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBloodBankRoute: AuthenticatedBloodBankRoute,
   AuthenticatedBranchesRoute: AuthenticatedBranchesRoute,
   AuthenticatedCdssRoute: AuthenticatedCdssRoute,
+  AuthenticatedChangePasswordRoute: AuthenticatedChangePasswordRoute,
   AuthenticatedClinicalAuditsRoute: AuthenticatedClinicalAuditsRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedCommunicationsRoute: AuthenticatedCommunicationsRoute,
