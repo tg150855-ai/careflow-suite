@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -210,6 +210,12 @@ export function patientDefaults(
   };
 }
 
+export type PatientFormAction = {
+  value: string;
+  label: string;
+  variant?: "default" | "outline" | "secondary";
+};
+
 export function PatientForm({
   initialPatient,
   initialInsurance,
@@ -217,13 +223,15 @@ export function PatientForm({
   submitLabel,
   onSubmit,
   onCancel,
+  actions,
 }: {
   initialPatient?: PatientDefaultsSource | null;
   initialInsurance?: InsuranceDefaultsSource | null;
   insuranceCompanies?: InsuranceCompanyOption[];
   submitLabel: string;
-  onSubmit: (payload: PatientSubmission) => Promise<void>;
+  onSubmit: (payload: PatientSubmission, action?: string) => Promise<void>;
   onCancel?: () => void;
+  actions?: PatientFormAction[];
 }) {
   const defaultValues = useMemo(
     () => patientDefaults(initialPatient, initialInsurance),
@@ -234,9 +242,11 @@ export function PatientForm({
     defaultValues,
     values: defaultValues,
   });
+  const pendingActionRef = useRef<string | undefined>(undefined);
 
   async function submit(values: PatientFormValues) {
-    await onSubmit(buildPatientSubmission(values));
+    await onSubmit(buildPatientSubmission(values), pendingActionRef.current);
+    pendingActionRef.current = undefined;
   }
 
   return (
@@ -382,13 +392,33 @@ export function PatientForm({
         </div>
       </Card>
 
-      <div className="flex justify-end gap-3 sticky bottom-0 bg-background py-4">
+      <div className="flex flex-wrap justify-end gap-3 sticky bottom-0 bg-background py-4 border-t">
         {onCancel && (
           <Button variant="ghost" type="button" onClick={onCancel}>
             Cancel
           </Button>
         )}
-        <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+        {(actions ?? []).map((a) => (
+          <Button
+            key={a.value}
+            type="submit"
+            variant={a.variant ?? "outline"}
+            disabled={form.formState.isSubmitting}
+            onClick={() => {
+              pendingActionRef.current = a.value;
+            }}
+          >
+            {a.label}
+          </Button>
+        ))}
+        <Button
+          type="submit"
+          size="lg"
+          disabled={form.formState.isSubmitting}
+          onClick={() => {
+            pendingActionRef.current = undefined;
+          }}
+        >
           {form.formState.isSubmitting && <Loader2 className="size-4 mr-2 animate-spin" />}
           {submitLabel}
         </Button>

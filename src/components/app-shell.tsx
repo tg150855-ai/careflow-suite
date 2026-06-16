@@ -164,6 +164,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { hasAnyRole, hasRole, profile, user, signOut, roles } = useAuth();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
+  // Force first-login password change
+  useEffect(() => {
+    if (profile && profile.password_changed === false && path !== "/change-password") {
+      window.location.replace("/change-password");
+    }
+  }, [profile, path]);
+
+
+
   const visibleGroups = GROUPS
     .map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || i.roles.some(hasRole)) }))
     .filter((g) => (!g.roles || g.roles.some(hasRole)) && g.items.length > 0);

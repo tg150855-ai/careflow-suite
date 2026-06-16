@@ -25,7 +25,7 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   roles: AppRole[];
-  profile: { full_name: string | null; phone: string | null } | null;
+  profile: { full_name: string | null; phone: string | null; password_changed?: boolean; login_disabled?: boolean } | null;
   loading: boolean;
   hasRole: (r: AppRole) => boolean;
   hasAnyRole: (rs: AppRole[]) => boolean;
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadRolesAndProfile(userId: string) {
     const [rolesRes, profileRes] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", userId),
-      supabase.from("profiles").select("full_name, phone").eq("id", userId).maybeSingle(),
+      supabase.from("profiles").select("full_name, phone, password_changed, login_disabled").eq("id", userId).maybeSingle(),
     ]);
     setRoles((rolesRes.data ?? []).map((r) => r.role as AppRole));
     setProfile(profileRes.data ?? null);

@@ -11,8 +11,10 @@ import { logAudit } from "@/lib/audit";
 export const Route = createFileRoute("/_authenticated/patients/new")({ component: NewPatient });
 
 function NewPatient() {
-  const { user } = useAuth();
+  const { user, hasAnyRole } = useAuth();
   const navigate = useNavigate();
+  const canConsult = hasAnyRole(["doctor", "admin", "super_admin"]);
+
   const { data: insuranceCompanies = [] } = useQuery({
     queryKey: ["insurance-companies", "patient-form"],
     queryFn: async () => {
@@ -26,7 +28,22 @@ function NewPatient() {
     },
   });
 
-  async function onSubmit(payload: PatientSubmission) {
+  async function onSubmit(payload: PatientSubmission, action?: string) {
+    const mobile = String(payload.patient.mobile ?? "").trim();
+    // Duplicate mobile pre-check
+    if (mobile) {
+      const { data: dup } = await (supabase as any)
+        .from("patients")
+        .select("id, uhid, full_name")
+        .eq("mobile", mobile)
+        .limit(1)
+        .maybeSingle();
+      if (dup) {
+        toast.error(`Mobile already registered to ${dup.full_name} (${dup.uhid})`);
+        return;
+      }
+    }
+
     const { data, error } = await (supabase as any)
       .from("patients")
       .insert({ ...payload.patient, created_by: user?.id })
@@ -36,6 +53,7 @@ function NewPatient() {
       toast.error(error.message);
       return;
     }
+
     if (payload.insurance) {
       const { error: insuranceError } = await (supabase as any)
         .from("patient_insurance")
@@ -43,14 +61,43 @@ function NewPatient() {
       if (insuranceError)
         toast.warning(`Patient saved, insurance not saved: ${insuranceError.message}`);
     }
+
+    // Seed EMR / timeline registration entry
+    await (supabase as any).from("emr_records").insert({
+      patient_id: data.id,
+      record_type: "registration",
+      title: "Patient registered",
+      summary: `UHID ${data.uhid} created`,
+      department: "Reception",
+      event_date: new Date().toISOString(),
+      data: { uhid: data.uhid, by: user?.id ?? null },
+    });
+
     await logAudit({
       action: "create",
       entity: "patients",
       entityId: data.id,
       after: payload.patient,
     });
+
     toast.success(`Patient registered · ${data.uhid}`);
-    navigate({ to: "/patients/$id", params: { id: data.id } });
+
+    switch (action) {
+      case "appointment":
+        navigate({ to: "/appointments", search: { patientId: data.id } as any });
+        return;
+      case "consult":
+        navigate({ to: "/opd", search: { patientId: data.id } as any });
+        return;
+      case "print":
+        if (typeof window !== "undefined") {
+          window.open(`/patient-card/${data.id}/print`, "_blank");
+        }
+        navigate({ to: "/patients/$id", params: { id: data.id } });
+        return;
+      default:
+        navigate({ to: "/patients/$id", params: { id: data.id } });
+    }
   }
 
   return (
@@ -69,7 +116,14 @@ function NewPatient() {
 
       <PatientForm
         insuranceCompanies={insuranceCompanies}
-        submitLabel="Register patient"
+        submitLabel="Save patient"
+        actions={[
+          { value: "appointment", label: "Save & book appointment", variant: "outline" },
+          ...(canConsult
+            ? [{ value: "consult" as const, label: "Save & start consultation", variant: "outline" as const }]
+            : []),
+          { value: "print", label: "Save & print card", variant: "secondary" },
+        ]}
         onSubmit={onSubmit}
         onCancel={() => navigate({ to: "/patients" })}
       />

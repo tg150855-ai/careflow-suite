@@ -80,6 +80,7 @@ import { Route as AuthenticatedComplianceAiRouteImport } from './routes/_authent
 import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedClinicalAuditsRouteImport } from './routes/_authenticated/clinical-audits'
+import { Route as AuthenticatedChangePasswordRouteImport } from './routes/_authenticated/change-password'
 import { Route as AuthenticatedCdssRouteImport } from './routes/_authenticated/cdss'
 import { Route as AuthenticatedBranchesRouteImport } from './routes/_authenticated/branches'
 import { Route as AuthenticatedBloodBankRouteImport } from './routes/_authenticated/blood-bank'
@@ -100,7 +101,9 @@ import { Route as AuthenticatedLaboratoryIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedIpdIndexRouteImport } from './routes/_authenticated/ipd.index'
 import { Route as AuthenticatedBillingIndexRouteImport } from './routes/_authenticated/billing.index'
 import { Route as PrescriptionsIdPrintRouteImport } from './routes/prescriptions.$id.print'
+import { Route as PatientCardIdPrintRouteImport } from './routes/patient-card.$id.print'
 import { Route as DischargeIdPrintRouteImport } from './routes/discharge.$id.print'
+import { Route as AuthenticatedStaffIdRouteImport } from './routes/_authenticated/staff.$id'
 import { Route as AuthenticatedPharmacyMedicinesRouteImport } from './routes/_authenticated/pharmacy.medicines'
 import { Route as AuthenticatedPatientsNewRouteImport } from './routes/_authenticated/patients.new'
 import { Route as AuthenticatedPatientsIdRouteImport } from './routes/_authenticated/patients.$id'
@@ -498,6 +501,12 @@ const AuthenticatedClinicalAuditsRoute =
     path: '/clinical-audits',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedChangePasswordRoute =
+  AuthenticatedChangePasswordRouteImport.update({
+    id: '/change-password',
+    path: '/change-password',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCdssRoute = AuthenticatedCdssRouteImport.update({
   id: '/cdss',
   path: '/cdss',
@@ -603,10 +612,20 @@ const PrescriptionsIdPrintRoute = PrescriptionsIdPrintRouteImport.update({
   path: '/prescriptions/$id/print',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PatientCardIdPrintRoute = PatientCardIdPrintRouteImport.update({
+  id: '/patient-card/$id/print',
+  path: '/patient-card/$id/print',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DischargeIdPrintRoute = DischargeIdPrintRouteImport.update({
   id: '/discharge/$id/print',
   path: '/discharge/$id/print',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedStaffIdRoute = AuthenticatedStaffIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedStaffRoute,
 } as any)
 const AuthenticatedPharmacyMedicinesRoute =
   AuthenticatedPharmacyMedicinesRouteImport.update({
@@ -732,6 +751,7 @@ export interface FileRoutesByFullPath {
   '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/cdss': typeof AuthenticatedCdssRoute
+  '/change-password': typeof AuthenticatedChangePasswordRoute
   '/clinical-audits': typeof AuthenticatedClinicalAuditsRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
@@ -794,7 +814,7 @@ export interface FileRoutesByFullPath {
   '/security-center': typeof AuthenticatedSecurityCenterRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/smart-staffing': typeof AuthenticatedSmartStaffingRoute
-  '/staff': typeof AuthenticatedStaffRoute
+  '/staff': typeof AuthenticatedStaffRouteWithChildren
   '/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/vaccinations': typeof AuthenticatedVaccinationsRoute
   '/vendors': typeof AuthenticatedVendorsRoute
@@ -816,7 +836,9 @@ export interface FileRoutesByFullPath {
   '/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/patients/new': typeof AuthenticatedPatientsNewRoute
   '/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
+  '/staff/$id': typeof AuthenticatedStaffIdRoute
   '/discharge/$id/print': typeof DischargeIdPrintRoute
+  '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/billing/': typeof AuthenticatedBillingIndexRoute
   '/ipd/': typeof AuthenticatedIpdIndexRoute
@@ -843,6 +865,7 @@ export interface FileRoutesByTo {
   '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
   '/cdss': typeof AuthenticatedCdssRoute
+  '/change-password': typeof AuthenticatedChangePasswordRoute
   '/clinical-audits': typeof AuthenticatedClinicalAuditsRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
@@ -902,7 +925,7 @@ export interface FileRoutesByTo {
   '/security-center': typeof AuthenticatedSecurityCenterRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/smart-staffing': typeof AuthenticatedSmartStaffingRoute
-  '/staff': typeof AuthenticatedStaffRoute
+  '/staff': typeof AuthenticatedStaffRouteWithChildren
   '/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/vaccinations': typeof AuthenticatedVaccinationsRoute
   '/vendors': typeof AuthenticatedVendorsRoute
@@ -924,7 +947,9 @@ export interface FileRoutesByTo {
   '/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/patients/new': typeof AuthenticatedPatientsNewRoute
   '/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
+  '/staff/$id': typeof AuthenticatedStaffIdRoute
   '/discharge/$id/print': typeof DischargeIdPrintRoute
+  '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/billing': typeof AuthenticatedBillingIndexRoute
   '/ipd': typeof AuthenticatedIpdIndexRoute
@@ -954,6 +979,7 @@ export interface FileRoutesById {
   '/_authenticated/blood-bank': typeof AuthenticatedBloodBankRoute
   '/_authenticated/branches': typeof AuthenticatedBranchesRoute
   '/_authenticated/cdss': typeof AuthenticatedCdssRoute
+  '/_authenticated/change-password': typeof AuthenticatedChangePasswordRoute
   '/_authenticated/clinical-audits': typeof AuthenticatedClinicalAuditsRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
@@ -1016,7 +1042,7 @@ export interface FileRoutesById {
   '/_authenticated/security-center': typeof AuthenticatedSecurityCenterRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/smart-staffing': typeof AuthenticatedSmartStaffingRoute
-  '/_authenticated/staff': typeof AuthenticatedStaffRoute
+  '/_authenticated/staff': typeof AuthenticatedStaffRouteWithChildren
   '/_authenticated/telemedicine': typeof AuthenticatedTelemedicineRoute
   '/_authenticated/vaccinations': typeof AuthenticatedVaccinationsRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
@@ -1038,7 +1064,9 @@ export interface FileRoutesById {
   '/_authenticated/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/_authenticated/patients/new': typeof AuthenticatedPatientsNewRoute
   '/_authenticated/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
+  '/_authenticated/staff/$id': typeof AuthenticatedStaffIdRoute
   '/discharge/$id/print': typeof DischargeIdPrintRoute
+  '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/_authenticated/billing/': typeof AuthenticatedBillingIndexRoute
   '/_authenticated/ipd/': typeof AuthenticatedIpdIndexRoute
@@ -1068,6 +1096,7 @@ export interface FileRouteTypes {
     | '/blood-bank'
     | '/branches'
     | '/cdss'
+    | '/change-password'
     | '/clinical-audits'
     | '/command-center'
     | '/communications'
@@ -1152,7 +1181,9 @@ export interface FileRouteTypes {
     | '/patients/$id'
     | '/patients/new'
     | '/pharmacy/medicines'
+    | '/staff/$id'
     | '/discharge/$id/print'
+    | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
     | '/billing/'
     | '/ipd/'
@@ -1179,6 +1210,7 @@ export interface FileRouteTypes {
     | '/blood-bank'
     | '/branches'
     | '/cdss'
+    | '/change-password'
     | '/clinical-audits'
     | '/command-center'
     | '/communications'
@@ -1260,7 +1292,9 @@ export interface FileRouteTypes {
     | '/patients/$id'
     | '/patients/new'
     | '/pharmacy/medicines'
+    | '/staff/$id'
     | '/discharge/$id/print'
+    | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
     | '/billing'
     | '/ipd'
@@ -1289,6 +1323,7 @@ export interface FileRouteTypes {
     | '/_authenticated/blood-bank'
     | '/_authenticated/branches'
     | '/_authenticated/cdss'
+    | '/_authenticated/change-password'
     | '/_authenticated/clinical-audits'
     | '/_authenticated/command-center'
     | '/_authenticated/communications'
@@ -1373,7 +1408,9 @@ export interface FileRouteTypes {
     | '/_authenticated/patients/$id'
     | '/_authenticated/patients/new'
     | '/_authenticated/pharmacy/medicines'
+    | '/_authenticated/staff/$id'
     | '/discharge/$id/print'
+    | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
     | '/_authenticated/billing/'
     | '/_authenticated/ipd/'
@@ -1389,6 +1426,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   DischargeIdPrintRoute: typeof DischargeIdPrintRoute
+  PatientCardIdPrintRoute: typeof PatientCardIdPrintRoute
   PrescriptionsIdPrintRoute: typeof PrescriptionsIdPrintRoute
   ApiPublicMobileExecKpisRoute: typeof ApiPublicMobileExecKpisRoute
 }
@@ -1892,6 +1930,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClinicalAuditsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/change-password': {
+      id: '/_authenticated/change-password'
+      path: '/change-password'
+      fullPath: '/change-password'
+      preLoaderRoute: typeof AuthenticatedChangePasswordRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/cdss': {
       id: '/_authenticated/cdss'
       path: '/cdss'
@@ -2032,12 +2077,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrescriptionsIdPrintRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/patient-card/$id/print': {
+      id: '/patient-card/$id/print'
+      path: '/patient-card/$id/print'
+      fullPath: '/patient-card/$id/print'
+      preLoaderRoute: typeof PatientCardIdPrintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/discharge/$id/print': {
       id: '/discharge/$id/print'
       path: '/discharge/$id/print'
       fullPath: '/discharge/$id/print'
       preLoaderRoute: typeof DischargeIdPrintRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/staff/$id': {
+      id: '/_authenticated/staff/$id'
+      path: '/$id'
+      fullPath: '/staff/$id'
+      preLoaderRoute: typeof AuthenticatedStaffIdRouteImport
+      parentRoute: typeof AuthenticatedStaffRoute
     }
     '/_authenticated/pharmacy/medicines': {
       id: '/_authenticated/pharmacy/medicines'
@@ -2281,6 +2340,17 @@ const AuthenticatedPharmacyRouteWithChildren =
     AuthenticatedPharmacyRouteChildren,
   )
 
+interface AuthenticatedStaffRouteChildren {
+  AuthenticatedStaffIdRoute: typeof AuthenticatedStaffIdRoute
+}
+
+const AuthenticatedStaffRouteChildren: AuthenticatedStaffRouteChildren = {
+  AuthenticatedStaffIdRoute: AuthenticatedStaffIdRoute,
+}
+
+const AuthenticatedStaffRouteWithChildren =
+  AuthenticatedStaffRoute._addFileChildren(AuthenticatedStaffRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAiAssistantRoute: typeof AuthenticatedAiAssistantRoute
   AuthenticatedAmbulanceRoute: typeof AuthenticatedAmbulanceRoute
@@ -2297,6 +2367,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBloodBankRoute: typeof AuthenticatedBloodBankRoute
   AuthenticatedBranchesRoute: typeof AuthenticatedBranchesRoute
   AuthenticatedCdssRoute: typeof AuthenticatedCdssRoute
+  AuthenticatedChangePasswordRoute: typeof AuthenticatedChangePasswordRoute
   AuthenticatedClinicalAuditsRoute: typeof AuthenticatedClinicalAuditsRoute
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
@@ -2359,7 +2430,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSecurityCenterRoute: typeof AuthenticatedSecurityCenterRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSmartStaffingRoute: typeof AuthenticatedSmartStaffingRoute
-  AuthenticatedStaffRoute: typeof AuthenticatedStaffRoute
+  AuthenticatedStaffRoute: typeof AuthenticatedStaffRouteWithChildren
   AuthenticatedTelemedicineRoute: typeof AuthenticatedTelemedicineRoute
   AuthenticatedVaccinationsRoute: typeof AuthenticatedVaccinationsRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
@@ -2387,6 +2458,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBloodBankRoute: AuthenticatedBloodBankRoute,
   AuthenticatedBranchesRoute: AuthenticatedBranchesRoute,
   AuthenticatedCdssRoute: AuthenticatedCdssRoute,
+  AuthenticatedChangePasswordRoute: AuthenticatedChangePasswordRoute,
   AuthenticatedClinicalAuditsRoute: AuthenticatedClinicalAuditsRoute,
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedCommunicationsRoute: AuthenticatedCommunicationsRoute,
@@ -2449,7 +2521,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSecurityCenterRoute: AuthenticatedSecurityCenterRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSmartStaffingRoute: AuthenticatedSmartStaffingRoute,
-  AuthenticatedStaffRoute: AuthenticatedStaffRoute,
+  AuthenticatedStaffRoute: AuthenticatedStaffRouteWithChildren,
   AuthenticatedTelemedicineRoute: AuthenticatedTelemedicineRoute,
   AuthenticatedVaccinationsRoute: AuthenticatedVaccinationsRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
@@ -2470,6 +2542,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   DischargeIdPrintRoute: DischargeIdPrintRoute,
+  PatientCardIdPrintRoute: PatientCardIdPrintRoute,
   PrescriptionsIdPrintRoute: PrescriptionsIdPrintRoute,
   ApiPublicMobileExecKpisRoute: ApiPublicMobileExecKpisRoute,
 }
