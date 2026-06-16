@@ -4741,24 +4741,33 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
+          login_disabled: boolean
+          password_changed: boolean
           phone: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id: string
+          login_disabled?: boolean
+          password_changed?: boolean
           phone?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
+          login_disabled?: boolean
+          password_changed?: boolean
           phone?: string | null
           updated_at?: string
         }
@@ -6500,6 +6509,7 @@ export type Database = {
         }
         Returns: string
       }
+      mark_password_changed: { Args: never; Returns: undefined }
     }
     Enums: {
       admission_status: "active" | "discharged" | "transferred" | "cancelled"
