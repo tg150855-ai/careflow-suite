@@ -392,13 +392,33 @@ export function PatientForm({
         </div>
       </Card>
 
-      <div className="flex justify-end gap-3 sticky bottom-0 bg-background py-4">
+      <div className="flex flex-wrap justify-end gap-3 sticky bottom-0 bg-background py-4 border-t">
         {onCancel && (
           <Button variant="ghost" type="button" onClick={onCancel}>
             Cancel
           </Button>
         )}
-        <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+        {(actions ?? []).map((a) => (
+          <Button
+            key={a.value}
+            type="submit"
+            variant={a.variant ?? "outline"}
+            disabled={form.formState.isSubmitting}
+            onClick={() => {
+              pendingActionRef.current = a.value;
+            }}
+          >
+            {a.label}
+          </Button>
+        ))}
+        <Button
+          type="submit"
+          size="lg"
+          disabled={form.formState.isSubmitting}
+          onClick={() => {
+            pendingActionRef.current = undefined;
+          }}
+        >
           {form.formState.isSubmitting && <Loader2 className="size-4 mr-2 animate-spin" />}
           {submitLabel}
         </Button>
