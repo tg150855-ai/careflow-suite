@@ -97,6 +97,7 @@ import { Route as AuthenticatedApiGatewayRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAmbulanceRouteImport } from './routes/_authenticated/ambulance'
 import { Route as AuthenticatedAiAssistantRouteImport } from './routes/_authenticated/ai-assistant'
 import { Route as AuthenticatedPharmacyIndexRouteImport } from './routes/_authenticated/pharmacy.index'
+import { Route as AuthenticatedPatientsIndexRouteImport } from './routes/_authenticated/patients.index'
 import { Route as AuthenticatedLaboratoryIndexRouteImport } from './routes/_authenticated/laboratory.index'
 import { Route as AuthenticatedIpdIndexRouteImport } from './routes/_authenticated/ipd.index'
 import { Route as AuthenticatedBillingIndexRouteImport } from './routes/_authenticated/billing.index'
@@ -590,6 +591,12 @@ const AuthenticatedPharmacyIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedPharmacyRoute,
   } as any)
+const AuthenticatedPatientsIndexRoute =
+  AuthenticatedPatientsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedPatientsRoute,
+  } as any)
 const AuthenticatedLaboratoryIndexRoute =
   AuthenticatedLaboratoryIndexRouteImport.update({
     id: '/',
@@ -843,6 +850,7 @@ export interface FileRoutesByFullPath {
   '/billing/': typeof AuthenticatedBillingIndexRoute
   '/ipd/': typeof AuthenticatedIpdIndexRoute
   '/laboratory/': typeof AuthenticatedLaboratoryIndexRoute
+  '/patients/': typeof AuthenticatedPatientsIndexRoute
   '/pharmacy/': typeof AuthenticatedPharmacyIndexRoute
   '/ipd/$id/discharge': typeof AuthenticatedIpdIdDischargeRoute
   '/pharmacy/sales/new': typeof AuthenticatedPharmacySalesNewRoute
@@ -905,7 +913,6 @@ export interface FileRoutesByTo {
   '/pacs': typeof AuthenticatedPacsRoute
   '/patient-portal': typeof AuthenticatedPatientPortalRoute
   '/patient-safety': typeof AuthenticatedPatientSafetyRoute
-  '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/payments-online': typeof AuthenticatedPaymentsOnlineRoute
   '/performance': typeof AuthenticatedPerformanceRoute
   '/pharmacy-intel': typeof AuthenticatedPharmacyIntelRoute
@@ -954,6 +961,7 @@ export interface FileRoutesByTo {
   '/billing': typeof AuthenticatedBillingIndexRoute
   '/ipd': typeof AuthenticatedIpdIndexRoute
   '/laboratory': typeof AuthenticatedLaboratoryIndexRoute
+  '/patients': typeof AuthenticatedPatientsIndexRoute
   '/pharmacy': typeof AuthenticatedPharmacyIndexRoute
   '/ipd/$id/discharge': typeof AuthenticatedIpdIdDischargeRoute
   '/pharmacy/sales/new': typeof AuthenticatedPharmacySalesNewRoute
@@ -1071,6 +1079,7 @@ export interface FileRoutesById {
   '/_authenticated/billing/': typeof AuthenticatedBillingIndexRoute
   '/_authenticated/ipd/': typeof AuthenticatedIpdIndexRoute
   '/_authenticated/laboratory/': typeof AuthenticatedLaboratoryIndexRoute
+  '/_authenticated/patients/': typeof AuthenticatedPatientsIndexRoute
   '/_authenticated/pharmacy/': typeof AuthenticatedPharmacyIndexRoute
   '/_authenticated/ipd/$id/discharge': typeof AuthenticatedIpdIdDischargeRoute
   '/_authenticated/pharmacy/sales/new': typeof AuthenticatedPharmacySalesNewRoute
@@ -1188,6 +1197,7 @@ export interface FileRouteTypes {
     | '/billing/'
     | '/ipd/'
     | '/laboratory/'
+    | '/patients/'
     | '/pharmacy/'
     | '/ipd/$id/discharge'
     | '/pharmacy/sales/new'
@@ -1250,7 +1260,6 @@ export interface FileRouteTypes {
     | '/pacs'
     | '/patient-portal'
     | '/patient-safety'
-    | '/patients'
     | '/payments-online'
     | '/performance'
     | '/pharmacy-intel'
@@ -1299,6 +1308,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/ipd'
     | '/laboratory'
+    | '/patients'
     | '/pharmacy'
     | '/ipd/$id/discharge'
     | '/pharmacy/sales/new'
@@ -1415,6 +1425,7 @@ export interface FileRouteTypes {
     | '/_authenticated/billing/'
     | '/_authenticated/ipd/'
     | '/_authenticated/laboratory/'
+    | '/_authenticated/patients/'
     | '/_authenticated/pharmacy/'
     | '/_authenticated/ipd/$id/discharge'
     | '/_authenticated/pharmacy/sales/new'
@@ -2049,6 +2060,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPharmacyIndexRouteImport
       parentRoute: typeof AuthenticatedPharmacyRoute
     }
+    '/_authenticated/patients/': {
+      id: '/_authenticated/patients/'
+      path: '/'
+      fullPath: '/patients/'
+      preLoaderRoute: typeof AuthenticatedPatientsIndexRouteImport
+      parentRoute: typeof AuthenticatedPatientsRoute
+    }
     '/_authenticated/laboratory/': {
       id: '/_authenticated/laboratory/'
       path: '/'
@@ -2311,11 +2329,13 @@ const AuthenticatedOpdRouteWithChildren =
 interface AuthenticatedPatientsRouteChildren {
   AuthenticatedPatientsIdRoute: typeof AuthenticatedPatientsIdRoute
   AuthenticatedPatientsNewRoute: typeof AuthenticatedPatientsNewRoute
+  AuthenticatedPatientsIndexRoute: typeof AuthenticatedPatientsIndexRoute
 }
 
 const AuthenticatedPatientsRouteChildren: AuthenticatedPatientsRouteChildren = {
   AuthenticatedPatientsIdRoute: AuthenticatedPatientsIdRoute,
   AuthenticatedPatientsNewRoute: AuthenticatedPatientsNewRoute,
+  AuthenticatedPatientsIndexRoute: AuthenticatedPatientsIndexRoute,
 }
 
 const AuthenticatedPatientsRouteWithChildren =
@@ -2549,13 +2569,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
