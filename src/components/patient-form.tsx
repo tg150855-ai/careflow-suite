@@ -250,7 +250,7 @@ export function PatientForm({
   }
 
   return (
-    <form onSubmit={form.handleSubmit(submit)} className="space-y-5">
+    <form onSubmit={form.handleSubmit(submit)} className="space-y-5 pb-24">
       <Card className="p-6 space-y-5">
         <h2 className="font-semibold">Basic information</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
