@@ -2646,6 +2646,81 @@ export type Database = {
         }
         Relationships: []
       }
+      hospital_settings: {
+        Row: {
+          accent_color: string | null
+          address: string | null
+          billing: Json
+          created_at: string
+          departments: Json
+          email: string | null
+          gst_no: string | null
+          hospital_name: string
+          id: string
+          logo_url: string | null
+          messaging: Json
+          nabh_no: string | null
+          phone: string | null
+          prescription: Json
+          primary_color: string | null
+          printers: Json
+          registration_no: string | null
+          secondary_color: string | null
+          security: Json
+          tagline: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          address?: string | null
+          billing?: Json
+          created_at?: string
+          departments?: Json
+          email?: string | null
+          gst_no?: string | null
+          hospital_name?: string
+          id?: string
+          logo_url?: string | null
+          messaging?: Json
+          nabh_no?: string | null
+          phone?: string | null
+          prescription?: Json
+          primary_color?: string | null
+          printers?: Json
+          registration_no?: string | null
+          secondary_color?: string | null
+          security?: Json
+          tagline?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          address?: string | null
+          billing?: Json
+          created_at?: string
+          departments?: Json
+          email?: string | null
+          gst_no?: string | null
+          hospital_name?: string
+          id?: string
+          logo_url?: string | null
+          messaging?: Json
+          nabh_no?: string | null
+          phone?: string | null
+          prescription?: Json
+          primary_color?: string | null
+          printers?: Json
+          registration_no?: string | null
+          secondary_color?: string | null
+          security?: Json
+          tagline?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       icu_alerts: {
         Row: {
           alert_type: string

@@ -250,7 +250,7 @@ export function PatientForm({
   }
 
   return (
-    <form onSubmit={form.handleSubmit(submit)} className="space-y-5">
+    <form onSubmit={form.handleSubmit(submit)} className="space-y-5 pb-20">
       <Card className="p-6 space-y-5">
         <h2 className="font-semibold">Basic information</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -392,36 +392,39 @@ export function PatientForm({
         </div>
       </Card>
 
-      <div className="flex flex-wrap justify-end gap-3 sticky bottom-0 bg-background py-4 border-t">
-        {onCancel && (
-          <Button variant="ghost" type="button" onClick={onCancel}>
-            Cancel
-          </Button>
-        )}
-        {(actions ?? []).map((a) => (
+      <div className="sticky bottom-0 -mx-6 lg:-mx-8 px-6 lg:px-8 z-20 bg-background/95 backdrop-blur border-t shadow-[0_-2px_8px_-2px_rgba(0,0,0,0.08)]">
+        <div className="py-3 flex flex-wrap justify-end gap-3">
+
+          {onCancel && (
+            <Button variant="ghost" type="button" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          {(actions ?? []).map((a) => (
+            <Button
+              key={a.value}
+              type="submit"
+              variant={a.variant ?? "outline"}
+              disabled={form.formState.isSubmitting}
+              onClick={() => {
+                pendingActionRef.current = a.value;
+              }}
+            >
+              {a.label}
+            </Button>
+          ))}
           <Button
-            key={a.value}
             type="submit"
-            variant={a.variant ?? "outline"}
+            size="lg"
             disabled={form.formState.isSubmitting}
             onClick={() => {
-              pendingActionRef.current = a.value;
+              pendingActionRef.current = undefined;
             }}
           >
-            {a.label}
+            {form.formState.isSubmitting && <Loader2 className="size-4 mr-2 animate-spin" />}
+            {submitLabel}
           </Button>
-        ))}
-        <Button
-          type="submit"
-          size="lg"
-          disabled={form.formState.isSubmitting}
-          onClick={() => {
-            pendingActionRef.current = undefined;
-          }}
-        >
-          {form.formState.isSubmitting && <Loader2 className="size-4 mr-2 animate-spin" />}
-          {submitLabel}
-        </Button>
+        </div>
       </div>
     </form>
   );
