@@ -38,6 +38,7 @@ import { Route as AuthenticatedPharmacyIntelRouteImport } from './routes/_authen
 import { Route as AuthenticatedPharmacyRouteImport } from './routes/_authenticated/pharmacy'
 import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenticated/performance'
 import { Route as AuthenticatedPaymentsOnlineRouteImport } from './routes/_authenticated/payments-online'
+import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticated/patients'
 import { Route as AuthenticatedPatientSafetyRouteImport } from './routes/_authenticated/patient-safety'
 import { Route as AuthenticatedPatientPortalRouteImport } from './routes/_authenticated/patient-portal'
 import { Route as AuthenticatedPacsRouteImport } from './routes/_authenticated/pacs'
@@ -279,6 +280,11 @@ const AuthenticatedPaymentsOnlineRoute =
     path: '/payments-online',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPatientsRoute = AuthenticatedPatientsRouteImport.update({
+  id: '/patients',
+  path: '/patients',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedPatientSafetyRoute =
   AuthenticatedPatientSafetyRouteImport.update({
     id: '/patient-safety',
@@ -587,9 +593,9 @@ const AuthenticatedPharmacyIndexRoute =
   } as any)
 const AuthenticatedPatientsIndexRoute =
   AuthenticatedPatientsIndexRouteImport.update({
-    id: '/patients/',
-    path: '/patients/',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedPatientsRoute,
   } as any)
 const AuthenticatedLaboratoryIndexRoute =
   AuthenticatedLaboratoryIndexRouteImport.update({
@@ -636,14 +642,14 @@ const AuthenticatedPharmacyMedicinesRoute =
   } as any)
 const AuthenticatedPatientsNewRoute =
   AuthenticatedPatientsNewRouteImport.update({
-    id: '/patients/new',
-    path: '/patients/new',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedPatientsRoute,
   } as any)
 const AuthenticatedPatientsIdRoute = AuthenticatedPatientsIdRouteImport.update({
-  id: '/patients/$id',
-  path: '/patients/$id',
-  getParentRoute: () => AuthenticatedRoute,
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedPatientsRoute,
 } as any)
 const AuthenticatedOpdAppointmentIdRoute =
   AuthenticatedOpdAppointmentIdRouteImport.update({
@@ -794,6 +800,7 @@ export interface FileRoutesByFullPath {
   '/pacs': typeof AuthenticatedPacsRoute
   '/patient-portal': typeof AuthenticatedPatientPortalRoute
   '/patient-safety': typeof AuthenticatedPatientSafetyRoute
+  '/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/payments-online': typeof AuthenticatedPaymentsOnlineRoute
   '/performance': typeof AuthenticatedPerformanceRoute
   '/pharmacy': typeof AuthenticatedPharmacyRouteWithChildren
@@ -1022,6 +1029,7 @@ export interface FileRoutesById {
   '/_authenticated/pacs': typeof AuthenticatedPacsRoute
   '/_authenticated/patient-portal': typeof AuthenticatedPatientPortalRoute
   '/_authenticated/patient-safety': typeof AuthenticatedPatientSafetyRoute
+  '/_authenticated/patients': typeof AuthenticatedPatientsRouteWithChildren
   '/_authenticated/payments-online': typeof AuthenticatedPaymentsOnlineRoute
   '/_authenticated/performance': typeof AuthenticatedPerformanceRoute
   '/_authenticated/pharmacy': typeof AuthenticatedPharmacyRouteWithChildren
@@ -1139,6 +1147,7 @@ export interface FileRouteTypes {
     | '/pacs'
     | '/patient-portal'
     | '/patient-safety'
+    | '/patients'
     | '/payments-online'
     | '/performance'
     | '/pharmacy'
@@ -1366,6 +1375,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pacs'
     | '/_authenticated/patient-portal'
     | '/_authenticated/patient-safety'
+    | '/_authenticated/patients'
     | '/_authenticated/payments-online'
     | '/_authenticated/performance'
     | '/_authenticated/pharmacy'
@@ -1635,6 +1645,13 @@ declare module '@tanstack/react-router' {
       path: '/payments-online'
       fullPath: '/payments-online'
       preLoaderRoute: typeof AuthenticatedPaymentsOnlineRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/patients': {
+      id: '/_authenticated/patients'
+      path: '/patients'
+      fullPath: '/patients'
+      preLoaderRoute: typeof AuthenticatedPatientsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/patient-safety': {
@@ -2045,10 +2062,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/patients/': {
       id: '/_authenticated/patients/'
-      path: '/patients'
+      path: '/'
       fullPath: '/patients/'
       preLoaderRoute: typeof AuthenticatedPatientsIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedPatientsRoute
     }
     '/_authenticated/laboratory/': {
       id: '/_authenticated/laboratory/'
@@ -2108,17 +2125,17 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/patients/new': {
       id: '/_authenticated/patients/new'
-      path: '/patients/new'
+      path: '/new'
       fullPath: '/patients/new'
       preLoaderRoute: typeof AuthenticatedPatientsNewRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedPatientsRoute
     }
     '/_authenticated/patients/$id': {
       id: '/_authenticated/patients/$id'
-      path: '/patients/$id'
+      path: '/$id'
       fullPath: '/patients/$id'
       preLoaderRoute: typeof AuthenticatedPatientsIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedPatientsRoute
     }
     '/_authenticated/opd/$appointmentId': {
       id: '/_authenticated/opd/$appointmentId'
@@ -2309,6 +2326,23 @@ const AuthenticatedOpdRouteChildren: AuthenticatedOpdRouteChildren = {
 const AuthenticatedOpdRouteWithChildren =
   AuthenticatedOpdRoute._addFileChildren(AuthenticatedOpdRouteChildren)
 
+interface AuthenticatedPatientsRouteChildren {
+  AuthenticatedPatientsIdRoute: typeof AuthenticatedPatientsIdRoute
+  AuthenticatedPatientsNewRoute: typeof AuthenticatedPatientsNewRoute
+  AuthenticatedPatientsIndexRoute: typeof AuthenticatedPatientsIndexRoute
+}
+
+const AuthenticatedPatientsRouteChildren: AuthenticatedPatientsRouteChildren = {
+  AuthenticatedPatientsIdRoute: AuthenticatedPatientsIdRoute,
+  AuthenticatedPatientsNewRoute: AuthenticatedPatientsNewRoute,
+  AuthenticatedPatientsIndexRoute: AuthenticatedPatientsIndexRoute,
+}
+
+const AuthenticatedPatientsRouteWithChildren =
+  AuthenticatedPatientsRoute._addFileChildren(
+    AuthenticatedPatientsRouteChildren,
+  )
+
 interface AuthenticatedPharmacyRouteChildren {
   AuthenticatedPharmacyMedicinesRoute: typeof AuthenticatedPharmacyMedicinesRoute
   AuthenticatedPharmacyIndexRoute: typeof AuthenticatedPharmacyIndexRoute
@@ -2395,6 +2429,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPacsRoute: typeof AuthenticatedPacsRoute
   AuthenticatedPatientPortalRoute: typeof AuthenticatedPatientPortalRoute
   AuthenticatedPatientSafetyRoute: typeof AuthenticatedPatientSafetyRoute
+  AuthenticatedPatientsRoute: typeof AuthenticatedPatientsRouteWithChildren
   AuthenticatedPaymentsOnlineRoute: typeof AuthenticatedPaymentsOnlineRoute
   AuthenticatedPerformanceRoute: typeof AuthenticatedPerformanceRoute
   AuthenticatedPharmacyRoute: typeof AuthenticatedPharmacyRouteWithChildren
@@ -2425,9 +2460,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHrEmployeesRoute: typeof AuthenticatedHrEmployeesRoute
   AuthenticatedHrLeaveRoute: typeof AuthenticatedHrLeaveRoute
   AuthenticatedHrPayrollRoute: typeof AuthenticatedHrPayrollRoute
-  AuthenticatedPatientsIdRoute: typeof AuthenticatedPatientsIdRoute
-  AuthenticatedPatientsNewRoute: typeof AuthenticatedPatientsNewRoute
-  AuthenticatedPatientsIndexRoute: typeof AuthenticatedPatientsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -2488,6 +2520,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPacsRoute: AuthenticatedPacsRoute,
   AuthenticatedPatientPortalRoute: AuthenticatedPatientPortalRoute,
   AuthenticatedPatientSafetyRoute: AuthenticatedPatientSafetyRoute,
+  AuthenticatedPatientsRoute: AuthenticatedPatientsRouteWithChildren,
   AuthenticatedPaymentsOnlineRoute: AuthenticatedPaymentsOnlineRoute,
   AuthenticatedPerformanceRoute: AuthenticatedPerformanceRoute,
   AuthenticatedPharmacyRoute: AuthenticatedPharmacyRouteWithChildren,
@@ -2518,9 +2551,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHrEmployeesRoute: AuthenticatedHrEmployeesRoute,
   AuthenticatedHrLeaveRoute: AuthenticatedHrLeaveRoute,
   AuthenticatedHrPayrollRoute: AuthenticatedHrPayrollRoute,
-  AuthenticatedPatientsIdRoute: AuthenticatedPatientsIdRoute,
-  AuthenticatedPatientsNewRoute: AuthenticatedPatientsNewRoute,
-  AuthenticatedPatientsIndexRoute: AuthenticatedPatientsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
