@@ -392,8 +392,9 @@ export function PatientForm({
         </div>
       </Card>
 
-      <div className="fixed bottom-0 left-0 right-0 md:left-[264px] z-20 bg-background/95 backdrop-blur border-t shadow-[0_-2px_8px_-2px_rgba(0,0,0,0.08)]">
-        <div className="max-w-4xl mx-auto px-6 py-3 flex flex-wrap justify-end gap-3">
+      <div className="sticky bottom-0 -mx-6 lg:-mx-8 px-6 lg:px-8 z-20 bg-background/95 backdrop-blur border-t shadow-[0_-2px_8px_-2px_rgba(0,0,0,0.08)]">
+        <div className="py-3 flex flex-wrap justify-end gap-3">
+
           {onCancel && (
             <Button variant="ghost" type="button" onClick={onCancel}>
               Cancel
