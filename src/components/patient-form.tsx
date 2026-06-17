@@ -392,36 +392,38 @@ export function PatientForm({
         </div>
       </Card>
 
-      <div className="flex flex-wrap justify-end gap-3 sticky bottom-0 bg-background py-4 border-t">
-        {onCancel && (
-          <Button variant="ghost" type="button" onClick={onCancel}>
-            Cancel
-          </Button>
-        )}
-        {(actions ?? []).map((a) => (
+      <div className="fixed bottom-0 left-0 right-0 md:left-[264px] z-20 bg-background/95 backdrop-blur border-t shadow-[0_-2px_8px_-2px_rgba(0,0,0,0.08)]">
+        <div className="max-w-4xl mx-auto px-6 py-3 flex flex-wrap justify-end gap-3">
+          {onCancel && (
+            <Button variant="ghost" type="button" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          {(actions ?? []).map((a) => (
+            <Button
+              key={a.value}
+              type="submit"
+              variant={a.variant ?? "outline"}
+              disabled={form.formState.isSubmitting}
+              onClick={() => {
+                pendingActionRef.current = a.value;
+              }}
+            >
+              {a.label}
+            </Button>
+          ))}
           <Button
-            key={a.value}
             type="submit"
-            variant={a.variant ?? "outline"}
+            size="lg"
             disabled={form.formState.isSubmitting}
             onClick={() => {
-              pendingActionRef.current = a.value;
+              pendingActionRef.current = undefined;
             }}
           >
-            {a.label}
+            {form.formState.isSubmitting && <Loader2 className="size-4 mr-2 animate-spin" />}
+            {submitLabel}
           </Button>
-        ))}
-        <Button
-          type="submit"
-          size="lg"
-          disabled={form.formState.isSubmitting}
-          onClick={() => {
-            pendingActionRef.current = undefined;
-          }}
-        >
-          {form.formState.isSubmitting && <Loader2 className="size-4 mr-2 animate-spin" />}
-          {submitLabel}
-        </Button>
+        </div>
       </div>
     </form>
   );
