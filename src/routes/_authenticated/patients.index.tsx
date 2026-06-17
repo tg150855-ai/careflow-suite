@@ -31,7 +31,7 @@ import { logAudit } from "@/lib/audit";
 import { useAuth } from "@/lib/auth-context";
 import { can } from "@/lib/permissions";
 
-export const Route = createFileRoute("/_authenticated/patients")({ component: PatientsPage });
+export const Route = createFileRoute("/_authenticated/patients/")({ component: PatientsPage });
 
 function PatientsPage() {
   const [q, setQ] = useState("");
