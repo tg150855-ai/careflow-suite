@@ -1,19 +1,5 @@
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import {
-  Outlet,
-  Link,
-  createRootRouteWithContext,
-  useRouter,
-  HeadContent,
-  Scripts,
-} from "@tanstack/react-router";
-import { useEffect } from "react";
-
-import appCss from "../styles.css?url";
-import { AuthProvider } from "@/lib/auth-context";
-import { supabase } from "@/integrations/supabase/client";
-import { Toaster } from "@/components/ui/sonner";
-import logoAsset from "@/assets/sbg-arogya-plus-logo.png.asset.json";
+import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
 
 function NotFoundComponent() {
   return (
@@ -64,71 +50,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SBG Arogya Plus — Hospital Management Suite" },
-      { name: "description", content: "SBG Arogya Plus — a modern Hospital Management & Healthcare ERP platform for multi-specialty hospitals." },
-      { name: "theme-color", content: "#1e40af" },
-      { property: "og:title", content: "SBG Arogya Plus — Hospital Management Suite" },
-      { property: "og:description", content: "SBG Arogya Plus — a modern Hospital Management & Healthcare ERP platform for multi-specialty hospitals." },
-      { property: "og:image", content: logoAsset.url },
-      { name: "twitter:title", content: "SBG Arogya Plus — Hospital Management Suite" },
-      { name: "twitter:description", content: "SBG Arogya Plus — a modern Hospital Management & Healthcare ERP platform for multi-specialty hospitals." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f7ce9e8b-e563-449f-845b-4f4bec6217b5/id-preview-da373d8a--05cdb149-8f51-47a4-8aba-fae983ab8895.lovable.app-1781679660263.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f7ce9e8b-e563-449f-845b-4f4bec6217b5/id-preview-da373d8a--05cdb149-8f51-47a4-8aba-fae983ab8895.lovable.app-1781679660263.png" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:type", content: "website" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", type: "image/png", href: logoAsset.url },
-      { rel: "apple-touch-icon", href: logoAsset.url },
-    ],
-  }),
-  shellComponent: RootShell,
-  component: RootComponent,
+  component: () => <Outlet />,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
-function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AuthInvalidator />
-        <Outlet />
-        <Toaster richColors closeButton position="top-right" />
-      </AuthProvider>
-    </QueryClientProvider>
-  );
-}
-
-function AuthInvalidator() {
-  const router = useRouter();
-  const qc = useQueryClient();
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      router.invalidate();
-      qc.invalidateQueries();
-    });
-    return () => subscription.unsubscribe();
-  }, [router, qc]);
-  return null;
-}
