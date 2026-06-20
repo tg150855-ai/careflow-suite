@@ -123,7 +123,6 @@ import { Route as AuthenticatedBillingNewRouteImport } from './routes/_authentic
 import { Route as AuthenticatedBillingIdRouteImport } from './routes/_authenticated/billing.$id'
 import { Route as AuthenticatedPharmacySalesNewRouteImport } from './routes/_authenticated/pharmacy.sales.new'
 import { Route as AuthenticatedIpdIdDischargeRouteImport } from './routes/_authenticated/ipd.$id.discharge'
-import { Route as ApiPublicMobileExecKpisRouteImport } from './routes/api/public/mobile/exec/kpis'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -734,11 +733,6 @@ const AuthenticatedIpdIdDischargeRoute =
     path: '/discharge',
     getParentRoute: () => AuthenticatedIpdIdRoute,
   } as any)
-const ApiPublicMobileExecKpisRoute = ApiPublicMobileExecKpisRouteImport.update({
-  id: '/api/public/mobile/exec/kpis',
-  path: '/api/public/mobile/exec/kpis',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -854,7 +848,6 @@ export interface FileRoutesByFullPath {
   '/pharmacy/': typeof AuthenticatedPharmacyIndexRoute
   '/ipd/$id/discharge': typeof AuthenticatedIpdIdDischargeRoute
   '/pharmacy/sales/new': typeof AuthenticatedPharmacySalesNewRoute
-  '/api/public/mobile/exec/kpis': typeof ApiPublicMobileExecKpisRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -965,7 +958,6 @@ export interface FileRoutesByTo {
   '/pharmacy': typeof AuthenticatedPharmacyIndexRoute
   '/ipd/$id/discharge': typeof AuthenticatedIpdIdDischargeRoute
   '/pharmacy/sales/new': typeof AuthenticatedPharmacySalesNewRoute
-  '/api/public/mobile/exec/kpis': typeof ApiPublicMobileExecKpisRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1083,7 +1075,6 @@ export interface FileRoutesById {
   '/_authenticated/pharmacy/': typeof AuthenticatedPharmacyIndexRoute
   '/_authenticated/ipd/$id/discharge': typeof AuthenticatedIpdIdDischargeRoute
   '/_authenticated/pharmacy/sales/new': typeof AuthenticatedPharmacySalesNewRoute
-  '/api/public/mobile/exec/kpis': typeof ApiPublicMobileExecKpisRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1201,7 +1192,6 @@ export interface FileRouteTypes {
     | '/pharmacy/'
     | '/ipd/$id/discharge'
     | '/pharmacy/sales/new'
-    | '/api/public/mobile/exec/kpis'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1312,7 +1302,6 @@ export interface FileRouteTypes {
     | '/pharmacy'
     | '/ipd/$id/discharge'
     | '/pharmacy/sales/new'
-    | '/api/public/mobile/exec/kpis'
   id:
     | '__root__'
     | '/'
@@ -1429,7 +1418,6 @@ export interface FileRouteTypes {
     | '/_authenticated/pharmacy/'
     | '/_authenticated/ipd/$id/discharge'
     | '/_authenticated/pharmacy/sales/new'
-    | '/api/public/mobile/exec/kpis'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1439,7 +1427,6 @@ export interface RootRouteChildren {
   DischargeIdPrintRoute: typeof DischargeIdPrintRoute
   PatientCardIdPrintRoute: typeof PatientCardIdPrintRoute
   PrescriptionsIdPrintRoute: typeof PrescriptionsIdPrintRoute
-  ApiPublicMobileExecKpisRoute: typeof ApiPublicMobileExecKpisRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2242,13 +2229,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIpdIdDischargeRouteImport
       parentRoute: typeof AuthenticatedIpdIdRoute
     }
-    '/api/public/mobile/exec/kpis': {
-      id: '/api/public/mobile/exec/kpis'
-      path: '/api/public/mobile/exec/kpis'
-      fullPath: '/api/public/mobile/exec/kpis'
-      preLoaderRoute: typeof ApiPublicMobileExecKpisRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -2564,7 +2544,6 @@ const rootRouteChildren: RootRouteChildren = {
   DischargeIdPrintRoute: DischargeIdPrintRoute,
   PatientCardIdPrintRoute: PatientCardIdPrintRoute,
   PrescriptionsIdPrintRoute: PrescriptionsIdPrintRoute,
-  ApiPublicMobileExecKpisRoute: ApiPublicMobileExecKpisRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
