@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +36,7 @@ function StaffDirectory() {
   const { hasAnyRole } = useAuth();
   const isAdmin = hasAnyRole(["admin", "super_admin"]);
   const qc = useQueryClient();
-  const create = useServerFn(createStaff);
+  const create = createStaff;
 
   const [q, setQ] = useState("");
   const [dept, setDept] = useState<string>("all");

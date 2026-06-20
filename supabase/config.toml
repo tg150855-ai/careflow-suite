@@ -1,1 +1,7 @@
 project_id = "cqhhfbmrnstqnjvmgiss"
+
+[functions.staff-admin]
+verify_jwt = true
+
+[functions.mobile-exec-kpis]
+verify_jwt = false

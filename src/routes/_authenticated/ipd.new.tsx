@@ -16,7 +16,10 @@ import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/ipd/new")({
   component: NewAdmission,
-  validateSearch: (s: Record<string, unknown>) => ({ patientId: typeof s.patientId === "string" ? s.patientId : undefined }),
+  validateSearch: (s: Record<string, unknown>): { patientId?: string } => {
+    const patientId = typeof s.patientId === "string" ? s.patientId : undefined;
+    return patientId !== undefined ? { patientId } : {};
+  },
 });
 
 const Schema = z.object({
