@@ -54,9 +54,10 @@ import { PatientForm, type PatientSubmission } from "@/components/patient-form";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/patients/$id")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    edit: typeof search.edit === "string" ? search.edit : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { edit?: string } => {
+    const edit = typeof search.edit === "string" ? search.edit : undefined;
+    return edit !== undefined ? { edit } : {};
+  },
   component: PatientWorkspace,
 });
 
