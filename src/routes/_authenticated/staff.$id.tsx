@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,9 +30,9 @@ function StaffProfile() {
   const { hasAnyRole } = useAuth();
   const isAdmin = hasAnyRole(["admin", "super_admin"]);
   const qc = useQueryClient();
-  const resetPw = useServerFn(resetStaffPassword);
-  const toggleLogin = useServerFn(toggleStaffLogin);
-  const setRole = useServerFn(changeStaffRole);
+  const resetPw = resetStaffPassword;
+  const toggleLogin = toggleStaffLogin;
+  const setRole = changeStaffRole;
 
   const [pwOpen, setPwOpen] = useState(false);
   const [newPw, setNewPw] = useState("");
