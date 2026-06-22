@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HealthCheckRouteImport } from './routes/health-check'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWhatsappRouteImport } from './routes/_authenticated/whatsapp'
@@ -127,6 +128,11 @@ import { Route as AuthenticatedIpdIdDischargeRouteImport } from './routes/_authe
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthCheckRoute = HealthCheckRouteImport.update({
+  id: '/health-check',
+  path: '/health-check',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -736,6 +742,7 @@ const AuthenticatedIpdIdDischargeRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/health-check': typeof HealthCheckRoute
   '/login': typeof LoginRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/ambulance': typeof AuthenticatedAmbulanceRoute
@@ -851,6 +858,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/health-check': typeof HealthCheckRoute
   '/login': typeof LoginRoute
   '/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/ambulance': typeof AuthenticatedAmbulanceRoute
@@ -963,6 +971,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/health-check': typeof HealthCheckRoute
   '/login': typeof LoginRoute
   '/_authenticated/ai-assistant': typeof AuthenticatedAiAssistantRoute
   '/_authenticated/ambulance': typeof AuthenticatedAmbulanceRoute
@@ -1080,6 +1089,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/health-check'
     | '/login'
     | '/ai-assistant'
     | '/ambulance'
@@ -1195,6 +1205,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/health-check'
     | '/login'
     | '/ai-assistant'
     | '/ambulance'
@@ -1306,6 +1317,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/health-check'
     | '/login'
     | '/_authenticated/ai-assistant'
     | '/_authenticated/ambulance'
@@ -1423,6 +1435,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  HealthCheckRoute: typeof HealthCheckRoute
   LoginRoute: typeof LoginRoute
   DischargeIdPrintRoute: typeof DischargeIdPrintRoute
   PatientCardIdPrintRoute: typeof PatientCardIdPrintRoute
@@ -1436,6 +1449,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/health-check': {
+      id: '/health-check'
+      path: '/health-check'
+      fullPath: '/health-check'
+      preLoaderRoute: typeof HealthCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -2540,6 +2560,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  HealthCheckRoute: HealthCheckRoute,
   LoginRoute: LoginRoute,
   DischargeIdPrintRoute: DischargeIdPrintRoute,
   PatientCardIdPrintRoute: PatientCardIdPrintRoute,
