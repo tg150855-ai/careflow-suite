@@ -48,7 +48,10 @@ function PrintRx() {
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-4 py-4 text-sm border-b">
+      <h1 className="sr-only">Medical Prescription for {v.patients?.full_name}</h1>
+
+      <section aria-labelledby="rx-patient-heading" className="grid grid-cols-2 gap-4 py-4 text-sm border-b">
+        <h2 id="rx-patient-heading" className="sr-only col-span-2">Patient details</h2>
         <div><span className="text-gray-500 text-xs uppercase">Patient: </span>{v.patients?.full_name}</div>
         <div><span className="text-gray-500 text-xs uppercase">UHID: </span>{v.patients?.uhid}</div>
         <div><span className="text-gray-500 text-xs uppercase">Gender: </span><span className="capitalize">{v.patients?.gender}</span></div>
@@ -57,13 +60,14 @@ function PrintRx() {
 
       {v.diagnosis && (
         <section className="py-4 border-b">
-          <div className="text-xs uppercase text-gray-500 mb-1">Diagnosis</div>
+          <h2 className="text-xs uppercase text-gray-500 mb-1 font-normal">Diagnosis</h2>
           <div className="text-sm">{v.diagnosis}</div>
         </section>
       )}
 
-      <section className="py-4">
-        <div className="text-2xl font-serif italic mb-3">℞</div>
+      <section aria-labelledby="rx-medicines-heading" className="py-4">
+        <h2 id="rx-medicines-heading" className="sr-only">Prescribed medicines</h2>
+        <div aria-hidden="true" className="text-2xl font-serif italic mb-3">℞</div>
         <ol className="space-y-3">
           {data.items.map((it: any, i: number) => (
             <li key={it.id} className="border-b border-dashed pb-2 text-sm">
@@ -79,7 +83,7 @@ function PrintRx() {
 
       {v.notes && (
         <section className="py-3 border-t text-sm">
-          <div className="text-xs uppercase text-gray-500 mb-1">Advice</div>
+          <h2 className="text-xs uppercase text-gray-500 mb-1 font-normal">Advice</h2>
           <div>{v.notes}</div>
         </section>
       )}
