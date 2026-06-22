@@ -1,0 +1,10 @@
+# SBG Arogya Plus
+
+> A modern Hospital Management & Healthcare ERP platform for multi-specialty hospitals — OPD, IPD, pharmacy, lab, billing, insurance, HR, and analytics in one integrated workspace.
+
+SBG Arogya Plus is a secure, role-based hospital information system used by clinicians, nurses, pharmacists, lab technicians, accountants, and administrators. The product surface is sign-in only; the pages below are the public entry points.
+
+## Pages
+
+- [Home](/): Product landing — redirects authenticated users to the dashboard.
+- [Sign in](/login): Sign in or request access to the hospital workspace.

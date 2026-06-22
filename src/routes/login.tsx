@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Loader2, ShieldCheck, Activity, Stethoscope } from "lucide-react";
 import { z } from "zod";
@@ -71,6 +72,15 @@ function LoginPage() {
   }
 
   return (
+    <>
+      <Helmet>
+        <title>Sign in — SBG Arogya Plus</title>
+        <meta name="description" content="Sign in to SBG Arogya Plus, the hospital management workspace for OPD, IPD, pharmacy, lab, and billing." />
+        <link rel="canonical" href="https://cura-swift-care.lovable.app/login" />
+        <meta property="og:title" content="Sign in — SBG Arogya Plus" />
+        <meta property="og:description" content="Sign in to SBG Arogya Plus, the hospital management workspace for OPD, IPD, pharmacy, lab, and billing." />
+        <meta property="og:url" content="https://cura-swift-care.lovable.app/login" />
+      </Helmet>
     <div className="min-h-screen w-full grid lg:grid-cols-2 bg-background">
       {/* Left brand panel */}
       <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden text-primary-foreground"
@@ -175,6 +185,7 @@ function LoginPage() {
         </motion.div>
       </div>
     </div>
+    </>
   );
 }
 

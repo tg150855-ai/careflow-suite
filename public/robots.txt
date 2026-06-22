@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /patients
+Disallow: /staff
+Disallow: /ipd
+Disallow: /opd
+Disallow: /pharmacy
+Disallow: /lab
+Disallow: /billing
+Disallow: /admin
+Disallow: /settings
+Disallow: /health-check
+Disallow: /prescriptions/
+Disallow: /discharge/
+Disallow: /patient-card/
+
+Sitemap: https://cura-swift-care.lovable.app/sitemap.xml

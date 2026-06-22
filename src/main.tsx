@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 
 import "./styles.css";
 import { routeTree } from "./routeTree.gen";
@@ -46,13 +47,15 @@ function AuthInvalidator() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AuthInvalidator />
-        <RouterProvider router={router} />
-        <Toaster richColors closeButton position="top-right" />
-      </AuthProvider>
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AuthInvalidator />
+          <RouterProvider router={router} />
+          <Toaster richColors closeButton position="top-right" />
+        </AuthProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 
