@@ -109,6 +109,12 @@ import { Route as AuthenticatedStaffIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPharmacyMedicinesRouteImport } from './routes/_authenticated/pharmacy.medicines'
 import { Route as AuthenticatedPatientsNewRouteImport } from './routes/_authenticated/patients.new'
 import { Route as AuthenticatedPatientsIdRouteImport } from './routes/_authenticated/patients.$id'
+import { Route as AuthenticatedOpdSettingsRouteImport } from './routes/_authenticated/opd.settings'
+import { Route as AuthenticatedOpdReportsRouteImport } from './routes/_authenticated/opd.reports'
+import { Route as AuthenticatedOpdRegistrationRouteImport } from './routes/_authenticated/opd.registration'
+import { Route as AuthenticatedOpdConsultationRouteImport } from './routes/_authenticated/opd.consultation'
+import { Route as AuthenticatedOpdBillingRouteImport } from './routes/_authenticated/opd.billing'
+import { Route as AuthenticatedOpdAppointmentsRouteImport } from './routes/_authenticated/opd.appointments'
 import { Route as AuthenticatedOpdAppointmentIdRouteImport } from './routes/_authenticated/opd.$appointmentId'
 import { Route as AuthenticatedLaboratoryTestsRouteImport } from './routes/_authenticated/laboratory.tests'
 import { Route as AuthenticatedLaboratoryNewRouteImport } from './routes/_authenticated/laboratory.new'
@@ -656,6 +662,40 @@ const AuthenticatedPatientsIdRoute = AuthenticatedPatientsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedPatientsRoute,
 } as any)
+const AuthenticatedOpdSettingsRoute =
+  AuthenticatedOpdSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedOpdRoute,
+  } as any)
+const AuthenticatedOpdReportsRoute = AuthenticatedOpdReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedOpdRoute,
+} as any)
+const AuthenticatedOpdRegistrationRoute =
+  AuthenticatedOpdRegistrationRouteImport.update({
+    id: '/registration',
+    path: '/registration',
+    getParentRoute: () => AuthenticatedOpdRoute,
+  } as any)
+const AuthenticatedOpdConsultationRoute =
+  AuthenticatedOpdConsultationRouteImport.update({
+    id: '/consultation',
+    path: '/consultation',
+    getParentRoute: () => AuthenticatedOpdRoute,
+  } as any)
+const AuthenticatedOpdBillingRoute = AuthenticatedOpdBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AuthenticatedOpdRoute,
+} as any)
+const AuthenticatedOpdAppointmentsRoute =
+  AuthenticatedOpdAppointmentsRouteImport.update({
+    id: '/appointments',
+    path: '/appointments',
+    getParentRoute: () => AuthenticatedOpdRoute,
+  } as any)
 const AuthenticatedOpdAppointmentIdRoute =
   AuthenticatedOpdAppointmentIdRouteImport.update({
     id: '/$appointmentId',
@@ -841,6 +881,12 @@ export interface FileRoutesByFullPath {
   '/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
   '/laboratory/tests': typeof AuthenticatedLaboratoryTestsRoute
   '/opd/$appointmentId': typeof AuthenticatedOpdAppointmentIdRoute
+  '/opd/appointments': typeof AuthenticatedOpdAppointmentsRoute
+  '/opd/billing': typeof AuthenticatedOpdBillingRoute
+  '/opd/consultation': typeof AuthenticatedOpdConsultationRoute
+  '/opd/registration': typeof AuthenticatedOpdRegistrationRoute
+  '/opd/reports': typeof AuthenticatedOpdReportsRoute
+  '/opd/settings': typeof AuthenticatedOpdSettingsRoute
   '/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/patients/new': typeof AuthenticatedPatientsNewRoute
   '/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
@@ -952,6 +998,12 @@ export interface FileRoutesByTo {
   '/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
   '/laboratory/tests': typeof AuthenticatedLaboratoryTestsRoute
   '/opd/$appointmentId': typeof AuthenticatedOpdAppointmentIdRoute
+  '/opd/appointments': typeof AuthenticatedOpdAppointmentsRoute
+  '/opd/billing': typeof AuthenticatedOpdBillingRoute
+  '/opd/consultation': typeof AuthenticatedOpdConsultationRoute
+  '/opd/registration': typeof AuthenticatedOpdRegistrationRoute
+  '/opd/reports': typeof AuthenticatedOpdReportsRoute
+  '/opd/settings': typeof AuthenticatedOpdSettingsRoute
   '/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/patients/new': typeof AuthenticatedPatientsNewRoute
   '/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
@@ -1070,6 +1122,12 @@ export interface FileRoutesById {
   '/_authenticated/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
   '/_authenticated/laboratory/tests': typeof AuthenticatedLaboratoryTestsRoute
   '/_authenticated/opd/$appointmentId': typeof AuthenticatedOpdAppointmentIdRoute
+  '/_authenticated/opd/appointments': typeof AuthenticatedOpdAppointmentsRoute
+  '/_authenticated/opd/billing': typeof AuthenticatedOpdBillingRoute
+  '/_authenticated/opd/consultation': typeof AuthenticatedOpdConsultationRoute
+  '/_authenticated/opd/registration': typeof AuthenticatedOpdRegistrationRoute
+  '/_authenticated/opd/reports': typeof AuthenticatedOpdReportsRoute
+  '/_authenticated/opd/settings': typeof AuthenticatedOpdSettingsRoute
   '/_authenticated/patients/$id': typeof AuthenticatedPatientsIdRoute
   '/_authenticated/patients/new': typeof AuthenticatedPatientsNewRoute
   '/_authenticated/pharmacy/medicines': typeof AuthenticatedPharmacyMedicinesRoute
@@ -1188,6 +1246,12 @@ export interface FileRouteTypes {
     | '/laboratory/new'
     | '/laboratory/tests'
     | '/opd/$appointmentId'
+    | '/opd/appointments'
+    | '/opd/billing'
+    | '/opd/consultation'
+    | '/opd/registration'
+    | '/opd/reports'
+    | '/opd/settings'
     | '/patients/$id'
     | '/patients/new'
     | '/pharmacy/medicines'
@@ -1299,6 +1363,12 @@ export interface FileRouteTypes {
     | '/laboratory/new'
     | '/laboratory/tests'
     | '/opd/$appointmentId'
+    | '/opd/appointments'
+    | '/opd/billing'
+    | '/opd/consultation'
+    | '/opd/registration'
+    | '/opd/reports'
+    | '/opd/settings'
     | '/patients/$id'
     | '/patients/new'
     | '/pharmacy/medicines'
@@ -1416,6 +1486,12 @@ export interface FileRouteTypes {
     | '/_authenticated/laboratory/new'
     | '/_authenticated/laboratory/tests'
     | '/_authenticated/opd/$appointmentId'
+    | '/_authenticated/opd/appointments'
+    | '/_authenticated/opd/billing'
+    | '/_authenticated/opd/consultation'
+    | '/_authenticated/opd/registration'
+    | '/_authenticated/opd/reports'
+    | '/_authenticated/opd/settings'
     | '/_authenticated/patients/$id'
     | '/_authenticated/patients/new'
     | '/_authenticated/pharmacy/medicines'
@@ -2144,6 +2220,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPatientsIdRouteImport
       parentRoute: typeof AuthenticatedPatientsRoute
     }
+    '/_authenticated/opd/settings': {
+      id: '/_authenticated/opd/settings'
+      path: '/settings'
+      fullPath: '/opd/settings'
+      preLoaderRoute: typeof AuthenticatedOpdSettingsRouteImport
+      parentRoute: typeof AuthenticatedOpdRoute
+    }
+    '/_authenticated/opd/reports': {
+      id: '/_authenticated/opd/reports'
+      path: '/reports'
+      fullPath: '/opd/reports'
+      preLoaderRoute: typeof AuthenticatedOpdReportsRouteImport
+      parentRoute: typeof AuthenticatedOpdRoute
+    }
+    '/_authenticated/opd/registration': {
+      id: '/_authenticated/opd/registration'
+      path: '/registration'
+      fullPath: '/opd/registration'
+      preLoaderRoute: typeof AuthenticatedOpdRegistrationRouteImport
+      parentRoute: typeof AuthenticatedOpdRoute
+    }
+    '/_authenticated/opd/consultation': {
+      id: '/_authenticated/opd/consultation'
+      path: '/consultation'
+      fullPath: '/opd/consultation'
+      preLoaderRoute: typeof AuthenticatedOpdConsultationRouteImport
+      parentRoute: typeof AuthenticatedOpdRoute
+    }
+    '/_authenticated/opd/billing': {
+      id: '/_authenticated/opd/billing'
+      path: '/billing'
+      fullPath: '/opd/billing'
+      preLoaderRoute: typeof AuthenticatedOpdBillingRouteImport
+      parentRoute: typeof AuthenticatedOpdRoute
+    }
+    '/_authenticated/opd/appointments': {
+      id: '/_authenticated/opd/appointments'
+      path: '/appointments'
+      fullPath: '/opd/appointments'
+      preLoaderRoute: typeof AuthenticatedOpdAppointmentsRouteImport
+      parentRoute: typeof AuthenticatedOpdRoute
+    }
     '/_authenticated/opd/$appointmentId': {
       id: '/_authenticated/opd/$appointmentId'
       path: '/$appointmentId'
@@ -2317,10 +2435,22 @@ const AuthenticatedLaboratoryRouteWithChildren =
 
 interface AuthenticatedOpdRouteChildren {
   AuthenticatedOpdAppointmentIdRoute: typeof AuthenticatedOpdAppointmentIdRoute
+  AuthenticatedOpdAppointmentsRoute: typeof AuthenticatedOpdAppointmentsRoute
+  AuthenticatedOpdBillingRoute: typeof AuthenticatedOpdBillingRoute
+  AuthenticatedOpdConsultationRoute: typeof AuthenticatedOpdConsultationRoute
+  AuthenticatedOpdRegistrationRoute: typeof AuthenticatedOpdRegistrationRoute
+  AuthenticatedOpdReportsRoute: typeof AuthenticatedOpdReportsRoute
+  AuthenticatedOpdSettingsRoute: typeof AuthenticatedOpdSettingsRoute
 }
 
 const AuthenticatedOpdRouteChildren: AuthenticatedOpdRouteChildren = {
   AuthenticatedOpdAppointmentIdRoute: AuthenticatedOpdAppointmentIdRoute,
+  AuthenticatedOpdAppointmentsRoute: AuthenticatedOpdAppointmentsRoute,
+  AuthenticatedOpdBillingRoute: AuthenticatedOpdBillingRoute,
+  AuthenticatedOpdConsultationRoute: AuthenticatedOpdConsultationRoute,
+  AuthenticatedOpdRegistrationRoute: AuthenticatedOpdRegistrationRoute,
+  AuthenticatedOpdReportsRoute: AuthenticatedOpdReportsRoute,
+  AuthenticatedOpdSettingsRoute: AuthenticatedOpdSettingsRoute,
 }
 
 const AuthenticatedOpdRouteWithChildren =
