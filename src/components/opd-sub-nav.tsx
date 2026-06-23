@@ -2,7 +2,8 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, UserPlus, CalendarDays, Stethoscope, Receipt, FileBarChart, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TABS = [
+type Tab = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+const TABS: Tab[] = [
   { to: "/opd", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/opd/registration", label: "Registration", icon: UserPlus },
   { to: "/opd/appointments", label: "Appointments", icon: CalendarDays },
@@ -10,7 +11,7 @@ const TABS = [
   { to: "/opd/billing", label: "Billing", icon: Receipt },
   { to: "/opd/reports", label: "Reports", icon: FileBarChart },
   { to: "/opd/settings", label: "Settings", icon: Settings },
-] as const;
+];
 
 export function OpdSubNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
