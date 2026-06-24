@@ -54,11 +54,12 @@ function BillingPage() {
   const { data: unbilled = [] } = useQuery({
     queryKey: ["opd-unbilled-visits"],
     queryFn: async () => {
-      const { data: visits } = await supabase.from("opd_visits")
-        .select("id, created_at, patient_id, doctor_id, diagnosis, patients(full_name, uhid), doctors(name)")
+      const { data: visits, error } = await supabase.from("opd_visits")
+        .select("id, created_at, patient_id, doctor_id, appointment_id, diagnosis, patients(full_name, uhid), doctors(name, consultation_fee)")
         .gte("created_at", startOfDayIso())
         .order("created_at", { ascending: false })
         .limit(50);
+      if (error) throw error;
       if (!visits?.length) return [];
       const { data: existing } = await supabase.from("bills")
         .select("opd_visit_id")
@@ -68,6 +69,35 @@ function BillingPage() {
     },
     refetchInterval: 20000,
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("opd-billing-workflow")
+      .on("postgres_changes", { event: "*", schema: "public", table: "opd_visits" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-unbilled-visits"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "prescriptions" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-unbilled-visits"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "prescription_items" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-unbilled-visits"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "bills" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-bills"] });
+        qc.invalidateQueries({ queryKey: ["opd-unbilled-visits"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "bill_items" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-bills"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-bills"] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   const filteredBills = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -236,7 +266,7 @@ function BillEditor({ billId, visit, userId, onSaved, onClose }: { billId?: stri
           setPatient(p);
           setDoctorId(visit.doctor_id);
           setOpdVisitId(visit.id);
-          setItems([{ category: "Consultation", description: `Consultation - ${visit.doctors?.name ?? "Doctor"}`, quantity: 1, unit_price: DEFAULT_FEE }]);
+          setItems([{ category: "Consultation", description: `Consultation - ${visit.doctors?.name ?? "Doctor"}`, quantity: 1, unit_price: Number(visit.doctors?.consultation_fee ?? 0) || DEFAULT_FEE }]);
         }
       } finally {
         setLoading(false);
