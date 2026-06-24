@@ -70,7 +70,16 @@ function OpdDashboard() {
         .in("status", ["confirmed", "waiting", "in_consultation"]);
       if (error) console.error("[opd-dash-active-queue] error", error);
       console.debug("[opd-dash-active-queue] rows:", data?.length ?? 0);
-      return data ?? [];
+      return (data ?? [])
+        .filter((r: any) => r.appointments && !["completed","cancelled"].includes(r.appointments.status))
+        .map((r: any) => ({
+          id: r.appointments.id,
+          status: r.status, // queue status
+          scheduled_at: r.appointments.scheduled_at,
+          token_no: r.token_no,
+          patients: r.patients,
+          doctors: r.doctors,
+        }));
     },
     refetchInterval: 20000,
   });
