@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { differenceInMinutes, format, formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/opd/consultation")({ component: ConsultationPage });
 
@@ -40,17 +40,73 @@ function ConsultationPage() {
   const { data: queue = [], refetch: refetchQueue } = useQuery({
     queryKey: ["opd-consult-queue", doctorFilter],
     queryFn: async () => {
-      let q = supabase.from("appointments")
-        .select("id, scheduled_at, status, token_no, patient_id, doctor_id, patients(id, full_name, uhid, gender, dob, allergies, chronic_diseases, blood_group), doctors(name, specialization)")
-        .gte("scheduled_at", startOfDayIso())
-        .lte("scheduled_at", endOfDayIso())
-        .in("status", ["waiting", "checked_in", "booked"])
-        .order("scheduled_at");
+      let q = supabase.from("queue_tokens")
+        .select("id, token_no, status, issued_at, called_at, served_at, appointment_id, patient_id, doctor_id, patients(id, full_name, uhid, gender, dob, allergies, chronic_diseases, blood_group), doctors(name, specialization), appointments(id, scheduled_at, status, notes, patient_id, doctor_id, token_no)")
+        .gte("issued_at", startOfDayIso())
+        .lte("issued_at", endOfDayIso())
+        .in("status", ["confirmed", "waiting", "in_consultation"])
+        .order("issued_at");
       if (doctorFilter !== "all") q = q.eq("doctor_id", doctorFilter);
-      return (await q).data ?? [];
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? [])
+        .filter((row: any) => row.appointments)
+        .map((row: any) => ({
+          queue_id: row.id,
+          queue_status: row.status,
+          issued_at: row.issued_at,
+          called_at: row.called_at,
+          served_at: row.served_at,
+          id: row.appointments.id,
+          scheduled_at: row.appointments.scheduled_at,
+          status: row.appointments.status,
+          notes: row.appointments.notes,
+          token_no: row.token_no ?? row.appointments.token_no,
+          patient_id: row.appointments.patient_id ?? row.patient_id,
+          doctor_id: row.appointments.doctor_id ?? row.doctor_id,
+          patients: row.patients,
+          doctors: row.doctors,
+        }));
     },
     refetchInterval: 15000,
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("opd-consultation-workflow")
+      .on("postgres_changes", { event: "*", schema: "public", table: "queue_tokens" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-consult-queue"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-consult-queue"] });
+        qc.invalidateQueries({ queryKey: ["opd-appts"] });
+        qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "opd_visits" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-today-completed"] });
+        qc.invalidateQueries({ queryKey: ["opd-consult-history"] });
+        qc.invalidateQueries({ queryKey: ["opd-unbilled-visits"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "prescriptions" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-consult-history"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "prescription_items" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-consult-history"] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
+  useEffect(() => {
+    const pending = sessionStorage.getItem("opd-consultation-appointment-id");
+    if (pending && queue.some((a: any) => a.id === pending)) {
+      setSelectedId(pending);
+      sessionStorage.removeItem("opd-consultation-appointment-id");
+    }
+  }, [queue]);
 
   const { data: completed = [] } = useQuery({
     queryKey: ["opd-today-completed", doctorFilter],
@@ -125,7 +181,7 @@ function ConsultationPage() {
                       <span className="text-[11px] text-muted-foreground font-mono truncate">{a.patients?.uhid}</span>
                       <span className="text-[11px] text-muted-foreground">{format(new Date(a.scheduled_at), "HH:mm")}</span>
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{a.doctors?.name} · <span className="capitalize">{a.status?.replace("_"," ")}</span></div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{a.doctors?.name} · waiting {Math.max(0, differenceInMinutes(new Date(), new Date(a.issued_at ?? a.scheduled_at)))} min · <span className="capitalize">{a.queue_status?.replace("_"," ")}</span></div>
                   </button>
                 );
               })}
@@ -199,10 +255,61 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
   const [items, setItems] = useState<RxItem[]>([{ ...EMPTY_ITEM }]);
   const [saving, setSaving] = useState(false);
 
-  // Auto-mark checked_in when opened
+  const { data: history = [] } = useQuery({
+    queryKey: ["opd-consult-history", appt.patient_id],
+    enabled: !!appt.patient_id,
+    queryFn: async () => {
+      const [visitsRes, billsRes, emrRes] = await Promise.all([
+        supabase.from("opd_visits").select("id, created_at, chief_complaints, diagnosis, doctors(name)").eq("patient_id", appt.patient_id).neq("appointment_id", appt.id).order("created_at", { ascending: false }).limit(5),
+        supabase.from("bills").select("id, bill_no, total, status, created_at").eq("patient_id", appt.patient_id).order("created_at", { ascending: false }).limit(5),
+        (supabase as any).from("emr_records").select("id, event_date, title, summary, record_type").eq("patient_id", appt.patient_id).order("event_date", { ascending: false }).limit(5),
+      ]);
+      return [
+        ...((visitsRes.data ?? []) as any[]).map((v) => ({ id: `visit-${v.id}`, date: v.created_at, title: v.diagnosis || v.chief_complaints || "OPD visit", meta: v.doctors?.name || "Clinical note" })),
+        ...((billsRes.data ?? []) as any[]).map((b) => ({ id: `bill-${b.id}`, date: b.created_at, title: `${b.bill_no} · ₹${Number(b.total ?? 0).toLocaleString("en-IN")}`, meta: b.status })),
+        ...((emrRes.data ?? []) as any[]).map((e) => ({ id: `emr-${e.id}`, date: e.event_date, title: e.title || e.record_type, meta: e.summary || "EMR" })),
+      ].filter((h) => h.date).sort((a, b) => +new Date(b.date) - +new Date(a.date)).slice(0, 6);
+    },
+  });
+
+  const { data: existingVisit } = useQuery({
+    queryKey: ["opd-consult-existing-visit", appt.id],
+    enabled: !!appt.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("opd_visits")
+        .select("id, chief_complaints, diagnosis, clinical_findings, notes, follow_up_date, vitals, prescriptions(id, prescription_items(id, medicine_name, dosage, food_instruction, duration_days, position))")
+        .eq("appointment_id", appt.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data as any;
+    },
+  });
+
   useEffect(() => {
-    if (appt.status !== "checked_in" && appt.status !== "completed") {
-      supabase.from("appointments").update({ status: "checked_in" }).eq("id", appt.id);
+    if (!existingVisit) return;
+    setChief(existingVisit.chief_complaints ?? "");
+    setDiagnosis(existingVisit.diagnosis ?? "");
+    setFindings(existingVisit.clinical_findings ?? "");
+    setNotes((existingVisit.notes ?? "").replace(/\n?\[Consultation duration: .*? min\]$/m, ""));
+    setFollowUp(existingVisit.follow_up_date ?? "");
+    setVitals({ bp: "", pulse: "", temp: "", spo2: "", weight: "", ...(existingVisit.vitals ?? {}) });
+    const rxItems = existingVisit.prescriptions?.[0]?.prescription_items ?? [];
+    if (rxItems.length) {
+      setItems(rxItems.sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0)).map((it: any) => ({
+        medicine_name: it.medicine_name ?? "",
+        dosage: it.dosage ?? "",
+        food_instruction: it.food_instruction ?? "After food",
+        duration_days: it.duration_days ? String(it.duration_days) : "",
+      })));
+    }
+  }, [existingVisit]);
+
+  // Auto-start consultation when workspace opens
+  useEffect(() => {
+    if (appt.status !== "in_consultation" && appt.status !== "completed") {
+      supabase.from("appointments").update({ status: "in_consultation" as any }).eq("id", appt.id);
     }
   }, [appt.id]); // eslint-disable-line
 
@@ -234,7 +341,7 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
     try {
       const durationMin = Math.max(1, Math.round(elapsed / 60));
       const notesWithDuration = `${notes}${notes ? "\n\n" : ""}[Consultation duration: ${durationMin} min]`;
-      const { data: visit, error: e1 } = await supabase.from("opd_visits").insert({
+      const visitPayload = {
         patient_id: appt.patient_id,
         doctor_id: appt.doctor_id,
         appointment_id: appt.id,
@@ -245,13 +352,28 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
         follow_up_date: followUp || null,
         vitals,
         created_by: userId,
-      }).select("id").single();
-      if (e1) throw e1;
+      };
 
-      const { data: rx, error: e2 } = await supabase.from("prescriptions").insert({ opd_visit_id: visit.id }).select("id").single();
+      let visitId = existingVisit?.id as string | undefined;
+      if (visitId) {
+        const { error } = await supabase.from("opd_visits").update(visitPayload).eq("id", visitId);
+        if (error) throw error;
+      } else {
+        const { data: visit, error } = await supabase.from("opd_visits").insert(visitPayload).select("id").single();
+        if (error) throw error;
+        visitId = visit.id;
+      }
+
+      let { data: rx, error: e2 } = await supabase.from("prescriptions").select("id").eq("opd_visit_id", visitId).maybeSingle();
       if (e2) throw e2;
+      if (!rx) {
+        const created = await supabase.from("prescriptions").insert({ opd_visit_id: visitId }).select("id").single();
+        if (created.error) throw created.error;
+        rx = created.data;
+      }
 
       const valid = items.filter((it) => it.medicine_name.trim());
+      await supabase.from("prescription_items").delete().eq("prescription_id", rx.id);
       if (valid.length) {
         const { error: e3 } = await supabase.from("prescription_items").insert(valid.map((it, idx) => ({
           prescription_id: rx.id,
@@ -264,7 +386,8 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
         if (e3) throw e3;
       }
 
-      await supabase.from("appointments").update({ status: "completed" }).eq("id", appt.id);
+      const { error: apptError } = await supabase.from("appointments").update({ status: "completed" as any }).eq("id", appt.id);
+      if (apptError) throw apptError;
       toast.success("Consultation saved");
       if (opts.print) window.open(`/prescriptions/${rx.id}/print`, "_blank");
       onSaved();
@@ -298,6 +421,19 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
             <div className="flex gap-2 mt-1.5 flex-wrap">
               {p.allergies && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300">Allergy: {p.allergies}</span>}
               {p.chronic_diseases && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">Chronic: {p.chronic_diseases}</span>}
+            </div>
+          )}
+          {history.length > 0 && (
+            <div className="mt-2 rounded-lg border bg-muted/30 px-3 py-2">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Patient history</div>
+              <div className="space-y-1">
+                {history.slice(0, 3).map((h: any) => (
+                  <div key={h.id} className="flex items-center justify-between gap-2 text-[11px]">
+                    <span className="truncate">{h.title}</span>
+                    <span className="text-muted-foreground shrink-0">{formatDistanceToNow(new Date(h.date), { addSuffix: true })}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
