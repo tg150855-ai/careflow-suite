@@ -1,6 +1,8 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +40,7 @@ function endOfToday() {
 }
 
 function OpdDashboard() {
+  const qc = useQueryClient();
   const today = startOfToday();
   const endToday = endOfToday();
 
@@ -46,13 +49,32 @@ function OpdDashboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("appointments")
-        .select("id, scheduled_at, status, type, patients(full_name, uhid), doctors(id, name, specialization)")
+        .select("id, scheduled_at, status, token_no, patients(full_name, uhid), doctors(id, name, specialization)")
         .gte("scheduled_at", today.toISOString())
         .lte("scheduled_at", endToday.toISOString())
         .order("scheduled_at");
       return data ?? [];
     },
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("opd-dashboard-workflow")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "queue_tokens" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "bills" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-dash-bills"] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   const { data: billsToday = [] } = useQuery({
     queryKey: ["opd-dash-bills", today.toISOString()],
@@ -67,10 +89,10 @@ function OpdDashboard() {
   });
 
   const waiting = appts.filter((a: any) => ["booked", "checked_in", "waiting"].includes(a.status));
-  const inProgress = appts.filter((a: any) => a.status === "in_progress");
+  const inProgress = appts.filter((a: any) => a.status === "in_consultation");
   const completed = appts.filter((a: any) => a.status === "completed");
-  const walkIns = appts.filter((a: any) => (a.type ?? "").toLowerCase().includes("walk")).length;
-  const scheduled = appts.length - walkIns;
+  const walkIns = 0;
+  const scheduled = appts.length;
 
   const totalBilling = billsToday.reduce((s: number, b: any) => s + Number(b.total ?? 0), 0);
   const totalPaid = billsToday.reduce((s: number, b: any) => s + Number(b.paid ?? 0), 0);
@@ -82,7 +104,7 @@ function OpdDashboard() {
     const d = a.doctors;
     if (!d) continue;
     const cur = byDoctor.get(d.id) ?? { name: d.name, spec: d.specialization, waiting: 0, inProgress: 0 };
-    if (a.status === "in_progress") cur.inProgress++; else cur.waiting++;
+    if (a.status === "in_consultation") cur.inProgress++; else cur.waiting++;
     byDoctor.set(d.id, cur);
   }
   const doctorRows = Array.from(byDoctor.values()).sort((a, b) => (b.waiting + b.inProgress) - (a.waiting + a.inProgress));
@@ -140,9 +162,9 @@ function OpdDashboard() {
                     </div>
                   </div>
                   <StatusBadge status={a.status} />
-                  <Button asChild size="sm" variant={a.status === "in_progress" ? "default" : "outline"}>
-                    <Link to="/opd/$appointmentId" params={{ appointmentId: a.id }}>
-                      {a.status === "in_progress" ? "Resume" : "Start"}
+                  <Button asChild size="sm" variant={a.status === "in_consultation" ? "default" : "outline"}>
+                    <Link to="/opd/consultation" onClick={() => sessionStorage.setItem("opd-consultation-appointment-id", a.id)}>
+                      {a.status === "in_consultation" ? "Resume" : "Start"}
                     </Link>
                   </Button>
                 </div>
@@ -211,7 +233,7 @@ function StatCard({ label, value, icon: Icon, tone }: { label: string; value: Re
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    in_progress: { label: "In consult", cls: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200" },
+    in_consultation: { label: "In consult", cls: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200" },
     waiting: { label: "Waiting", cls: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200" },
     checked_in: { label: "Checked-in", cls: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200" },
     booked: { label: "Booked", cls: "bg-muted text-muted-foreground" },
