@@ -194,7 +194,8 @@ function OpdAppointments() {
           <BookDialog
             defaultDate={date}
             doctors={doctors as any[]}
-            onCreated={() => {
+            onCreated={(bookedDate) => {
+              if (bookedDate && bookedDate !== date) setDate(bookedDate);
               qc.invalidateQueries({ queryKey: ["opd-appts"] });
               qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
             }}
