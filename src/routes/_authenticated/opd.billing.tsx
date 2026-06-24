@@ -221,8 +221,8 @@ function BillEditor({ billId, visit, userId, onSaved, onClose }: { billId?: stri
             .eq("bill_id", billId).order("position");
           setBill(b);
           setPatient(b?.patients);
-          setDoctorId(b?.doctor_id);
-          setOpdVisitId(b?.opd_visit_id);
+          setDoctorId(b?.doctor_id ?? null);
+          setOpdVisitId(b?.opd_visit_id ?? null);
           setDiscount(Number(b?.discount ?? 0));
           const sub = (bi ?? []).reduce((s, i) => s + Number(i.quantity) * Number(i.unit_price), 0);
           setGstPct(sub > 0 ? Math.round((Number(b?.gst ?? 0) / sub) * 100) : 0);
