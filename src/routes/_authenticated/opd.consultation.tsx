@@ -44,7 +44,7 @@ function ConsultationPage() {
         .select("id, scheduled_at, status, token_no, patient_id, doctor_id, patients(id, full_name, uhid, gender, dob, allergies, chronic_diseases, blood_group), doctors(name, specialization)")
         .gte("scheduled_at", startOfDayIso())
         .lte("scheduled_at", endOfDayIso())
-        .in("status", ["waiting", "checked_in", "in_progress", "booked"])
+        .in("status", ["waiting", "checked_in", "booked"])
         .order("scheduled_at");
       if (doctorFilter !== "all") q = q.eq("doctor_id", doctorFilter);
       return (await q).data ?? [];
