@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -27,13 +27,14 @@ export const Route = createFileRoute("/_authenticated/opd/appointments")({
   component: OpdAppointments,
 });
 
-const STATUSES = ["booked", "checked_in", "waiting", "completed", "cancelled"] as const;
+const STATUSES = ["booked", "checked_in", "waiting", "in_consultation", "completed", "cancelled"] as const;
 type Status = (typeof STATUSES)[number];
 
 const STATUS_TONE: Record<Status, string> = {
   booked: "bg-muted text-muted-foreground",
   checked_in: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
   waiting: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
+  in_consultation: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
   completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
   cancelled: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200",
 };
@@ -65,7 +66,7 @@ function OpdAppointments() {
     queryFn: async () => {
       const start = new Date(`${date}T00:00:00`).toISOString();
       const end = new Date(`${date}T23:59:59`).toISOString();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("appointments")
         .select(
           "id, scheduled_at, status, token_no, notes, doctor_id, patient_id, patients(id, full_name, uhid, mobile), doctors(id, name, specialization)"
@@ -73,9 +74,38 @@ function OpdAppointments() {
         .gte("scheduled_at", start)
         .lte("scheduled_at", end)
         .order("scheduled_at");
+      if (error) throw error;
       return data ?? [];
     },
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`opd-appointments-workflow-${date}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-appts"] });
+        qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
+        qc.invalidateQueries({ queryKey: ["opd-consult-queue"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "queue_tokens" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-consult-queue"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "opd_visits" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-patient-timeline"] });
+        qc.invalidateQueries({ queryKey: ["opd-unbilled-visits"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "bills" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-patient-timeline"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "emr_records" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-patient-timeline"] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [date, qc]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -109,6 +139,7 @@ function OpdAppointments() {
     toast.success("Status updated");
     qc.invalidateQueries({ queryKey: ["opd-appts"] });
     qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
+    qc.invalidateQueries({ queryKey: ["opd-consult-queue"] });
   }
 
   return (
@@ -361,6 +392,7 @@ function BookDialog({
       patient_id: patientId,
       doctor_id: doctorId,
       scheduled_at,
+      status: "booked" as any,
       notes: notes || null,
       created_by: user?.id,
     });
@@ -560,8 +592,21 @@ function EditDialog({
 function AppointmentDetail({
   appointment, onEdit,
 }: { appointment: any; onEdit: () => void }) {
+  const qc = useQueryClient();
   const patient = appointment.patients;
   const patientId = patient?.id;
+
+  async function startConsultation() {
+    const { error } = await supabase
+      .from("appointments")
+      .update({ status: "in_consultation" as any })
+      .eq("id", appointment.id);
+    if (error) return toast.error(error.message);
+    sessionStorage.setItem("opd-consultation-appointment-id", appointment.id);
+    qc.invalidateQueries({ queryKey: ["opd-appts"] });
+    qc.invalidateQueries({ queryKey: ["opd-consult-queue"] });
+    window.location.href = "/opd/consultation";
+  }
 
   const { data: timeline = [], isFetching } = useQuery({
     queryKey: ["opd-patient-timeline", patientId],
@@ -662,10 +707,8 @@ function AppointmentDetail({
       </div>
 
       <div className="flex gap-2">
-        <Button asChild size="sm" className="flex-1">
-          <a href={`/opd/${appointment.id}`}>
+        <Button size="sm" className="flex-1" onClick={startConsultation}>
             <Stethoscope className="size-4" /> Start / resume consultation
-          </a>
         </Button>
       </div>
 
