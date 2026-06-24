@@ -493,7 +493,7 @@ function BookDialog({
 /* ─────────────────────── Edit dialog ─────────────────────── */
 function EditDialog({
   appointment, doctors, onClose, onSaved,
-}: { appointment: any; doctors: any[]; onClose: () => void; onSaved: () => void }) {
+}: { appointment: any; doctors: any[]; onClose: () => void; onSaved: (newDate?: string) => void }) {
   const sched = new Date(appointment.scheduled_at);
   const [date, setDate] = useState(format(sched, "yyyy-MM-dd"));
   const [time, setTime] = useState(format(sched, "HH:mm"));
@@ -510,9 +510,9 @@ function EditDialog({
       .update({ scheduled_at, doctor_id: doctorId, status: status as any, notes: notes || null })
       .eq("id", appointment.id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { console.error("[edit-appointment] update error", error); return toast.error(error.message); }
     toast.success("Appointment updated");
-    onSaved();
+    onSaved(date);
   }
 
   async function cancel() {
