@@ -199,10 +199,10 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
   const [items, setItems] = useState<RxItem[]>([{ ...EMPTY_ITEM }]);
   const [saving, setSaving] = useState(false);
 
-  // Auto-mark in_progress when opened
+  // Auto-mark checked_in when opened
   useEffect(() => {
-    if (appt.status !== "in_progress") {
-      supabase.from("appointments").update({ status: "in_progress" }).eq("id", appt.id);
+    if (appt.status !== "checked_in" && appt.status !== "completed") {
+      supabase.from("appointments").update({ status: "checked_in" }).eq("id", appt.id);
     }
   }, [appt.id]); // eslint-disable-line
 
