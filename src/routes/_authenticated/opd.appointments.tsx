@@ -5,7 +5,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import {
   CalendarPlus, CalendarDays, Search, Clock, Pencil, X, Stethoscope,
-  FileText, IndianRupee, Activity, History, ChevronRight, User2,
+  FileText, Activity, History, ChevronRight, User2,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
