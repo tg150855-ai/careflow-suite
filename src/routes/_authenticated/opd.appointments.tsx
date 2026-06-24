@@ -353,7 +353,7 @@ function StatChip({
 /* ─────────────────────── Book dialog ─────────────────────── */
 function BookDialog({
   defaultDate, doctors, onCreated,
-}: { defaultDate: string; doctors: any[]; onCreated: () => void }) {
+}: { defaultDate: string; doctors: any[]; onCreated: (bookedDate: string) => void }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [patientQ, setPatientQ] = useState("");
@@ -398,11 +398,12 @@ function BookDialog({
       created_by: user?.id,
     });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { console.error("[book-appointment] insert error", error); return toast.error(error.message); }
     toast.success("Appointment booked");
+    const bookedDate = date;
     reset();
     setOpen(false);
-    onCreated();
+    onCreated(bookedDate);
   }
 
   return (
