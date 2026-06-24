@@ -40,17 +40,19 @@ function ConsultationPage() {
   const { data: queue = [], refetch: refetchQueue } = useQuery({
     queryKey: ["opd-consult-queue", doctorFilter],
     queryFn: async () => {
+      // Active queue = any token in an active status, regardless of issued date.
+      // (Tokens auto-created from appointments inherit scheduled_at; restricting to "today"
+      // hides patients who were booked for a different day but are physically here.)
       let q = supabase.from("queue_tokens")
         .select("id, token_no, status, issued_at, called_at, served_at, appointment_id, patient_id, doctor_id, patients(id, full_name, uhid, gender, dob, allergies, chronic_diseases, blood_group), doctors(name, specialization), appointments(id, scheduled_at, status, notes, patient_id, doctor_id, token_no)")
-        .gte("issued_at", startOfDayIso())
-        .lte("issued_at", endOfDayIso())
         .in("status", ["confirmed", "waiting", "in_consultation"])
         .order("issued_at");
       if (doctorFilter !== "all") q = q.eq("doctor_id", doctorFilter);
       const { data, error } = await q;
-      if (error) throw error;
+      if (error) { console.error("[opd-consult-queue] query error", error); throw error; }
+      console.debug("[opd-consult-queue] rows:", data?.length ?? 0);
       return (data ?? [])
-        .filter((row: any) => row.appointments)
+        .filter((row: any) => row.appointments && row.appointments.status !== "completed" && row.appointments.status !== "cancelled")
         .map((row: any) => ({
           queue_id: row.id,
           queue_status: row.status,
