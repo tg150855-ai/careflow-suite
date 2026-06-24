@@ -5116,6 +5116,13 @@ export type Database = {
             referencedRelation: "doctors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "queue_tokens_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
         ]
       }
       radiology_orders: {
