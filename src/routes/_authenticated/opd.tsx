@@ -47,14 +47,41 @@ function OpdDashboard() {
   const { data: appts = [] } = useQuery({
     queryKey: ["opd-dash-appts", today.toISOString()],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("appointments")
         .select("id, scheduled_at, status, token_no, patients(full_name, uhid), doctors(id, name, specialization)")
         .gte("scheduled_at", today.toISOString())
         .lte("scheduled_at", endToday.toISOString())
         .order("scheduled_at");
+      if (error) console.error("[opd-dash-appts] error", error);
+      console.debug("[opd-dash-appts] rows:", data?.length ?? 0);
       return data ?? [];
     },
+  });
+
+  // Live queue (active tokens) — independent of date so checked-in patients
+  // for any scheduled date appear in the dashboard queue immediately.
+  const { data: activeQueue = [] } = useQuery({
+    queryKey: ["opd-dash-active-queue"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("queue_tokens")
+        .select("id, token_no, status, issued_at, patient_id, doctor_id, patients(full_name, uhid), doctors(id, name, specialization), appointments(id, scheduled_at, status)")
+        .in("status", ["confirmed", "waiting", "in_consultation"]);
+      if (error) console.error("[opd-dash-active-queue] error", error);
+      console.debug("[opd-dash-active-queue] rows:", data?.length ?? 0);
+      return (data ?? [])
+        .filter((r: any) => r.appointments && !["completed","cancelled"].includes(r.appointments.status))
+        .map((r: any) => ({
+          id: r.appointments.id,
+          status: r.status, // queue status
+          scheduled_at: r.appointments.scheduled_at,
+          token_no: r.token_no,
+          patients: r.patients,
+          doctors: r.doctors,
+        }));
+    },
+    refetchInterval: 20000,
   });
 
   useEffect(() => {
@@ -62,9 +89,11 @@ function OpdDashboard() {
       .channel("opd-dashboard-workflow")
       .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
         qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
+        qc.invalidateQueries({ queryKey: ["opd-dash-active-queue"] });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "queue_tokens" }, () => {
         qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
+        qc.invalidateQueries({ queryKey: ["opd-dash-active-queue"] });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "bills" }, () => {
         qc.invalidateQueries({ queryKey: ["opd-dash-bills"] });
@@ -88,10 +117,10 @@ function OpdDashboard() {
     },
   });
 
-  const waiting = appts.filter((a: any) => ["booked", "checked_in", "waiting"].includes(a.status));
-  const inProgress = appts.filter((a: any) => a.status === "in_consultation");
+  const waiting = (activeQueue as any[]).filter((q) => ["confirmed", "waiting"].includes(q.status));
+  const inProgress = (activeQueue as any[]).filter((q) => q.status === "in_consultation");
   const completed = appts.filter((a: any) => a.status === "completed");
-  const walkIns = 0;
+  const walkIns = appts.filter((a: any) => !a.token_no).length;
   const scheduled = appts.length;
 
   const totalBilling = billsToday.reduce((s: number, b: any) => s + Number(b.total ?? 0), 0);

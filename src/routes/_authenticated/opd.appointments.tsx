@@ -74,7 +74,8 @@ function OpdAppointments() {
         .gte("scheduled_at", start)
         .lte("scheduled_at", end)
         .order("scheduled_at");
-      if (error) throw error;
+      if (error) { console.error("[opd-appts] query error", error); throw error; }
+      console.debug("[opd-appts] date=%s rows=%d", date, data?.length ?? 0);
       return data ?? [];
     },
   });
@@ -194,7 +195,8 @@ function OpdAppointments() {
           <BookDialog
             defaultDate={date}
             doctors={doctors as any[]}
-            onCreated={() => {
+            onCreated={(bookedDate) => {
+              if (bookedDate && bookedDate !== date) setDate(bookedDate);
               qc.invalidateQueries({ queryKey: ["opd-appts"] });
               qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
             }}
@@ -321,9 +323,11 @@ function OpdAppointments() {
           appointment={editing}
           doctors={doctors as any[]}
           onClose={() => setEditing(null)}
-          onSaved={() => {
+          onSaved={(newDate?: string) => {
             setEditing(null);
+            if (newDate && newDate !== date) setDate(newDate);
             qc.invalidateQueries({ queryKey: ["opd-appts"] });
+            qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
           }}
         />
       )}
@@ -352,7 +356,7 @@ function StatChip({
 /* ─────────────────────── Book dialog ─────────────────────── */
 function BookDialog({
   defaultDate, doctors, onCreated,
-}: { defaultDate: string; doctors: any[]; onCreated: () => void }) {
+}: { defaultDate: string; doctors: any[]; onCreated: (bookedDate: string) => void }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [patientQ, setPatientQ] = useState("");
@@ -397,11 +401,12 @@ function BookDialog({
       created_by: user?.id,
     });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { console.error("[book-appointment] insert error", error); return toast.error(error.message); }
     toast.success("Appointment booked");
+    const bookedDate = date;
     reset();
     setOpen(false);
-    onCreated();
+    onCreated(bookedDate);
   }
 
   return (
@@ -488,7 +493,7 @@ function BookDialog({
 /* ─────────────────────── Edit dialog ─────────────────────── */
 function EditDialog({
   appointment, doctors, onClose, onSaved,
-}: { appointment: any; doctors: any[]; onClose: () => void; onSaved: () => void }) {
+}: { appointment: any; doctors: any[]; onClose: () => void; onSaved: (newDate?: string) => void }) {
   const sched = new Date(appointment.scheduled_at);
   const [date, setDate] = useState(format(sched, "yyyy-MM-dd"));
   const [time, setTime] = useState(format(sched, "HH:mm"));
@@ -505,9 +510,9 @@ function EditDialog({
       .update({ scheduled_at, doctor_id: doctorId, status: status as any, notes: notes || null })
       .eq("id", appointment.id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { console.error("[edit-appointment] update error", error); return toast.error(error.message); }
     toast.success("Appointment updated");
-    onSaved();
+    onSaved(date);
   }
 
   async function cancel() {
