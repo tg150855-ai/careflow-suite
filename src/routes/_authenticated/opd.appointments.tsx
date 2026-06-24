@@ -74,7 +74,8 @@ function OpdAppointments() {
         .gte("scheduled_at", start)
         .lte("scheduled_at", end)
         .order("scheduled_at");
-      if (error) throw error;
+      if (error) { console.error("[opd-appts] query error", error); throw error; }
+      console.debug("[opd-appts] date=%s rows=%d", date, data?.length ?? 0);
       return data ?? [];
     },
   });
