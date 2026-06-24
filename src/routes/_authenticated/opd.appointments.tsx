@@ -323,9 +323,11 @@ function OpdAppointments() {
           appointment={editing}
           doctors={doctors as any[]}
           onClose={() => setEditing(null)}
-          onSaved={() => {
+          onSaved={(newDate?: string) => {
             setEditing(null);
+            if (newDate && newDate !== date) setDate(newDate);
             qc.invalidateQueries({ queryKey: ["opd-appts"] });
+            qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
           }}
         />
       )}
