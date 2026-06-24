@@ -5063,8 +5063,10 @@ export type Database = {
       }
       queue_tokens: {
         Row: {
+          appointment_id: string | null
           called_at: string | null
           counter: string
+          doctor_id: string | null
           estimated_minutes: number | null
           id: string
           issued_at: string
@@ -5074,8 +5076,10 @@ export type Database = {
           token_no: number
         }
         Insert: {
+          appointment_id?: string | null
           called_at?: string | null
           counter: string
+          doctor_id?: string | null
           estimated_minutes?: number | null
           id?: string
           issued_at?: string
@@ -5085,8 +5089,10 @@ export type Database = {
           token_no?: number
         }
         Update: {
+          appointment_id?: string | null
           called_at?: string | null
           counter?: string
+          doctor_id?: string | null
           estimated_minutes?: number | null
           id?: string
           issued_at?: string
@@ -5095,7 +5101,22 @@ export type Database = {
           status?: string
           token_no?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "queue_tokens_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_tokens_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       radiology_orders: {
         Row: {
@@ -6618,6 +6639,7 @@ export type Database = {
         | "waiting"
         | "completed"
         | "cancelled"
+        | "in_consultation"
       bed_status:
         | "available"
         | "occupied"
@@ -6833,6 +6855,7 @@ export const Constants = {
         "waiting",
         "completed",
         "cancelled",
+        "in_consultation",
       ],
       bed_status: [
         "available",
