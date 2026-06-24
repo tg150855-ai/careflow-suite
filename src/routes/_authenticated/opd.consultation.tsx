@@ -355,6 +355,17 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
       };
 
       let visitId = existingVisit?.id as string | undefined;
+      if (!visitId) {
+        const { data: currentVisit, error: currentVisitError } = await supabase
+          .from("opd_visits")
+          .select("id")
+          .eq("appointment_id", appt.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (currentVisitError) throw currentVisitError;
+        visitId = currentVisit?.id;
+      }
       if (visitId) {
         const { error } = await supabase.from("opd_visits").update(visitPayload).eq("id", visitId);
         if (error) throw error;
