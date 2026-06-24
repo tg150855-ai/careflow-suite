@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Plus, Trash2, Save, Printer } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -27,7 +27,7 @@ function Consultation() {
     queryKey: ["appt", appointmentId],
     queryFn: async () => {
       const { data, error } = await supabase.from("appointments")
-        .select("id, scheduled_at, patient_id, doctor_id, patients(*), doctors(name, specialization)")
+        .select("id, scheduled_at, status, token_no, patient_id, doctor_id, patients(*), doctors(name, specialization)")
         .eq("id", appointmentId).single();
       if (error) throw error;
       return data;
@@ -48,31 +48,91 @@ function Consultation() {
   const [diagnosis, setDiagnosis] = useState("");
   const [findings, setFindings] = useState("");
   const [notes, setNotes] = useState("");
+  const [followUp, setFollowUp] = useState("");
   const [vitals, setVitals] = useState({ bp: "", pulse: "", temp: "", spo2: "", weight: "" });
   const [items, setItems] = useState<RxItem[]>([{ ...EMPTY_ITEM }]);
   const [saving, setSaving] = useState(false);
+  const startedAtRef = useRef(Date.now());
+
+  const { data: existingVisit } = useQuery({
+    queryKey: ["opd-consult-existing-visit", appointmentId],
+    enabled: !!appt?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("opd_visits")
+        .select("id, chief_complaints, diagnosis, clinical_findings, notes, follow_up_date, vitals, prescriptions(id, prescription_items(id, medicine_name, dosage, timing, food_instruction, duration_days, position))")
+        .eq("appointment_id", appointmentId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data as any;
+    },
+  });
+
+  useEffect(() => {
+    if (!appt?.id || (appt as any).status === "in_consultation" || (appt as any).status === "completed") return;
+    supabase.from("appointments").update({ status: "in_consultation" as any }).eq("id", appt.id);
+    qc.invalidateQueries({ queryKey: ["opd-consult-queue"] });
+  }, [appt?.id]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!existingVisit) return;
+    setChief(existingVisit.chief_complaints ?? "");
+    setDiagnosis(existingVisit.diagnosis ?? "");
+    setFindings(existingVisit.clinical_findings ?? "");
+    setNotes((existingVisit.notes ?? "").replace(/\n?\[Consultation duration: .*? min\]$/m, ""));
+    setFollowUp(existingVisit.follow_up_date ?? "");
+    setVitals({ bp: "", pulse: "", temp: "", spo2: "", weight: "", ...(existingVisit.vitals ?? {}) });
+    const rxItems = existingVisit.prescriptions?.[0]?.prescription_items ?? [];
+    if (rxItems.length) {
+      setItems(rxItems.sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0)).map((it: any) => ({
+        medicine_name: it.medicine_name ?? "",
+        dosage: it.dosage ?? "",
+        timing: it.timing ?? "",
+        food_instruction: it.food_instruction ?? "After food",
+        duration_days: it.duration_days ? String(it.duration_days) : "",
+      })));
+    }
+  }, [existingVisit]);
 
   async function save(opts: { print?: boolean } = {}) {
     if (!appt) return;
     setSaving(true);
     try {
-      const { data: visit, error: e1 } = await supabase.from("opd_visits").insert({
+      const durationMin = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 60000));
+      const visitPayload = {
         patient_id: appt.patient_id,
         doctor_id: appt.doctor_id,
         appointment_id: appt.id,
-        chief_complaints: chief,
-        diagnosis,
-        clinical_findings: findings,
-        notes,
+        chief_complaints: chief || null,
+        diagnosis: diagnosis || null,
+        clinical_findings: findings || null,
+        notes: `${notes}${notes ? "\n\n" : ""}[Consultation duration: ${durationMin} min]`,
+        follow_up_date: followUp || null,
         vitals,
         created_by: user?.id,
-      }).select("id").single();
-      if (e1) throw e1;
+      };
 
-      const { data: rx, error: e2 } = await supabase.from("prescriptions").insert({ opd_visit_id: visit.id }).select("id").single();
+      let visitId = existingVisit?.id as string | undefined;
+      if (visitId) {
+        const { error } = await supabase.from("opd_visits").update(visitPayload).eq("id", visitId);
+        if (error) throw error;
+      } else {
+        const { data: visit, error } = await supabase.from("opd_visits").insert(visitPayload).select("id").single();
+        if (error) throw error;
+        visitId = visit.id;
+      }
+
+      let { data: rx, error: e2 } = await supabase.from("prescriptions").select("id").eq("opd_visit_id", visitId).maybeSingle();
       if (e2) throw e2;
+      if (!rx) {
+        const created = await supabase.from("prescriptions").insert({ opd_visit_id: visitId }).select("id").single();
+        if (created.error) throw created.error;
+        rx = created.data;
+      }
 
       const validItems = items.filter((i) => i.medicine_name.trim());
+      await supabase.from("prescription_items").delete().eq("prescription_id", rx.id);
       if (validItems.length) {
         const { error: e3 } = await supabase.from("prescription_items").insert(validItems.map((it, idx) => ({
           prescription_id: rx.id,
@@ -86,7 +146,8 @@ function Consultation() {
         if (e3) throw e3;
       }
 
-      await supabase.from("appointments").update({ status: "completed" }).eq("id", appt.id);
+      const { error: apptError } = await supabase.from("appointments").update({ status: "completed" as any }).eq("id", appt.id);
+      if (apptError) throw apptError;
       qc.invalidateQueries();
       toast.success("Consultation saved");
 
@@ -110,7 +171,7 @@ function Consultation() {
         <Button asChild variant="ghost" size="icon"><Link to="/opd"><ArrowLeft className="size-4" /></Link></Button>
         <div className="flex-1">
           <h1 className="text-xl font-semibold tracking-tight">{(appt as any).patients?.full_name} <span className="text-sm text-muted-foreground font-mono ml-1">{(appt as any).patients?.uhid}</span></h1>
-          <p className="text-xs text-muted-foreground">{(appt as any).doctors?.name} · {format(new Date(appt.scheduled_at), "dd MMM yyyy HH:mm")}</p>
+          <p className="text-xs text-muted-foreground">{(appt as any).doctors?.name} · token {(appt as any).token_no ?? "—"} · {format(new Date(appt.scheduled_at), "dd MMM yyyy HH:mm")}</p>
         </div>
       </div>
 
@@ -155,6 +216,10 @@ function Consultation() {
             <FieldArea label="Clinical findings" value={findings} onChange={setFindings} rows={2} />
             <FieldArea label="Diagnosis" value={diagnosis} onChange={setDiagnosis} rows={2} />
             <FieldArea label="Notes / advice" value={notes} onChange={setNotes} rows={2} />
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Follow-up date</Label>
+              <Input type="date" value={followUp} onChange={(e) => setFollowUp(e.target.value)} className="h-9 text-sm" />
+            </div>
           </div>
         </Card>
 
