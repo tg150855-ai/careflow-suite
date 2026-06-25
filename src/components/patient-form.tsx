@@ -96,6 +96,7 @@ type PatientDefaultsSource = Partial<{
   emergency_contact_mobile: string | null;
   allergies: string | null;
   chronic_diseases: string | null;
+  photo_url: string | null;
 }>;
 
 type InsuranceDefaultsSource = Partial<{
