@@ -19,7 +19,7 @@ import { can } from "@/lib/permissions";
 export function NSNotes() {
   const qc = useQueryClient();
   const { user, profile, roles } = useAuth();
-  const canEdit = can(roles as any, "nurse_station", "write") || roles?.includes("doctor") || roles?.includes("admin");
+  const canEdit = can(roles as any, "nurse_station", "edit") || can(roles as any, "nurse_station", "create") || roles?.includes("doctor") || roles?.includes("admin");
   const { data: admissions = [] } = useQuery({ queryKey: NS_QK.admissions, queryFn: loadActiveAdmissions });
   const [admissionId, setAdmissionId] = useState("");
   const [shift, setShift] = useState("Morning");
