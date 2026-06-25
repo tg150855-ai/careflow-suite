@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { BedDouble, Plus, UserPlus, Activity, LogOut, Search } from "lucide-react";
+import { BedDouble, Plus, UserPlus, Activity, LogOut, Search, FileBarChart, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, differenceInDays } from "date-fns";
 import { useState } from "react";
