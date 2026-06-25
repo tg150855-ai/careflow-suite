@@ -43,7 +43,6 @@ import { Route as AuthenticatedPatientsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPatientSafetyRouteImport } from './routes/_authenticated/patient-safety'
 import { Route as AuthenticatedPatientPortalRouteImport } from './routes/_authenticated/patient-portal'
 import { Route as AuthenticatedPacsRouteImport } from './routes/_authenticated/pacs'
-import { Route as AuthenticatedOtRouteImport } from './routes/_authenticated/ot'
 import { Route as AuthenticatedOpdRouteImport } from './routes/_authenticated/opd'
 import { Route as AuthenticatedNurseStationRouteImport } from './routes/_authenticated/nurse-station'
 import { Route as AuthenticatedNabhRouteImport } from './routes/_authenticated/nabh'
@@ -314,11 +313,6 @@ const AuthenticatedPatientPortalRoute =
 const AuthenticatedPacsRoute = AuthenticatedPacsRouteImport.update({
   id: '/pacs',
   path: '/pacs',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedOtRoute = AuthenticatedOtRouteImport.update({
-  id: '/ot',
-  path: '/ot',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedOpdRoute = AuthenticatedOpdRouteImport.update({
@@ -857,7 +851,6 @@ export interface FileRoutesByFullPath {
   '/nabh': typeof AuthenticatedNabhRoute
   '/nurse-station': typeof AuthenticatedNurseStationRoute
   '/opd': typeof AuthenticatedOpdRouteWithChildren
-  '/ot': typeof AuthenticatedOtRoute
   '/pacs': typeof AuthenticatedPacsRoute
   '/patient-portal': typeof AuthenticatedPatientPortalRoute
   '/patient-safety': typeof AuthenticatedPatientSafetyRoute
@@ -979,7 +972,6 @@ export interface FileRoutesByTo {
   '/nabh': typeof AuthenticatedNabhRoute
   '/nurse-station': typeof AuthenticatedNurseStationRoute
   '/opd': typeof AuthenticatedOpdRouteWithChildren
-  '/ot': typeof AuthenticatedOtRoute
   '/pacs': typeof AuthenticatedPacsRoute
   '/patient-portal': typeof AuthenticatedPatientPortalRoute
   '/patient-safety': typeof AuthenticatedPatientSafetyRoute
@@ -1104,7 +1096,6 @@ export interface FileRoutesById {
   '/_authenticated/nabh': typeof AuthenticatedNabhRoute
   '/_authenticated/nurse-station': typeof AuthenticatedNurseStationRoute
   '/_authenticated/opd': typeof AuthenticatedOpdRouteWithChildren
-  '/_authenticated/ot': typeof AuthenticatedOtRoute
   '/_authenticated/pacs': typeof AuthenticatedPacsRoute
   '/_authenticated/patient-portal': typeof AuthenticatedPatientPortalRoute
   '/_authenticated/patient-safety': typeof AuthenticatedPatientSafetyRoute
@@ -1231,7 +1222,6 @@ export interface FileRouteTypes {
     | '/nabh'
     | '/nurse-station'
     | '/opd'
-    | '/ot'
     | '/pacs'
     | '/patient-portal'
     | '/patient-safety'
@@ -1353,7 +1343,6 @@ export interface FileRouteTypes {
     | '/nabh'
     | '/nurse-station'
     | '/opd'
-    | '/ot'
     | '/pacs'
     | '/patient-portal'
     | '/patient-safety'
@@ -1477,7 +1466,6 @@ export interface FileRouteTypes {
     | '/_authenticated/nabh'
     | '/_authenticated/nurse-station'
     | '/_authenticated/opd'
-    | '/_authenticated/ot'
     | '/_authenticated/pacs'
     | '/_authenticated/patient-portal'
     | '/_authenticated/patient-safety'
@@ -1794,13 +1782,6 @@ declare module '@tanstack/react-router' {
       path: '/pacs'
       fullPath: '/pacs'
       preLoaderRoute: typeof AuthenticatedPacsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/ot': {
-      id: '/_authenticated/ot'
-      path: '/ot'
-      fullPath: '/ot'
-      preLoaderRoute: typeof AuthenticatedOtRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/opd': {
@@ -2620,7 +2601,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedNabhRoute: typeof AuthenticatedNabhRoute
   AuthenticatedNurseStationRoute: typeof AuthenticatedNurseStationRoute
   AuthenticatedOpdRoute: typeof AuthenticatedOpdRouteWithChildren
-  AuthenticatedOtRoute: typeof AuthenticatedOtRoute
   AuthenticatedPacsRoute: typeof AuthenticatedPacsRoute
   AuthenticatedPatientPortalRoute: typeof AuthenticatedPatientPortalRoute
   AuthenticatedPatientSafetyRoute: typeof AuthenticatedPatientSafetyRoute
@@ -2711,7 +2691,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedNabhRoute: AuthenticatedNabhRoute,
   AuthenticatedNurseStationRoute: AuthenticatedNurseStationRoute,
   AuthenticatedOpdRoute: AuthenticatedOpdRouteWithChildren,
-  AuthenticatedOtRoute: AuthenticatedOtRoute,
   AuthenticatedPacsRoute: AuthenticatedPacsRoute,
   AuthenticatedPatientPortalRoute: AuthenticatedPatientPortalRoute,
   AuthenticatedPatientSafetyRoute: AuthenticatedPatientSafetyRoute,
