@@ -660,29 +660,41 @@ export type Database = {
       bed_transfers: {
         Row: {
           admission_id: string
+          approved_by: string | null
           created_by: string | null
           from_bed_id: string | null
+          from_ward_id: string | null
           id: string
+          notes: string | null
           reason: string | null
           to_bed_id: string
+          to_ward_id: string | null
           transferred_at: string
         }
         Insert: {
           admission_id: string
+          approved_by?: string | null
           created_by?: string | null
           from_bed_id?: string | null
+          from_ward_id?: string | null
           id?: string
+          notes?: string | null
           reason?: string | null
           to_bed_id: string
+          to_ward_id?: string | null
           transferred_at?: string
         }
         Update: {
           admission_id?: string
+          approved_by?: string | null
           created_by?: string | null
           from_bed_id?: string | null
+          from_ward_id?: string | null
           id?: string
+          notes?: string | null
           reason?: string | null
           to_bed_id?: string
+          to_ward_id?: string | null
           transferred_at?: string
         }
         Relationships: [
@@ -701,10 +713,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bed_transfers_from_ward_id_fkey"
+            columns: ["from_ward_id"]
+            isOneToOne: false
+            referencedRelation: "wards"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bed_transfers_to_bed_id_fkey"
             columns: ["to_bed_id"]
             isOneToOne: false
             referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bed_transfers_to_ward_id_fkey"
+            columns: ["to_ward_id"]
+            isOneToOne: false
+            referencedRelation: "wards"
             referencedColumns: ["id"]
           },
         ]
@@ -793,6 +819,7 @@ export type Database = {
       }
       bills: {
         Row: {
+          admission_id: string | null
           bill_no: string
           created_at: string
           created_by: string | null
@@ -811,6 +838,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admission_id?: string | null
           bill_no?: string
           created_at?: string
           created_by?: string | null
@@ -829,6 +857,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admission_id?: string | null
           bill_no?: string
           created_at?: string
           created_by?: string | null
@@ -847,6 +876,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bills_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bills_doctor_id_fkey"
             columns: ["doctor_id"]
@@ -1477,6 +1513,75 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      death_register: {
+        Row: {
+          admission_id: string | null
+          cause_of_death: string
+          certified_by: string | null
+          certifying_doctor_name: string | null
+          created_at: string
+          created_by: string | null
+          died_at: string
+          id: string
+          immediate_cause: string | null
+          patient_id: string
+          place_of_death: string | null
+          remarks: string | null
+          underlying_cause: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          admission_id?: string | null
+          cause_of_death: string
+          certified_by?: string | null
+          certifying_doctor_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          died_at: string
+          id?: string
+          immediate_cause?: string | null
+          patient_id: string
+          place_of_death?: string | null
+          remarks?: string | null
+          underlying_cause?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          admission_id?: string | null
+          cause_of_death?: string
+          certified_by?: string | null
+          certifying_doctor_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          died_at?: string
+          id?: string
+          immediate_cause?: string | null
+          patient_id?: string
+          place_of_death?: string | null
+          remarks?: string | null
+          underlying_cause?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "death_register_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "death_register_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       departments: {
         Row: {
@@ -3427,6 +3532,7 @@ export type Database = {
       }
       lab_orders: {
         Row: {
+          admission_id: string | null
           created_at: string
           created_by: string | null
           doctor_id: string | null
@@ -3440,6 +3546,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admission_id?: string | null
           created_at?: string
           created_by?: string | null
           doctor_id?: string | null
@@ -3453,6 +3560,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admission_id?: string | null
           created_at?: string
           created_by?: string | null
           doctor_id?: string | null
@@ -3466,6 +3574,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lab_orders_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lab_orders_doctor_id_fkey"
             columns: ["doctor_id"]
@@ -5127,6 +5242,7 @@ export type Database = {
       }
       radiology_orders: {
         Row: {
+          admission_id: string | null
           amount: number | null
           created_at: string
           doctor_id: string | null
@@ -5143,6 +5259,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admission_id?: string | null
           amount?: number | null
           created_at?: string
           doctor_id?: string | null
@@ -5159,6 +5276,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admission_id?: string | null
           amount?: number | null
           created_at?: string
           doctor_id?: string | null
@@ -5175,6 +5293,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "radiology_orders_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "radiology_orders_doctor_id_fkey"
             columns: ["doctor_id"]
