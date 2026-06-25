@@ -333,10 +333,16 @@ function OtSchedule() {
                   <TableCell>{inr(r.estimated_cost ?? 0)}</TableCell>
                   <TableCell className="flex gap-1 flex-wrap">
                     <Button asChild size="sm" variant="outline"><Link to="/ot/$id" params={{ id: r.id }}>Open</Link></Button>
-                    {r.status === "scheduled" && <Button size="sm" variant="outline" onClick={() => setStatus(r.id, "in_progress")}><Play className="size-3" /></Button>}
-                    {r.status === "in_progress" && <Button size="sm" onClick={() => setStatus(r.id, "completed")}><CheckCircle2 className="size-3" /></Button>}
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(r)}><Pencil className="size-3" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="size-3 text-rose-600" /></Button>
+                    {r.status === "scheduled" && canEdit && <Button size="sm" variant="outline" onClick={() => setStatus(r.id, "in_progress", r)} title="Start"><Play className="size-3" /></Button>}
+                    {r.status === "in_progress" && (canApprove || canEdit) && <Button size="sm" onClick={() => setStatus(r.id, "completed", r)} title="Complete"><CheckCircle2 className="size-3" /></Button>}
+                    {canEdit && !["completed"].includes(r.status) && (
+                      <Button size="sm" variant="ghost" onClick={() => openReschedule(r)} title="Reschedule"><CalendarClock className="size-3" /></Button>
+                    )}
+                    {canEdit && !["completed", "cancelled"].includes(r.status) && (
+                      <Button size="sm" variant="ghost" onClick={() => { setCancelTarget(r); setCancelReason(""); }} title="Cancel"><XCircle className="size-3 text-rose-600" /></Button>
+                    )}
+                    {canEdit && <Button size="sm" variant="ghost" onClick={() => openEdit(r)}><Pencil className="size-3" /></Button>}
+                    {canDelete && <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="size-3 text-rose-600" /></Button>}
                   </TableCell>
                 </TableRow>
               ))}
