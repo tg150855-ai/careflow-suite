@@ -5,7 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Eye, Phone, Plus, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search, Trash2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 import { differenceInYears, format } from "date-fns";
 import {
   Select,
