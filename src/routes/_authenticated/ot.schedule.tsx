@@ -41,9 +41,18 @@ const empty: FormState = {
 
 function OtSchedule() {
   const qc = useQueryClient();
+  const { roles } = useAuth();
+  const canCreate = can(roles, "ot", "create");
+  const canEdit = can(roles, "ot", "edit");
+  const canDelete = can(roles, "ot", "delete");
+  const canApprove = can(roles, "ot", "approve");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(empty);
+  const [cancelTarget, setCancelTarget] = useState<any | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [reschedTarget, setReschedTarget] = useState<any | null>(null);
+  const [reschedForm, setReschedForm] = useState({ scheduled_start: "", scheduled_end: "", reason: "" });
 
   const { data: rows = [] } = useQuery({
     queryKey: ["ot-schedule"],
