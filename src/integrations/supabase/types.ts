@@ -90,6 +90,7 @@ export type Database = {
           doctor_id: string
           emergency_contact: string | null
           estimated_stay_days: number | null
+          icu_status: string | null
           id: string
           initial_diagnosis: string | null
           insurance_policy_no: string | null
@@ -115,6 +116,7 @@ export type Database = {
           doctor_id: string
           emergency_contact?: string | null
           estimated_stay_days?: number | null
+          icu_status?: string | null
           id?: string
           initial_diagnosis?: string | null
           insurance_policy_no?: string | null
@@ -140,6 +142,7 @@ export type Database = {
           doctor_id?: string
           emergency_contact?: string | null
           estimated_stay_days?: number | null
+          icu_status?: string | null
           id?: string
           initial_diagnosis?: string | null
           insurance_policy_no?: string | null
@@ -2934,6 +2937,60 @@ export type Database = {
           },
         ]
       }
+      icu_doctor_notes: {
+        Row: {
+          admission_id: string | null
+          created_at: string
+          created_by: string | null
+          doctor_id: string | null
+          doctor_name: string | null
+          id: string
+          note: string
+          patient_id: string
+          recorded_at: string
+          updated_at: string
+        }
+        Insert: {
+          admission_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          doctor_id?: string | null
+          doctor_name?: string | null
+          id?: string
+          note: string
+          patient_id: string
+          recorded_at?: string
+          updated_at?: string
+        }
+        Update: {
+          admission_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          doctor_id?: string | null
+          doctor_name?: string | null
+          id?: string
+          note?: string
+          patient_id?: string
+          recorded_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icu_doctor_notes_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "icu_doctor_notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       icu_monitoring: {
         Row: {
           admission_id: string | null
@@ -2986,6 +3043,186 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "icu_monitoring_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      icu_procedures: {
+        Row: {
+          admission_id: string | null
+          charges: number | null
+          created_at: string
+          created_by: string | null
+          doctor_id: string | null
+          id: string
+          notes: string | null
+          patient_id: string
+          performed_at: string
+          procedure_type: string
+          updated_at: string
+        }
+        Insert: {
+          admission_id?: string | null
+          charges?: number | null
+          created_at?: string
+          created_by?: string | null
+          doctor_id?: string | null
+          id?: string
+          notes?: string | null
+          patient_id: string
+          performed_at?: string
+          procedure_type: string
+          updated_at?: string
+        }
+        Update: {
+          admission_id?: string | null
+          charges?: number | null
+          created_at?: string
+          created_by?: string | null
+          doctor_id?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          performed_at?: string
+          procedure_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icu_procedures_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "icu_procedures_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      icu_settings: {
+        Row: {
+          alert_bp_sys_max: number | null
+          alert_gcs_min: number | null
+          alert_hr_max: number | null
+          alert_hr_min: number | null
+          alert_rr_max: number | null
+          alert_spo2_min: number | null
+          alert_temp_max: number | null
+          bed_charge_per_day: number
+          created_at: string
+          id: string
+          nursing_charge_per_day: number
+          updated_at: string
+          ventilator_charge_per_day: number
+        }
+        Insert: {
+          alert_bp_sys_max?: number | null
+          alert_gcs_min?: number | null
+          alert_hr_max?: number | null
+          alert_hr_min?: number | null
+          alert_rr_max?: number | null
+          alert_spo2_min?: number | null
+          alert_temp_max?: number | null
+          bed_charge_per_day?: number
+          created_at?: string
+          id?: string
+          nursing_charge_per_day?: number
+          updated_at?: string
+          ventilator_charge_per_day?: number
+        }
+        Update: {
+          alert_bp_sys_max?: number | null
+          alert_gcs_min?: number | null
+          alert_hr_max?: number | null
+          alert_hr_min?: number | null
+          alert_rr_max?: number | null
+          alert_spo2_min?: number | null
+          alert_temp_max?: number | null
+          bed_charge_per_day?: number
+          created_at?: string
+          id?: string
+          nursing_charge_per_day?: number
+          updated_at?: string
+          ventilator_charge_per_day?: number
+        }
+        Relationships: []
+      }
+      icu_ventilator_records: {
+        Row: {
+          admission_id: string | null
+          charge_per_day: number | null
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          fio2: number | null
+          id: string
+          mode: string | null
+          notes: string | null
+          patient_id: string
+          peep: number | null
+          resp_rate: number | null
+          start_date: string
+          status: string
+          tidal_volume: number | null
+          updated_at: string
+          vent_type: string | null
+        }
+        Insert: {
+          admission_id?: string | null
+          charge_per_day?: number | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          fio2?: number | null
+          id?: string
+          mode?: string | null
+          notes?: string | null
+          patient_id: string
+          peep?: number | null
+          resp_rate?: number | null
+          start_date?: string
+          status?: string
+          tidal_volume?: number | null
+          updated_at?: string
+          vent_type?: string | null
+        }
+        Update: {
+          admission_id?: string | null
+          charge_per_day?: number | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          fio2?: number | null
+          id?: string
+          mode?: string | null
+          notes?: string | null
+          patient_id?: string
+          peep?: number | null
+          resp_rate?: number | null
+          start_date?: string
+          status?: string
+          tidal_volume?: number | null
+          updated_at?: string
+          vent_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icu_ventilator_records_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "icu_ventilator_records_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
@@ -6815,7 +7052,9 @@ export type Database = {
       vitals: {
         Row: {
           admission_id: string | null
+          cvp: number | null
           diastolic: number | null
+          gcs_score: number | null
           id: string
           notes: string | null
           oxygen: number | null
@@ -6831,7 +7070,9 @@ export type Database = {
         }
         Insert: {
           admission_id?: string | null
+          cvp?: number | null
           diastolic?: number | null
+          gcs_score?: number | null
           id?: string
           notes?: string | null
           oxygen?: number | null
@@ -6847,7 +7088,9 @@ export type Database = {
         }
         Update: {
           admission_id?: string | null
+          cvp?: number | null
           diastolic?: number | null
+          gcs_score?: number | null
           id?: string
           notes?: string | null
           oxygen?: number | null
