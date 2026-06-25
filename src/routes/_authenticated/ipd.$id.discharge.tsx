@@ -41,6 +41,50 @@ function DischargeForm() {
 
   const pendingTotal = bills.reduce((s: number, b: any) => s + Number(b.pending), 0);
 
+  const autofill = useMutation({
+    mutationFn: async () => {
+      if (!adm) throw new Error("Loading…");
+      const [rounds, surgeries, labs, prescriptions] = await Promise.all([
+        supabase.from("doctor_rounds").select("progress_notes, updated_diagnosis, follow_up_orders, clinical_findings, rounded_at").eq("admission_id", id).order("rounded_at"),
+        supabase.from("surgeries").select("procedure_name, performed_at, notes").eq("patient_id", adm.patient_id).order("performed_at"),
+        supabase.from("lab_orders").select("order_no, lab_results(test_name, result_value, unit, flag)").or(`admission_id.eq.${id},patient_id.eq.${adm.patient_id}`),
+        supabase.from("prescriptions").select("id, created_at, opd_visit_id, prescription_items(medicine_name, dosage, timing, food_instruction, duration_days)").eq("opd_visit_id", "00000000-0000-0000-0000-000000000000"),
+      ]);
+
+      const dxFromRounds = (rounds.data ?? []).map((r: any) => r.updated_diagnosis).filter(Boolean).join("\n");
+      if (dxFromRounds && !finalDx) setFinalDx(dxFromRounds);
+
+      const procText = (surgeries.data ?? []).map((s: any) => `${s.procedure_name}${s.performed_at ? " (" + new Date(s.performed_at).toLocaleDateString() + ")" : ""}`).join("\n");
+      if (procText && !procedures) setProcedures(procText);
+
+      const courseText = (rounds.data ?? []).map((r: any) => `${new Date(r.rounded_at).toLocaleDateString()}: ${r.progress_notes ?? r.clinical_findings ?? ""}`).filter((x: string) => x.trim().length > 12).join("\n");
+      const abnormal = (labs.data ?? []).flatMap((o: any) => (o.lab_results ?? []).filter((r: any) => r.flag).map((r: any) => `${r.test_name}: ${r.result_value} ${r.unit ?? ""} [${r.flag}]`)).slice(0, 8).join("\n");
+      const merged = [courseText, abnormal && `\nNotable labs:\n${abnormal}`].filter(Boolean).join("");
+      if (merged && !course) setCourse(merged);
+
+      const followUp = (rounds.data ?? []).map((r: any) => r.follow_up_orders).filter(Boolean).join("\n");
+      if (followUp && !followUpInstr) setFollowUpInstr(followUp);
+
+      // Build take-home medicines from latest prescription items + active MAR
+      const { data: mar } = await supabase.from("medication_administration").select("medicine_name, dosage, route").eq("admission_id", id).eq("status", "administered");
+      const seen = new Set<string>();
+      const medRows: Med[] = [];
+      (prescriptions.data ?? []).flatMap((p: any) => p.prescription_items ?? []).forEach((it: any) => {
+        const k = it.medicine_name?.toLowerCase(); if (!k || seen.has(k)) return;
+        seen.add(k);
+        medRows.push({ id: crypto.randomUUID(), medicine_name: it.medicine_name, dosage: it.dosage ?? "", duration: it.duration_days ? `${it.duration_days} days` : "", instructions: [it.timing, it.food_instruction].filter(Boolean).join(", ") });
+      });
+      (mar ?? []).forEach((m: any) => {
+        const k = m.medicine_name?.toLowerCase(); if (!k || seen.has(k)) return;
+        seen.add(k);
+        medRows.push({ id: crypto.randomUUID(), medicine_name: m.medicine_name, dosage: m.dosage ?? "", duration: "", instructions: m.route ?? "" });
+      });
+      if (medRows.length && meds.length === 0) setMeds(medRows);
+    },
+    onSuccess: () => toast.success("Discharge summary populated"),
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const save = useMutation({
     mutationFn: async () => {
       // Create discharge summary
