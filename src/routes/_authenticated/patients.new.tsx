@@ -11,9 +11,8 @@ import { logAudit } from "@/lib/audit";
 export const Route = createFileRoute("/_authenticated/patients/new")({ component: NewPatient });
 
 function NewPatient() {
-  const { user, hasAnyRole } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const canConsult = hasAnyRole(["doctor", "admin", "super_admin"]);
 
   const { data: insuranceCompanies = [] } = useQuery({
     queryKey: ["insurance-companies", "patient-form"],
