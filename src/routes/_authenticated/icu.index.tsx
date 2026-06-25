@@ -235,7 +235,7 @@ function ICUDashboard() {
                 <div className="col-span-3">
                   <div className="font-medium">{a.patients?.full_name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {a.patients?.uhid} · {a.patients?.age ?? "—"}y · {a.patients?.gender ?? "—"}
+                    {a.patients?.uhid} · {a.patients?.dob ? new Date().getFullYear() - new Date(a.patients.dob).getFullYear() + "y" : "—"} · {a.patients?.gender ?? "—"}
                   </div>
                 </div>
                 <div className="col-span-2 text-sm">

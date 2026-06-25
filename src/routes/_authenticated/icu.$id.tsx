@@ -58,7 +58,7 @@ function ICUWorkspace() {
       const { data } = await supabase
         .from("admissions")
         .select(
-          "id, admission_no, admitted_at, status, icu_status, initial_diagnosis, reason, patient_id, doctor_id, ward_id, bed_id, patients(id, full_name, uhid, mobile, age, gender, photo_url), doctors(id, name), beds(id, bed_number, charge_per_day), wards(id, name, type)"
+          "id, admission_no, admitted_at, status, icu_status, initial_diagnosis, reason, patient_id, doctor_id, ward_id, bed_id, patients(id, full_name, uhid, mobile, dob, gender, photo_url), doctors(id, name), beds(id, bed_number, charge_per_day), wards(id, name, type)"
         )
         .eq("id", id)
         .maybeSingle();
@@ -115,7 +115,7 @@ function ICUWorkspace() {
           <div>
             <div className="text-lg font-semibold">{adm.patients?.full_name}</div>
             <div className="text-xs text-muted-foreground">
-              {adm.patients?.uhid} · {adm.patients?.age ?? "—"}y · {adm.patients?.gender ?? "—"} · {adm.admission_no} · Day {days} · {adm.beds?.bed_number} ({adm.wards?.name})
+              {adm.patients?.uhid} · {adm.patients?.dob ? (new Date().getFullYear() - new Date(adm.patients.dob).getFullYear()) : "—"}y · {adm.patients?.gender ?? "—"} · {adm.admission_no} · Day {days} · {adm.beds?.bed_number} ({adm.wards?.name})
             </div>
           </div>
         </div>
