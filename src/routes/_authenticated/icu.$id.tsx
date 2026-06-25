@@ -310,8 +310,8 @@ function NursingNotesTab({ adm }: any) {
         .from("nursing_notes")
         .select("*")
         .eq("admission_id", adm.id)
-        .order("recorded_at", { ascending: false });
-      return data ?? [];
+        .order("created_at", { ascending: false });
+      return (data ?? []).map((n: any) => ({ ...n, recorded_at: n.created_at }));
     },
   });
   const save = async () => {
@@ -320,7 +320,7 @@ function NursingNotesTab({ adm }: any) {
     const { error } = await supabase.from("nursing_notes").insert({
       admission_id: adm.id,
       note,
-      recorded_by: user?.id,
+      created_by: user?.id,
     });
     if (error) return toast.error(error.message);
     setNote("");
