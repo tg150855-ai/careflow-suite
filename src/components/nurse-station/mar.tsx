@@ -46,7 +46,7 @@ export function NSMar() {
     if (!admissionId) { toast.error("Select patient"); return; }
     if (!med) { toast.error("Medicine name required"); return; }
     const adm = admissions.find((a: any) => a.id === admissionId);
-    const { error } = await supabase.from("medication_administration").insert({
+    const { error } = await (supabase as any).from("medication_administration").insert({
       admission_id: admissionId, patient_id: adm?.patient_id,
       medicine_name: med, dosage: dose, route, scheduled_at: new Date(when).toISOString(), status: "scheduled",
     });
@@ -74,7 +74,7 @@ export function NSMar() {
       scheduled_at: new Date(now.getTime() + i * 30 * 60000).toISOString(),
       status: "scheduled", notes: it.timing ?? null,
     }));
-    const { error } = await supabase.from("medication_administration").insert(inserts);
+    const { error } = await (supabase as any).from("medication_administration").insert(inserts);
     if (error) { toast.error(error.message); return; }
     toast.success(`Pulled ${inserts.length} medications`);
     qc.invalidateQueries({ queryKey: ["ns-mar-rows"] });
@@ -83,7 +83,7 @@ export function NSMar() {
   const setStatus = async (id: string, status: string) => {
     const payload: any = { status };
     if (status === "administered") { payload.administered_at = new Date().toISOString(); payload.administered_by = user?.id; }
-    const { error } = await supabase.from("medication_administration").update(payload).eq("id", id);
+    const { error } = await (supabase as any).from("medication_administration").update(payload).eq("id", id);
     if (error) toast.error(error.message); else { toast.success(status); qc.invalidateQueries({ queryKey: ["ns-mar-rows"] }); }
   };
 
