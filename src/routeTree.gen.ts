@@ -133,6 +133,7 @@ import { Route as AuthenticatedIpdBedsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedIpdIdRouteImport } from './routes/_authenticated/ipd.$id'
 import { Route as AuthenticatedIcuSettingsRouteImport } from './routes/_authenticated/icu.settings'
 import { Route as AuthenticatedIcuReportsRouteImport } from './routes/_authenticated/icu.reports'
+import { Route as AuthenticatedIcuIdRouteImport } from './routes/_authenticated/icu.$id'
 import { Route as AuthenticatedHrPayrollRouteImport } from './routes/_authenticated/hr.payroll'
 import { Route as AuthenticatedHrLeaveRouteImport } from './routes/_authenticated/hr.leave'
 import { Route as AuthenticatedHrEmployeesRouteImport } from './routes/_authenticated/hr.employees'
@@ -804,6 +805,11 @@ const AuthenticatedIcuReportsRoute = AuthenticatedIcuReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedIcuRoute,
 } as any)
+const AuthenticatedIcuIdRoute = AuthenticatedIcuIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedIcuRoute,
+} as any)
 const AuthenticatedHrPayrollRoute = AuthenticatedHrPayrollRouteImport.update({
   id: '/hr/payroll',
   path: '/hr/payroll',
@@ -943,6 +949,7 @@ export interface FileRoutesByFullPath {
   '/hr/employees': typeof AuthenticatedHrEmployeesRoute
   '/hr/leave': typeof AuthenticatedHrLeaveRoute
   '/hr/payroll': typeof AuthenticatedHrPayrollRoute
+  '/icu/$id': typeof AuthenticatedIcuIdRoute
   '/icu/reports': typeof AuthenticatedIcuReportsRoute
   '/icu/settings': typeof AuthenticatedIcuSettingsRoute
   '/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
@@ -1069,6 +1076,7 @@ export interface FileRoutesByTo {
   '/hr/employees': typeof AuthenticatedHrEmployeesRoute
   '/hr/leave': typeof AuthenticatedHrLeaveRoute
   '/hr/payroll': typeof AuthenticatedHrPayrollRoute
+  '/icu/$id': typeof AuthenticatedIcuIdRoute
   '/icu/reports': typeof AuthenticatedIcuReportsRoute
   '/icu/settings': typeof AuthenticatedIcuSettingsRoute
   '/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
@@ -1204,6 +1212,7 @@ export interface FileRoutesById {
   '/_authenticated/hr/employees': typeof AuthenticatedHrEmployeesRoute
   '/_authenticated/hr/leave': typeof AuthenticatedHrLeaveRoute
   '/_authenticated/hr/payroll': typeof AuthenticatedHrPayrollRoute
+  '/_authenticated/icu/$id': typeof AuthenticatedIcuIdRoute
   '/_authenticated/icu/reports': typeof AuthenticatedIcuReportsRoute
   '/_authenticated/icu/settings': typeof AuthenticatedIcuSettingsRoute
   '/_authenticated/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
@@ -1339,6 +1348,7 @@ export interface FileRouteTypes {
     | '/hr/employees'
     | '/hr/leave'
     | '/hr/payroll'
+    | '/icu/$id'
     | '/icu/reports'
     | '/icu/settings'
     | '/ipd/$id'
@@ -1465,6 +1475,7 @@ export interface FileRouteTypes {
     | '/hr/employees'
     | '/hr/leave'
     | '/hr/payroll'
+    | '/icu/$id'
     | '/icu/reports'
     | '/icu/settings'
     | '/ipd/$id'
@@ -1599,6 +1610,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hr/employees'
     | '/_authenticated/hr/leave'
     | '/_authenticated/hr/payroll'
+    | '/_authenticated/icu/$id'
     | '/_authenticated/icu/reports'
     | '/_authenticated/icu/settings'
     | '/_authenticated/ipd/$id'
@@ -2519,6 +2531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIcuReportsRouteImport
       parentRoute: typeof AuthenticatedIcuRoute
     }
+    '/_authenticated/icu/$id': {
+      id: '/_authenticated/icu/$id'
+      path: '/$id'
+      fullPath: '/icu/$id'
+      preLoaderRoute: typeof AuthenticatedIcuIdRouteImport
+      parentRoute: typeof AuthenticatedIcuRoute
+    }
     '/_authenticated/hr/payroll': {
       id: '/_authenticated/hr/payroll'
       path: '/hr/payroll'
@@ -2594,12 +2613,14 @@ const AuthenticatedBillingRouteWithChildren =
   AuthenticatedBillingRoute._addFileChildren(AuthenticatedBillingRouteChildren)
 
 interface AuthenticatedIcuRouteChildren {
+  AuthenticatedIcuIdRoute: typeof AuthenticatedIcuIdRoute
   AuthenticatedIcuReportsRoute: typeof AuthenticatedIcuReportsRoute
   AuthenticatedIcuSettingsRoute: typeof AuthenticatedIcuSettingsRoute
   AuthenticatedIcuIndexRoute: typeof AuthenticatedIcuIndexRoute
 }
 
 const AuthenticatedIcuRouteChildren: AuthenticatedIcuRouteChildren = {
+  AuthenticatedIcuIdRoute: AuthenticatedIcuIdRoute,
   AuthenticatedIcuReportsRoute: AuthenticatedIcuReportsRoute,
   AuthenticatedIcuSettingsRoute: AuthenticatedIcuSettingsRoute,
   AuthenticatedIcuIndexRoute: AuthenticatedIcuIndexRoute,
