@@ -10,11 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Printer, Play, CheckCircle2, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, Printer, Play, CheckCircle2, Save, XCircle, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { inr } from "@/lib/format";
 import { PriorityBadge, StatusBadge } from "./ot.index";
+import { useAuth } from "@/lib/auth-context";
+import { can } from "@/lib/permissions";
+import { Can } from "@/components/can";
 
 export const Route = createFileRoute("/_authenticated/ot/schedule")({ component: OtSchedule });
 
