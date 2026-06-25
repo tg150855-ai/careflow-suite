@@ -1866,6 +1866,76 @@ export type Database = {
           },
         ]
       }
+      doctor_orders: {
+        Row: {
+          admission_id: string | null
+          completed_at: string | null
+          completed_by: string | null
+          completion_notes: string | null
+          created_at: string
+          created_by: string | null
+          doctor_id: string | null
+          id: string
+          order_text: string
+          patient_id: string | null
+          priority: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admission_id?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          doctor_id?: string | null
+          id?: string
+          order_text: string
+          patient_id?: string | null
+          priority?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admission_id?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          doctor_id?: string | null
+          id?: string
+          order_text?: string
+          patient_id?: string | null
+          priority?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_orders_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_orders_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctor_orders_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       doctor_rounds: {
         Row: {
           admission_id: string
@@ -4041,6 +4111,45 @@ export type Database = {
         }
         Relationships: []
       }
+      nurse_station_settings: {
+        Row: {
+          critical_pulse_high: number
+          critical_pulse_low: number
+          critical_spo2: number
+          critical_systolic_high: number
+          critical_systolic_low: number
+          id: string
+          med_alert_minutes: number
+          shift_types: Json
+          updated_at: string
+          vitals_frequency_hours: number
+        }
+        Insert: {
+          critical_pulse_high?: number
+          critical_pulse_low?: number
+          critical_spo2?: number
+          critical_systolic_high?: number
+          critical_systolic_low?: number
+          id?: string
+          med_alert_minutes?: number
+          shift_types?: Json
+          updated_at?: string
+          vitals_frequency_hours?: number
+        }
+        Update: {
+          critical_pulse_high?: number
+          critical_pulse_low?: number
+          critical_spo2?: number
+          critical_systolic_high?: number
+          critical_systolic_low?: number
+          id?: string
+          med_alert_minutes?: number
+          shift_types?: Json
+          updated_at?: string
+          vitals_frequency_hours?: number
+        }
+        Relationships: []
+      }
       nursing_notes: {
         Row: {
           admission_id: string
@@ -4075,6 +4184,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nursing_service_catalog: {
+        Row: {
+          active: boolean
+          category: string
+          charge: number
+          code: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          charge?: number
+          code?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          charge?: number
+          code?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       online_payments: {
         Row: {
@@ -5956,6 +6098,65 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_handovers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          critical_patients: Json
+          id: string
+          incoming_nurse_id: string | null
+          incoming_nurse_name: string | null
+          notes: string | null
+          outgoing_nurse_id: string | null
+          outgoing_nurse_name: string | null
+          pending_tasks: Json
+          shift: string
+          shift_date: string
+          updated_at: string
+          ward_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          critical_patients?: Json
+          id?: string
+          incoming_nurse_id?: string | null
+          incoming_nurse_name?: string | null
+          notes?: string | null
+          outgoing_nurse_id?: string | null
+          outgoing_nurse_name?: string | null
+          pending_tasks?: Json
+          shift: string
+          shift_date?: string
+          updated_at?: string
+          ward_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          critical_patients?: Json
+          id?: string
+          incoming_nurse_id?: string | null
+          incoming_nurse_name?: string | null
+          notes?: string | null
+          outgoing_nurse_id?: string | null
+          outgoing_nurse_name?: string | null
+          pending_tasks?: Json
+          shift?: string
+          shift_date?: string
+          updated_at?: string
+          ward_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_handovers_ward_id_fkey"
+            columns: ["ward_id"]
+            isOneToOne: false
+            referencedRelation: "wards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_logs: {
         Row: {
           body: string
@@ -6622,6 +6823,7 @@ export type Database = {
           pulse: number | null
           recorded_at: string
           recorded_by: string | null
+          respiratory_rate: number | null
           sugar: number | null
           systolic: number | null
           temperature: number | null
@@ -6637,6 +6839,7 @@ export type Database = {
           pulse?: number | null
           recorded_at?: string
           recorded_by?: string | null
+          respiratory_rate?: number | null
           sugar?: number | null
           systolic?: number | null
           temperature?: number | null
@@ -6652,6 +6855,7 @@ export type Database = {
           pulse?: number | null
           recorded_at?: string
           recorded_by?: string | null
+          respiratory_rate?: number | null
           sugar?: number | null
           systolic?: number | null
           temperature?: number | null
