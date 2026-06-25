@@ -119,6 +119,7 @@ import { Route as AuthenticatedOpdAppointmentIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedLaboratoryTestsRouteImport } from './routes/_authenticated/laboratory.tests'
 import { Route as AuthenticatedLaboratoryNewRouteImport } from './routes/_authenticated/laboratory.new'
 import { Route as AuthenticatedLaboratoryIdRouteImport } from './routes/_authenticated/laboratory.$id'
+import { Route as AuthenticatedIpdSettingsRouteImport } from './routes/_authenticated/ipd.settings'
 import { Route as AuthenticatedIpdReportsRouteImport } from './routes/_authenticated/ipd.reports'
 import { Route as AuthenticatedIpdNewRouteImport } from './routes/_authenticated/ipd.new'
 import { Route as AuthenticatedIpdDeathRegisterRouteImport } from './routes/_authenticated/ipd.death-register'
@@ -722,6 +723,12 @@ const AuthenticatedLaboratoryIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedLaboratoryRoute,
   } as any)
+const AuthenticatedIpdSettingsRoute =
+  AuthenticatedIpdSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedIpdRoute,
+  } as any)
 const AuthenticatedIpdReportsRoute = AuthenticatedIpdReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -892,6 +899,7 @@ export interface FileRoutesByFullPath {
   '/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
   '/ipd/new': typeof AuthenticatedIpdNewRoute
   '/ipd/reports': typeof AuthenticatedIpdReportsRoute
+  '/ipd/settings': typeof AuthenticatedIpdSettingsRoute
   '/laboratory/$id': typeof AuthenticatedLaboratoryIdRoute
   '/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
   '/laboratory/tests': typeof AuthenticatedLaboratoryTestsRoute
@@ -1011,6 +1019,7 @@ export interface FileRoutesByTo {
   '/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
   '/ipd/new': typeof AuthenticatedIpdNewRoute
   '/ipd/reports': typeof AuthenticatedIpdReportsRoute
+  '/ipd/settings': typeof AuthenticatedIpdSettingsRoute
   '/laboratory/$id': typeof AuthenticatedLaboratoryIdRoute
   '/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
   '/laboratory/tests': typeof AuthenticatedLaboratoryTestsRoute
@@ -1137,6 +1146,7 @@ export interface FileRoutesById {
   '/_authenticated/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
   '/_authenticated/ipd/new': typeof AuthenticatedIpdNewRoute
   '/_authenticated/ipd/reports': typeof AuthenticatedIpdReportsRoute
+  '/_authenticated/ipd/settings': typeof AuthenticatedIpdSettingsRoute
   '/_authenticated/laboratory/$id': typeof AuthenticatedLaboratoryIdRoute
   '/_authenticated/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
   '/_authenticated/laboratory/tests': typeof AuthenticatedLaboratoryTestsRoute
@@ -1263,6 +1273,7 @@ export interface FileRouteTypes {
     | '/ipd/death-register'
     | '/ipd/new'
     | '/ipd/reports'
+    | '/ipd/settings'
     | '/laboratory/$id'
     | '/laboratory/new'
     | '/laboratory/tests'
@@ -1382,6 +1393,7 @@ export interface FileRouteTypes {
     | '/ipd/death-register'
     | '/ipd/new'
     | '/ipd/reports'
+    | '/ipd/settings'
     | '/laboratory/$id'
     | '/laboratory/new'
     | '/laboratory/tests'
@@ -1507,6 +1519,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ipd/death-register'
     | '/_authenticated/ipd/new'
     | '/_authenticated/ipd/reports'
+    | '/_authenticated/ipd/settings'
     | '/_authenticated/laboratory/$id'
     | '/_authenticated/laboratory/new'
     | '/_authenticated/laboratory/tests'
@@ -2315,6 +2328,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLaboratoryIdRouteImport
       parentRoute: typeof AuthenticatedLaboratoryRoute
     }
+    '/_authenticated/ipd/settings': {
+      id: '/_authenticated/ipd/settings'
+      path: '/settings'
+      fullPath: '/ipd/settings'
+      preLoaderRoute: typeof AuthenticatedIpdSettingsRouteImport
+      parentRoute: typeof AuthenticatedIpdRoute
+    }
     '/_authenticated/ipd/reports': {
       id: '/_authenticated/ipd/reports'
       path: '/reports'
@@ -2441,6 +2461,7 @@ interface AuthenticatedIpdRouteChildren {
   AuthenticatedIpdDeathRegisterRoute: typeof AuthenticatedIpdDeathRegisterRoute
   AuthenticatedIpdNewRoute: typeof AuthenticatedIpdNewRoute
   AuthenticatedIpdReportsRoute: typeof AuthenticatedIpdReportsRoute
+  AuthenticatedIpdSettingsRoute: typeof AuthenticatedIpdSettingsRoute
   AuthenticatedIpdIndexRoute: typeof AuthenticatedIpdIndexRoute
 }
 
@@ -2450,6 +2471,7 @@ const AuthenticatedIpdRouteChildren: AuthenticatedIpdRouteChildren = {
   AuthenticatedIpdDeathRegisterRoute: AuthenticatedIpdDeathRegisterRoute,
   AuthenticatedIpdNewRoute: AuthenticatedIpdNewRoute,
   AuthenticatedIpdReportsRoute: AuthenticatedIpdReportsRoute,
+  AuthenticatedIpdSettingsRoute: AuthenticatedIpdSettingsRoute,
   AuthenticatedIpdIndexRoute: AuthenticatedIpdIndexRoute,
 }
 
