@@ -113,16 +113,31 @@ function DischargeForm() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  if (!adm) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+  const shareWhatsApp = () => {
+    const lines = [
+      `*Discharge summary* — ${adm.patients?.full_name} (${adm.patients?.uhid})`,
+      `Admission: ${adm.admission_no} · Dr. ${adm.doctors?.name}`,
+      finalDx && `Diagnosis: ${finalDx}`,
+      procedures && `Procedures: ${procedures}`,
+      followUpInstr && `Follow-up: ${followUpInstr}`,
+      followUpDate && `Follow-up on: ${followUpDate}`,
+      meds.length && `Medicines: ${meds.map((m) => `${m.medicine_name} ${m.dosage}`.trim()).join(", ")}`,
+    ].filter(Boolean).join("\n");
+    const phone = (adm.patients?.mobile ?? "").replace(/\D/g, "");
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(lines)}`, "_blank");
+  };
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Button asChild variant="ghost" size="icon"><Link to="/ipd/$id" params={{ id }}><ArrowLeft className="size-4" /></Link></Button>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">Discharge {adm.patients?.full_name}</h1>
           <p className="text-sm text-muted-foreground">{adm.admission_no} · Treating: Dr. {adm.doctors?.name}</p>
         </div>
+        <Button variant="outline" onClick={() => autofill.mutate()} disabled={autofill.isPending}>
+          <Sparkles className="size-4 mr-2" />{autofill.isPending ? "Pulling…" : "Auto-fill from records"}
+        </Button>
       </div>
 
       {pendingTotal > 0 && (
