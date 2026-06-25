@@ -52,6 +52,7 @@ import { format, differenceInYears } from "date-fns";
 import { inr } from "@/lib/format";
 import { PatientForm, type PatientSubmission } from "@/components/patient-form";
 import { toast } from "sonner";
+import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 
 export const Route = createFileRoute("/_authenticated/patients/$id")({
   validateSearch: (search: Record<string, unknown>): { edit?: string } => {
