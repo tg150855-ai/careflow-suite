@@ -39,7 +39,7 @@ function NurseStation() {
     <div className="space-y-4">
       <PageHeader
         title="Nurse Station"
-        description="Care board, medications, vitals, doctor orders, shift handovers."
+        subtitle="Care board, medications, vitals, doctor orders, shift handovers."
         icon={HeartPulse}
       />
       <Tabs value={tab} onValueChange={setTab}>
