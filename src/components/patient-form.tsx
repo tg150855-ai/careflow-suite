@@ -161,6 +161,7 @@ export function buildPatientSubmission(values: PatientFormValues): PatientSubmis
     emergency_contact_mobile: n(values.emergency_contact_mobile),
     allergies: n(values.allergies),
     chronic_diseases: n(values.chronic_diseases),
+    photo_url: n(values.photo_url ?? ""),
   };
 
   const hasInsurance = !!(
