@@ -4188,6 +4188,48 @@ export type Database = {
           },
         ]
       }
+      ot_procedure_catalog: {
+        Row: {
+          active: boolean
+          anesthesia_charge: number
+          assistant_charge: number
+          code: string | null
+          consumables_charge: number
+          created_at: string
+          id: string
+          name: string
+          ot_charge: number
+          surgeon_charge: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          anesthesia_charge?: number
+          assistant_charge?: number
+          code?: string | null
+          consumables_charge?: number
+          created_at?: string
+          id?: string
+          name: string
+          ot_charge?: number
+          surgeon_charge?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          anesthesia_charge?: number
+          assistant_charge?: number
+          code?: string | null
+          consumables_charge?: number
+          created_at?: string
+          id?: string
+          name?: string
+          ot_charge?: number
+          surgeon_charge?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ot_rooms: {
         Row: {
           active: boolean
@@ -6051,12 +6093,18 @@ export type Database = {
           actual_end: string | null
           actual_start: string | null
           admission_id: string | null
+          anesthesia_charge: number | null
           anesthetist_id: string | null
+          assistant_charge: number | null
+          assistant_surgeon_id: string | null
+          billed: boolean | null
+          consumables_charge: number | null
           created_at: string
           created_by: string | null
           estimated_cost: number
           id: string
           notes: string | null
+          ot_charge: number | null
           ot_room_id: string | null
           patient_id: string
           primary_surgeon_id: string | null
@@ -6066,6 +6114,7 @@ export type Database = {
           scheduled_end: string
           scheduled_start: string
           status: Database["public"]["Enums"]["surgery_status"]
+          surgeon_charge: number | null
           surgery_no: string
           updated_at: string
         }
@@ -6073,12 +6122,18 @@ export type Database = {
           actual_end?: string | null
           actual_start?: string | null
           admission_id?: string | null
+          anesthesia_charge?: number | null
           anesthetist_id?: string | null
+          assistant_charge?: number | null
+          assistant_surgeon_id?: string | null
+          billed?: boolean | null
+          consumables_charge?: number | null
           created_at?: string
           created_by?: string | null
           estimated_cost?: number
           id?: string
           notes?: string | null
+          ot_charge?: number | null
           ot_room_id?: string | null
           patient_id: string
           primary_surgeon_id?: string | null
@@ -6088,6 +6143,7 @@ export type Database = {
           scheduled_end: string
           scheduled_start: string
           status?: Database["public"]["Enums"]["surgery_status"]
+          surgeon_charge?: number | null
           surgery_no?: string
           updated_at?: string
         }
@@ -6095,12 +6151,18 @@ export type Database = {
           actual_end?: string | null
           actual_start?: string | null
           admission_id?: string | null
+          anesthesia_charge?: number | null
           anesthetist_id?: string | null
+          assistant_charge?: number | null
+          assistant_surgeon_id?: string | null
+          billed?: boolean | null
+          consumables_charge?: number | null
           created_at?: string
           created_by?: string | null
           estimated_cost?: number
           id?: string
           notes?: string | null
+          ot_charge?: number | null
           ot_room_id?: string | null
           patient_id?: string
           primary_surgeon_id?: string | null
@@ -6110,6 +6172,7 @@ export type Database = {
           scheduled_end?: string
           scheduled_start?: string
           status?: Database["public"]["Enums"]["surgery_status"]
+          surgeon_charge?: number | null
           surgery_no?: string
           updated_at?: string
         }
@@ -6174,9 +6237,11 @@ export type Database = {
           complications: string | null
           created_at: string
           created_by: string | null
+          diagnosis: string | null
           findings: string | null
           id: string
           implants_used: string | null
+          notes: string | null
           procedure_performed: string | null
           remarks: string | null
           surgery_id: string
@@ -6186,9 +6251,11 @@ export type Database = {
           complications?: string | null
           created_at?: string
           created_by?: string | null
+          diagnosis?: string | null
           findings?: string | null
           id?: string
           implants_used?: string | null
+          notes?: string | null
           procedure_performed?: string | null
           remarks?: string | null
           surgery_id: string
@@ -6198,9 +6265,11 @@ export type Database = {
           complications?: string | null
           created_at?: string
           created_by?: string | null
+          diagnosis?: string | null
           findings?: string | null
           id?: string
           implants_used?: string | null
+          notes?: string | null
           procedure_performed?: string | null
           remarks?: string | null
           surgery_id?: string
@@ -6818,7 +6887,7 @@ export type Database = {
         | "bank_transfer"
         | "insurance"
         | "credit"
-      surgery_priority: "emergency" | "urgent" | "elective"
+      surgery_priority: "emergency" | "urgent" | "elective" | "planned"
       surgery_status:
         | "scheduled"
         | "in_progress"
@@ -7041,7 +7110,7 @@ export const Constants = {
         "insurance",
         "credit",
       ],
-      surgery_priority: ["emergency", "urgent", "elective"],
+      surgery_priority: ["emergency", "urgent", "elective", "planned"],
       surgery_status: [
         "scheduled",
         "in_progress",
