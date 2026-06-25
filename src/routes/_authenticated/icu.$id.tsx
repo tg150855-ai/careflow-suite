@@ -202,7 +202,7 @@ function DashboardTab({ adm, settings }: any) {
     return a;
   }, [latestVitals, settings]);
 
-  const v = latestVitals ?? {};
+  const v: any = latestVitals ?? {};
   const cards = [
     ["HR", v.pulse, "bpm"],
     ["BP", v.systolic && v.diastolic ? `${v.systolic}/${v.diastolic}` : "—", "mmHg"],
