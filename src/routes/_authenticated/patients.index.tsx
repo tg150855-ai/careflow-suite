@@ -54,7 +54,7 @@ function PatientsPage() {
         .replace(/\s+/g, " ");
       let query = supabase
         .from("patients")
-        .select("id, uhid, full_name, mobile, gender, dob, blood_group, created_at", {
+        .select("id, uhid, full_name, mobile, gender, dob, blood_group, photo_url, created_at", {
           count: "exact",
         })
         .order("created_at", { ascending: false })
