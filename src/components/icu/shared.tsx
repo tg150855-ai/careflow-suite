@@ -25,7 +25,7 @@ export async function loadICUAdmissions() {
   const { data } = await supabase
     .from("admissions")
     .select(
-      "id, admission_no, admitted_at, status, icu_status, initial_diagnosis, patients(id, full_name, uhid, mobile, age, gender, photo_url), doctors(id, name), beds(id, bed_number), wards(id, name, type)"
+      "id, admission_no, admitted_at, status, icu_status, initial_diagnosis, patients(id, full_name, uhid, mobile, dob, gender, photo_url), doctors(id, name), beds(id, bed_number), wards(id, name, type)"
     )
     .eq("status", "active")
     .order("admitted_at", { ascending: false });
