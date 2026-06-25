@@ -137,6 +137,7 @@ function OtSchedule() {
   }
 
   async function remove(id: string) {
+    if (!canDelete) return toast.error("You don't have permission to delete surgeries.");
     if (!confirm("Delete this surgery?")) return;
     const { error } = await (supabase as any).from("surgeries").delete().eq("id", id);
     if (error) return toast.error(error.message);
@@ -144,13 +145,69 @@ function OtSchedule() {
     qc.invalidateQueries({ queryKey: ["ot-schedule"] });
   }
 
-  async function setStatus(id: string, status: string) {
+  async function setStatus(id: string, status: string, row?: any) {
+    if (row?.status === "cancelled") return toast.error("Cancelled surgery cannot change status. Reschedule first.");
+    if (status === "in_progress" && !canEdit) return toast.error("No permission to start surgery.");
+    if (status === "completed" && !canApprove && !canEdit) return toast.error("No permission to complete surgery.");
     const patch: any = { status };
     if (status === "in_progress") patch.actual_start = new Date().toISOString();
     if (status === "completed") patch.actual_end = new Date().toISOString();
     const { error } = await (supabase as any).from("surgeries").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Status updated");
+    qc.invalidateQueries({ queryKey: ["ot-schedule"] });
+  }
+
+  async function cancelSurgery() {
+    if (!cancelTarget) return;
+    if (!canEdit) return toast.error("No permission to cancel surgery.");
+    if (["completed", "cancelled"].includes(cancelTarget.status)) return toast.error("This surgery can no longer be cancelled.");
+    if (!cancelReason.trim()) return toast.error("Cancellation reason is required.");
+    const user = (await supabase.auth.getUser()).data.user;
+    const { error } = await (supabase as any).from("surgeries").update({
+      status: "cancelled",
+      cancelled_at: new Date().toISOString(),
+      cancelled_by: user?.id,
+      cancellation_reason: cancelReason.trim(),
+    }).eq("id", cancelTarget.id);
+    if (error) return toast.error(error.message);
+    toast.success("Surgery cancelled");
+    setCancelTarget(null); setCancelReason("");
+    qc.invalidateQueries({ queryKey: ["ot-schedule"] });
+  }
+
+  function openReschedule(r: any) {
+    setReschedTarget(r);
+    setReschedForm({
+      scheduled_start: r.scheduled_start ? r.scheduled_start.slice(0, 16) : "",
+      scheduled_end: r.scheduled_end ? r.scheduled_end.slice(0, 16) : "",
+      reason: "",
+    });
+  }
+
+  async function applyReschedule() {
+    if (!reschedTarget) return;
+    if (!canEdit) return toast.error("No permission to reschedule.");
+    if (reschedTarget.status === "completed") return toast.error("Completed surgery cannot be rescheduled.");
+    if (!reschedForm.scheduled_start || !reschedForm.scheduled_end) return toast.error("Both start and end are required.");
+    if (!reschedForm.reason.trim()) return toast.error("Reschedule reason is required.");
+    const patch: any = {
+      scheduled_start: new Date(reschedForm.scheduled_start).toISOString(),
+      scheduled_end: new Date(reschedForm.scheduled_end).toISOString(),
+      reschedule_count: (Number(reschedTarget.reschedule_count) || 0) + 1,
+      last_reschedule_reason: reschedForm.reason.trim(),
+      last_rescheduled_at: new Date().toISOString(),
+    };
+    if (!reschedTarget.original_scheduled_start) patch.original_scheduled_start = reschedTarget.scheduled_start;
+    // If was cancelled, bring back to scheduled and clear cancel metadata
+    if (reschedTarget.status === "cancelled") {
+      patch.status = "scheduled";
+      patch.cancelled_at = null; patch.cancelled_by = null; patch.cancellation_reason = null;
+    }
+    const { error } = await (supabase as any).from("surgeries").update(patch).eq("id", reschedTarget.id);
+    if (error) return toast.error(error.message);
+    toast.success("Rescheduled");
+    setReschedTarget(null);
     qc.invalidateQueries({ queryKey: ["ot-schedule"] });
   }
 
