@@ -102,6 +102,7 @@ import { Route as AuthenticatedPatientsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedOtIndexRouteImport } from './routes/_authenticated/ot.index'
 import { Route as AuthenticatedLaboratoryIndexRouteImport } from './routes/_authenticated/laboratory.index'
 import { Route as AuthenticatedIpdIndexRouteImport } from './routes/_authenticated/ipd.index'
+import { Route as AuthenticatedIcuIndexRouteImport } from './routes/_authenticated/icu.index'
 import { Route as AuthenticatedBillingIndexRouteImport } from './routes/_authenticated/billing.index'
 import { Route as PrescriptionsIdPrintRouteImport } from './routes/prescriptions.$id.print'
 import { Route as PatientCardIdPrintRouteImport } from './routes/patient-card.$id.print'
@@ -130,6 +131,9 @@ import { Route as AuthenticatedIpdNewRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedIpdDeathRegisterRouteImport } from './routes/_authenticated/ipd.death-register'
 import { Route as AuthenticatedIpdBedsRouteImport } from './routes/_authenticated/ipd.beds'
 import { Route as AuthenticatedIpdIdRouteImport } from './routes/_authenticated/ipd.$id'
+import { Route as AuthenticatedIcuSettingsRouteImport } from './routes/_authenticated/icu.settings'
+import { Route as AuthenticatedIcuReportsRouteImport } from './routes/_authenticated/icu.reports'
+import { Route as AuthenticatedIcuIdRouteImport } from './routes/_authenticated/icu.$id'
 import { Route as AuthenticatedHrPayrollRouteImport } from './routes/_authenticated/hr.payroll'
 import { Route as AuthenticatedHrLeaveRouteImport } from './routes/_authenticated/hr.leave'
 import { Route as AuthenticatedHrEmployeesRouteImport } from './routes/_authenticated/hr.employees'
@@ -632,6 +636,11 @@ const AuthenticatedIpdIndexRoute = AuthenticatedIpdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedIpdRoute,
 } as any)
+const AuthenticatedIcuIndexRoute = AuthenticatedIcuIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedIcuRoute,
+} as any)
 const AuthenticatedBillingIndexRoute =
   AuthenticatedBillingIndexRouteImport.update({
     id: '/',
@@ -785,6 +794,22 @@ const AuthenticatedIpdIdRoute = AuthenticatedIpdIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedIpdRoute,
 } as any)
+const AuthenticatedIcuSettingsRoute =
+  AuthenticatedIcuSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedIcuRoute,
+  } as any)
+const AuthenticatedIcuReportsRoute = AuthenticatedIcuReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedIcuRoute,
+} as any)
+const AuthenticatedIcuIdRoute = AuthenticatedIcuIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedIcuRoute,
+} as any)
 const AuthenticatedHrPayrollRoute = AuthenticatedHrPayrollRouteImport.update({
   id: '/hr/payroll',
   path: '/hr/payroll',
@@ -872,7 +897,7 @@ export interface FileRoutesByFullPath {
   '/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/health-records': typeof AuthenticatedHealthRecordsRoute
   '/hl7': typeof AuthenticatedHl7Route
-  '/icu': typeof AuthenticatedIcuRoute
+  '/icu': typeof AuthenticatedIcuRouteWithChildren
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/infection-control': typeof AuthenticatedInfectionControlRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
@@ -924,6 +949,9 @@ export interface FileRoutesByFullPath {
   '/hr/employees': typeof AuthenticatedHrEmployeesRoute
   '/hr/leave': typeof AuthenticatedHrLeaveRoute
   '/hr/payroll': typeof AuthenticatedHrPayrollRoute
+  '/icu/$id': typeof AuthenticatedIcuIdRoute
+  '/icu/reports': typeof AuthenticatedIcuReportsRoute
+  '/icu/settings': typeof AuthenticatedIcuSettingsRoute
   '/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
   '/ipd/beds': typeof AuthenticatedIpdBedsRoute
   '/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
@@ -952,6 +980,7 @@ export interface FileRoutesByFullPath {
   '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/billing/': typeof AuthenticatedBillingIndexRoute
+  '/icu/': typeof AuthenticatedIcuIndexRoute
   '/ipd/': typeof AuthenticatedIpdIndexRoute
   '/laboratory/': typeof AuthenticatedLaboratoryIndexRoute
   '/ot/': typeof AuthenticatedOtIndexRoute
@@ -1001,7 +1030,6 @@ export interface FileRoutesByTo {
   '/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/health-records': typeof AuthenticatedHealthRecordsRoute
   '/hl7': typeof AuthenticatedHl7Route
-  '/icu': typeof AuthenticatedIcuRoute
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/infection-control': typeof AuthenticatedInfectionControlRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
@@ -1048,6 +1076,9 @@ export interface FileRoutesByTo {
   '/hr/employees': typeof AuthenticatedHrEmployeesRoute
   '/hr/leave': typeof AuthenticatedHrLeaveRoute
   '/hr/payroll': typeof AuthenticatedHrPayrollRoute
+  '/icu/$id': typeof AuthenticatedIcuIdRoute
+  '/icu/reports': typeof AuthenticatedIcuReportsRoute
+  '/icu/settings': typeof AuthenticatedIcuSettingsRoute
   '/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
   '/ipd/beds': typeof AuthenticatedIpdBedsRoute
   '/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
@@ -1076,6 +1107,7 @@ export interface FileRoutesByTo {
   '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/billing': typeof AuthenticatedBillingIndexRoute
+  '/icu': typeof AuthenticatedIcuIndexRoute
   '/ipd': typeof AuthenticatedIpdIndexRoute
   '/laboratory': typeof AuthenticatedLaboratoryIndexRoute
   '/ot': typeof AuthenticatedOtIndexRoute
@@ -1128,7 +1160,7 @@ export interface FileRoutesById {
   '/_authenticated/health-packages': typeof AuthenticatedHealthPackagesRoute
   '/_authenticated/health-records': typeof AuthenticatedHealthRecordsRoute
   '/_authenticated/hl7': typeof AuthenticatedHl7Route
-  '/_authenticated/icu': typeof AuthenticatedIcuRoute
+  '/_authenticated/icu': typeof AuthenticatedIcuRouteWithChildren
   '/_authenticated/incidents': typeof AuthenticatedIncidentsRoute
   '/_authenticated/infection-control': typeof AuthenticatedInfectionControlRoute
   '/_authenticated/insurance': typeof AuthenticatedInsuranceRoute
@@ -1180,6 +1212,9 @@ export interface FileRoutesById {
   '/_authenticated/hr/employees': typeof AuthenticatedHrEmployeesRoute
   '/_authenticated/hr/leave': typeof AuthenticatedHrLeaveRoute
   '/_authenticated/hr/payroll': typeof AuthenticatedHrPayrollRoute
+  '/_authenticated/icu/$id': typeof AuthenticatedIcuIdRoute
+  '/_authenticated/icu/reports': typeof AuthenticatedIcuReportsRoute
+  '/_authenticated/icu/settings': typeof AuthenticatedIcuSettingsRoute
   '/_authenticated/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
   '/_authenticated/ipd/beds': typeof AuthenticatedIpdBedsRoute
   '/_authenticated/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
@@ -1208,6 +1243,7 @@ export interface FileRoutesById {
   '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/_authenticated/billing/': typeof AuthenticatedBillingIndexRoute
+  '/_authenticated/icu/': typeof AuthenticatedIcuIndexRoute
   '/_authenticated/ipd/': typeof AuthenticatedIpdIndexRoute
   '/_authenticated/laboratory/': typeof AuthenticatedLaboratoryIndexRoute
   '/_authenticated/ot/': typeof AuthenticatedOtIndexRoute
@@ -1312,6 +1348,9 @@ export interface FileRouteTypes {
     | '/hr/employees'
     | '/hr/leave'
     | '/hr/payroll'
+    | '/icu/$id'
+    | '/icu/reports'
+    | '/icu/settings'
     | '/ipd/$id'
     | '/ipd/beds'
     | '/ipd/death-register'
@@ -1340,6 +1379,7 @@ export interface FileRouteTypes {
     | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
     | '/billing/'
+    | '/icu/'
     | '/ipd/'
     | '/laboratory/'
     | '/ot/'
@@ -1389,7 +1429,6 @@ export interface FileRouteTypes {
     | '/health-packages'
     | '/health-records'
     | '/hl7'
-    | '/icu'
     | '/incidents'
     | '/infection-control'
     | '/insurance'
@@ -1436,6 +1475,9 @@ export interface FileRouteTypes {
     | '/hr/employees'
     | '/hr/leave'
     | '/hr/payroll'
+    | '/icu/$id'
+    | '/icu/reports'
+    | '/icu/settings'
     | '/ipd/$id'
     | '/ipd/beds'
     | '/ipd/death-register'
@@ -1464,6 +1506,7 @@ export interface FileRouteTypes {
     | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
     | '/billing'
+    | '/icu'
     | '/ipd'
     | '/laboratory'
     | '/ot'
@@ -1567,6 +1610,9 @@ export interface FileRouteTypes {
     | '/_authenticated/hr/employees'
     | '/_authenticated/hr/leave'
     | '/_authenticated/hr/payroll'
+    | '/_authenticated/icu/$id'
+    | '/_authenticated/icu/reports'
+    | '/_authenticated/icu/settings'
     | '/_authenticated/ipd/$id'
     | '/_authenticated/ipd/beds'
     | '/_authenticated/ipd/death-register'
@@ -1595,6 +1641,7 @@ export interface FileRouteTypes {
     | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
     | '/_authenticated/billing/'
+    | '/_authenticated/icu/'
     | '/_authenticated/ipd/'
     | '/_authenticated/laboratory/'
     | '/_authenticated/ot/'
@@ -2267,6 +2314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIpdIndexRouteImport
       parentRoute: typeof AuthenticatedIpdRoute
     }
+    '/_authenticated/icu/': {
+      id: '/_authenticated/icu/'
+      path: '/'
+      fullPath: '/icu/'
+      preLoaderRoute: typeof AuthenticatedIcuIndexRouteImport
+      parentRoute: typeof AuthenticatedIcuRoute
+    }
     '/_authenticated/billing/': {
       id: '/_authenticated/billing/'
       path: '/'
@@ -2463,6 +2517,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIpdIdRouteImport
       parentRoute: typeof AuthenticatedIpdRoute
     }
+    '/_authenticated/icu/settings': {
+      id: '/_authenticated/icu/settings'
+      path: '/settings'
+      fullPath: '/icu/settings'
+      preLoaderRoute: typeof AuthenticatedIcuSettingsRouteImport
+      parentRoute: typeof AuthenticatedIcuRoute
+    }
+    '/_authenticated/icu/reports': {
+      id: '/_authenticated/icu/reports'
+      path: '/reports'
+      fullPath: '/icu/reports'
+      preLoaderRoute: typeof AuthenticatedIcuReportsRouteImport
+      parentRoute: typeof AuthenticatedIcuRoute
+    }
+    '/_authenticated/icu/$id': {
+      id: '/_authenticated/icu/$id'
+      path: '/$id'
+      fullPath: '/icu/$id'
+      preLoaderRoute: typeof AuthenticatedIcuIdRouteImport
+      parentRoute: typeof AuthenticatedIcuRoute
+    }
     '/_authenticated/hr/payroll': {
       id: '/_authenticated/hr/payroll'
       path: '/hr/payroll'
@@ -2536,6 +2611,23 @@ const AuthenticatedBillingRouteChildren: AuthenticatedBillingRouteChildren = {
 
 const AuthenticatedBillingRouteWithChildren =
   AuthenticatedBillingRoute._addFileChildren(AuthenticatedBillingRouteChildren)
+
+interface AuthenticatedIcuRouteChildren {
+  AuthenticatedIcuIdRoute: typeof AuthenticatedIcuIdRoute
+  AuthenticatedIcuReportsRoute: typeof AuthenticatedIcuReportsRoute
+  AuthenticatedIcuSettingsRoute: typeof AuthenticatedIcuSettingsRoute
+  AuthenticatedIcuIndexRoute: typeof AuthenticatedIcuIndexRoute
+}
+
+const AuthenticatedIcuRouteChildren: AuthenticatedIcuRouteChildren = {
+  AuthenticatedIcuIdRoute: AuthenticatedIcuIdRoute,
+  AuthenticatedIcuReportsRoute: AuthenticatedIcuReportsRoute,
+  AuthenticatedIcuSettingsRoute: AuthenticatedIcuSettingsRoute,
+  AuthenticatedIcuIndexRoute: AuthenticatedIcuIndexRoute,
+}
+
+const AuthenticatedIcuRouteWithChildren =
+  AuthenticatedIcuRoute._addFileChildren(AuthenticatedIcuRouteChildren)
 
 interface AuthenticatedIpdIdRouteChildren {
   AuthenticatedIpdIdDischargeRoute: typeof AuthenticatedIpdIdDischargeRoute
@@ -2718,7 +2810,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHealthPackagesRoute: typeof AuthenticatedHealthPackagesRoute
   AuthenticatedHealthRecordsRoute: typeof AuthenticatedHealthRecordsRoute
   AuthenticatedHl7Route: typeof AuthenticatedHl7Route
-  AuthenticatedIcuRoute: typeof AuthenticatedIcuRoute
+  AuthenticatedIcuRoute: typeof AuthenticatedIcuRouteWithChildren
   AuthenticatedIncidentsRoute: typeof AuthenticatedIncidentsRoute
   AuthenticatedInfectionControlRoute: typeof AuthenticatedInfectionControlRoute
   AuthenticatedInsuranceRoute: typeof AuthenticatedInsuranceRoute
@@ -2809,7 +2901,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHealthPackagesRoute: AuthenticatedHealthPackagesRoute,
   AuthenticatedHealthRecordsRoute: AuthenticatedHealthRecordsRoute,
   AuthenticatedHl7Route: AuthenticatedHl7Route,
-  AuthenticatedIcuRoute: AuthenticatedIcuRoute,
+  AuthenticatedIcuRoute: AuthenticatedIcuRouteWithChildren,
   AuthenticatedIncidentsRoute: AuthenticatedIncidentsRoute,
   AuthenticatedInfectionControlRoute: AuthenticatedInfectionControlRoute,
   AuthenticatedInsuranceRoute: AuthenticatedInsuranceRoute,
