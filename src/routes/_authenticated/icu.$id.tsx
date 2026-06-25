@@ -564,7 +564,7 @@ function MedsTab({ adm }: any) {
           <div key={m.id} className="grid grid-cols-4 px-3 py-2 gap-2">
             <div>{m.scheduled_at ? format(new Date(m.scheduled_at), "dd MMM HH:mm") : ""}</div>
             <div className="font-medium">{m.medicine_name}</div>
-            <div>{m.dose}</div>
+            <div>{m.dosage}</div>
             <div className="capitalize text-right">{m.status}</div>
           </div>
         ))}
@@ -627,9 +627,9 @@ function OrderList({ rows, type }: any) {
         {rows.map((r: any) => (
           <div key={r.id} className="px-3 py-2 grid grid-cols-4 gap-2">
             <div>{r.created_at ? format(new Date(r.created_at), "dd MMM HH:mm") : ""}</div>
-            <div className="font-medium">{r.test_name ?? r.study_name ?? r.modality ?? "—"}</div>
+            <div className="font-medium">{r.investigation ?? r.modality ?? r.notes ?? "—"}</div>
             <div className="capitalize">{r.status}</div>
-            <div className="text-right">₹{Number(r.amount ?? r.charge ?? 0).toLocaleString()}</div>
+            <div className="text-right">₹{Number(r.amount ?? r.total_amount ?? 0).toLocaleString()}</div>
           </div>
         ))}
         {rows.length === 0 && <div className="p-6 text-center text-muted-foreground">No orders.</div>}
@@ -867,8 +867,8 @@ function BillingTab({ adm, settings }: any) {
     const [vents, procs, labs, rads] = await Promise.all([
       (supabase as any).from("icu_ventilator_records").select("start_date, end_date, charge_per_day, status").eq("admission_id", adm.id),
       (supabase as any).from("icu_procedures").select("charges, procedure_type").eq("admission_id", adm.id),
-      (supabase as any).from("lab_orders").select("amount, test_name").eq("admission_id", adm.id),
-      (supabase as any).from("radiology_orders").select("amount, study_name, modality").eq("admission_id", adm.id),
+      (supabase as any).from("lab_orders").select("total_amount").eq("admission_id", adm.id),
+      (supabase as any).from("radiology_orders").select("amount").eq("admission_id", adm.id),
     ]);
 
     const ventTotal = (vents.data ?? []).reduce((s: number, v: any) => {
@@ -878,7 +878,7 @@ function BillingTab({ adm, settings }: any) {
       return s + d * Number(v.charge_per_day ?? 0);
     }, 0);
     const procTotal = (procs.data ?? []).reduce((s: number, p: any) => s + Number(p.charges ?? 0), 0);
-    const labTotal = (labs.data ?? []).reduce((s: number, l: any) => s + Number(l.amount ?? 0), 0);
+    const labTotal = (labs.data ?? []).reduce((s: number, l: any) => s + Number(l.total_amount ?? 0), 0);
     const radTotal = (rads.data ?? []).reduce((s: number, r: any) => s + Number(r.amount ?? 0), 0);
 
     const items = [
