@@ -72,7 +72,7 @@ function WardTypesTab({ canManage }: { canManage: boolean }) {
     const map = new Map<string, { type: string; wards: any[]; bedCount: number; occupied: number }>();
     wards.forEach((w: any) => {
       const cur = map.get(w.type) ?? { type: w.type, wards: [], bedCount: 0, occupied: 0 };
-      cur.wards.push(w); map.set(w.type, cur);
+      (cur.wards as any[]).push(w); map.set(w.type, cur);
     });
     beds.forEach((b: any) => {
       const ward = wards.find((w: any) => w.id === b.ward_id);
