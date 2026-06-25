@@ -350,6 +350,46 @@ function OtSchedule() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Cancel Surgery</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              {cancelTarget && <>Cancelling <b>{cancelTarget.surgery_no}</b> — {cancelTarget.procedure_name} for {cancelTarget.patients?.full_name}.</>}
+            </div>
+            <div>
+              <Label>Reason *</Label>
+              <Textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Why is this surgery being cancelled?" />
+            </div>
+            <div className="text-xs text-amber-600">Once cancelled, this surgery will be excluded from billing. You can reschedule later to reactivate it.</div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelTarget(null)}>Back</Button>
+            <Button variant="destructive" onClick={cancelSurgery}><XCircle className="size-4" /> Confirm Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!reschedTarget} onOpenChange={(o) => !o && setReschedTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reschedule Surgery</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              {reschedTarget && <>{reschedTarget.surgery_no} — {reschedTarget.procedure_name}. Previously rescheduled <b>{reschedTarget.reschedule_count ?? 0}</b> time(s).</>}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>New Start *</Label><Input type="datetime-local" value={reschedForm.scheduled_start} onChange={(e) => setReschedForm({ ...reschedForm, scheduled_start: e.target.value })} /></div>
+              <div><Label>New End *</Label><Input type="datetime-local" value={reschedForm.scheduled_end} onChange={(e) => setReschedForm({ ...reschedForm, scheduled_end: e.target.value })} /></div>
+            </div>
+            <div><Label>Reason *</Label><Textarea value={reschedForm.reason} onChange={(e) => setReschedForm({ ...reschedForm, reason: e.target.value })} placeholder="Reason for rescheduling" /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReschedTarget(null)}>Back</Button>
+            <Button onClick={applyReschedule}><CalendarClock className="size-4" /> Reschedule</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
