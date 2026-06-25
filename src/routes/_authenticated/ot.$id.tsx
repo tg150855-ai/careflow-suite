@@ -9,12 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Mic } from "lucide-react";
+import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { inr } from "@/lib/format";
 import { VoiceDictate } from "@/components/voice-dictate";
 import { PriorityBadge, StatusBadge } from "./ot.index";
+import { useAuth } from "@/lib/auth-context";
+import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/ot/$id")({ component: OtDetail });
 
