@@ -259,6 +259,11 @@ export function PatientForm({
     <form onSubmit={form.handleSubmit(submit)} className="space-y-5 pb-20">
       <Card className="p-6 space-y-5">
         <h2 className="font-semibold">Basic information</h2>
+        <PatientPhotoField
+          value={form.watch("photo_url") ?? null}
+          onChange={(p) => form.setValue("photo_url", p ?? "", { shouldDirty: true })}
+          initials={(form.watch("full_name") || "PT").slice(0, 2).toUpperCase()}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Full name *" error={form.formState.errors.full_name?.message}>
             <Input {...form.register("full_name")} placeholder="Ramesh Kumar" />
