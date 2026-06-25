@@ -46,6 +46,7 @@ export const patientFormSchema = z
     insurance_valid_from: optionalText(20),
     insurance_valid_to: optionalText(20),
     authorization_number: optionalText(120),
+    photo_url: z.string().trim().max(500).optional().or(z.literal("")).nullable(),
   })
   .superRefine((value, ctx) => {
     if (value.age) {
