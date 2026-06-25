@@ -66,7 +66,9 @@ function IPDDashboard() {
           <h1 className="text-3xl font-semibold tracking-tight">In-Patient Department</h1>
           <p className="text-muted-foreground mt-1">Admissions, beds and ward management</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button asChild variant="ghost" size="lg"><Link to="/ipd/reports"><FileBarChart className="size-4 mr-2" />Reports</Link></Button>
+          <Button asChild variant="ghost" size="lg"><Link to="/ipd/settings"><Settings className="size-4 mr-2" />Settings</Link></Button>
           <Button asChild variant="outline" size="lg"><Link to="/ipd/beds"><BedDouble className="size-4 mr-2" />Bed map</Link></Button>
           <Button asChild size="lg"><Link to="/ipd/new"><Plus className="size-4 mr-2" />New admission</Link></Button>
         </div>
