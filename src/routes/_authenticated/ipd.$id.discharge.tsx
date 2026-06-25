@@ -113,6 +113,8 @@ function DischargeForm() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  if (!adm) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
+
   const shareWhatsApp = () => {
     const lines = [
       `*Discharge summary* — ${adm.patients?.full_name} (${adm.patients?.uhid})`,
