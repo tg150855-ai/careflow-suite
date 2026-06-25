@@ -89,6 +89,36 @@ function PatientsPage() {
     queryClient.invalidateQueries({ queryKey: ["patients"] });
   }
 
+  async function downloadCsv() {
+    const { data, error } = await supabase
+      .from("patients")
+      .select("uhid, full_name, mobile, email, gender, dob, blood_group, city, state, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const rows = data ?? [];
+    const headers = ["UHID", "Name", "Mobile", "Email", "Gender", "DOB", "Blood Group", "City", "State", "Registered"];
+    const csv = [
+      headers.join(","),
+      ...rows.map((r: any) =>
+        [r.uhid, r.full_name, r.mobile, r.email ?? "", r.gender, r.dob ?? "", r.blood_group ?? "", r.city ?? "", r.state ?? "", r.created_at]
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .join(","),
+      ),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `patients-${format(new Date(), "yyyyMMdd-HHmm")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} patients`);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -98,12 +128,22 @@ function PatientsPage() {
             {total} record{total === 1 ? "" : "s"}
           </p>
         </div>
-        <Button asChild size="lg">
-          <Link to="/patients/new">
-            <Plus className="size-4 mr-2" />
-            New patient
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="lg" onClick={downloadCsv}>
+            <Download className="size-4 mr-2" />
+            Download
+          </Button>
+          <Button variant="outline" size="lg" onClick={() => window.print()}>
+            <Printer className="size-4 mr-2" />
+            Print
+          </Button>
+          <Button asChild size="lg">
+            <Link to="/patients/new">
+              <Plus className="size-4 mr-2" />
+              New patient
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="p-2">
