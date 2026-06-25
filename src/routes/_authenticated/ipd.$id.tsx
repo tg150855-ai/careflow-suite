@@ -833,18 +833,20 @@ function BillingTab({ admission, days }: { admission: any; days: number }) {
   const saveBill = useMutation({
     mutationFn: async () => {
       const { data: billNo } = await supabase.rpc("gen_bill_no");
-      let billId = bill?.id;
+      let billId: string | undefined = bill?.id;
       if (!billId) {
         const { data, error } = await supabase.from("bills").insert({
-          bill_no: billNo, admission_id: admissionId, patient_id: patientId, doctor_id: admission.doctor_id,
-          subtotal, discount: disc, gst, total, paid: 0, pending: total, status: total > 0 ? "pending" : "paid",
+          bill_no: billNo as string, admission_id: admissionId, patient_id: patientId, doctor_id: admission.doctor_id,
+          subtotal, discount: disc, gst, total, paid: 0, pending: total,
+          status: total > 0 ? "draft" : "paid",
           created_by: user?.id ?? null,
         }).select("id").single();
         if (error) throw error;
         billId = data.id;
       } else {
-        const paid = Number(bill.paid ?? 0);
-        await supabase.from("bills").update({ subtotal, discount: disc, gst, total, pending: Math.max(0, total - paid), status: paid >= total ? "paid" : paid > 0 ? "partial" : "pending" }).eq("id", billId);
+        const paid = Number(bill!.paid ?? 0);
+        const nextStatus: "paid" | "partial" | "draft" = paid >= total ? "paid" : paid > 0 ? "partial" : "draft";
+        await supabase.from("bills").update({ subtotal, discount: disc, gst, total, pending: Math.max(0, total - paid), status: nextStatus }).eq("id", billId);
         await supabase.from("bill_items").delete().eq("bill_id", billId);
       }
       if (aggregateItems.length > 0) {
