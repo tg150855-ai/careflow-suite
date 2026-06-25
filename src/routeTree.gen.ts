@@ -120,6 +120,7 @@ import { Route as AuthenticatedLaboratoryTestsRouteImport } from './routes/_auth
 import { Route as AuthenticatedLaboratoryNewRouteImport } from './routes/_authenticated/laboratory.new'
 import { Route as AuthenticatedLaboratoryIdRouteImport } from './routes/_authenticated/laboratory.$id'
 import { Route as AuthenticatedIpdNewRouteImport } from './routes/_authenticated/ipd.new'
+import { Route as AuthenticatedIpdDeathRegisterRouteImport } from './routes/_authenticated/ipd.death-register'
 import { Route as AuthenticatedIpdBedsRouteImport } from './routes/_authenticated/ipd.beds'
 import { Route as AuthenticatedIpdIdRouteImport } from './routes/_authenticated/ipd.$id'
 import { Route as AuthenticatedHrPayrollRouteImport } from './routes/_authenticated/hr.payroll'
@@ -725,6 +726,12 @@ const AuthenticatedIpdNewRoute = AuthenticatedIpdNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AuthenticatedIpdRoute,
 } as any)
+const AuthenticatedIpdDeathRegisterRoute =
+  AuthenticatedIpdDeathRegisterRouteImport.update({
+    id: '/death-register',
+    path: '/death-register',
+    getParentRoute: () => AuthenticatedIpdRoute,
+  } as any)
 const AuthenticatedIpdBedsRoute = AuthenticatedIpdBedsRouteImport.update({
   id: '/beds',
   path: '/beds',
@@ -876,6 +883,7 @@ export interface FileRoutesByFullPath {
   '/hr/payroll': typeof AuthenticatedHrPayrollRoute
   '/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
   '/ipd/beds': typeof AuthenticatedIpdBedsRoute
+  '/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
   '/ipd/new': typeof AuthenticatedIpdNewRoute
   '/laboratory/$id': typeof AuthenticatedLaboratoryIdRoute
   '/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
@@ -993,6 +1001,7 @@ export interface FileRoutesByTo {
   '/hr/payroll': typeof AuthenticatedHrPayrollRoute
   '/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
   '/ipd/beds': typeof AuthenticatedIpdBedsRoute
+  '/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
   '/ipd/new': typeof AuthenticatedIpdNewRoute
   '/laboratory/$id': typeof AuthenticatedLaboratoryIdRoute
   '/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
@@ -1117,6 +1126,7 @@ export interface FileRoutesById {
   '/_authenticated/hr/payroll': typeof AuthenticatedHrPayrollRoute
   '/_authenticated/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
   '/_authenticated/ipd/beds': typeof AuthenticatedIpdBedsRoute
+  '/_authenticated/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
   '/_authenticated/ipd/new': typeof AuthenticatedIpdNewRoute
   '/_authenticated/laboratory/$id': typeof AuthenticatedLaboratoryIdRoute
   '/_authenticated/laboratory/new': typeof AuthenticatedLaboratoryNewRoute
@@ -1241,6 +1251,7 @@ export interface FileRouteTypes {
     | '/hr/payroll'
     | '/ipd/$id'
     | '/ipd/beds'
+    | '/ipd/death-register'
     | '/ipd/new'
     | '/laboratory/$id'
     | '/laboratory/new'
@@ -1358,6 +1369,7 @@ export interface FileRouteTypes {
     | '/hr/payroll'
     | '/ipd/$id'
     | '/ipd/beds'
+    | '/ipd/death-register'
     | '/ipd/new'
     | '/laboratory/$id'
     | '/laboratory/new'
@@ -1481,6 +1493,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hr/payroll'
     | '/_authenticated/ipd/$id'
     | '/_authenticated/ipd/beds'
+    | '/_authenticated/ipd/death-register'
     | '/_authenticated/ipd/new'
     | '/_authenticated/laboratory/$id'
     | '/_authenticated/laboratory/new'
@@ -2297,6 +2310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIpdNewRouteImport
       parentRoute: typeof AuthenticatedIpdRoute
     }
+    '/_authenticated/ipd/death-register': {
+      id: '/_authenticated/ipd/death-register'
+      path: '/death-register'
+      fullPath: '/ipd/death-register'
+      preLoaderRoute: typeof AuthenticatedIpdDeathRegisterRouteImport
+      parentRoute: typeof AuthenticatedIpdRoute
+    }
     '/_authenticated/ipd/beds': {
       id: '/_authenticated/ipd/beds'
       path: '/beds'
@@ -2399,6 +2419,7 @@ const AuthenticatedIpdIdRouteWithChildren =
 interface AuthenticatedIpdRouteChildren {
   AuthenticatedIpdIdRoute: typeof AuthenticatedIpdIdRouteWithChildren
   AuthenticatedIpdBedsRoute: typeof AuthenticatedIpdBedsRoute
+  AuthenticatedIpdDeathRegisterRoute: typeof AuthenticatedIpdDeathRegisterRoute
   AuthenticatedIpdNewRoute: typeof AuthenticatedIpdNewRoute
   AuthenticatedIpdIndexRoute: typeof AuthenticatedIpdIndexRoute
 }
@@ -2406,6 +2427,7 @@ interface AuthenticatedIpdRouteChildren {
 const AuthenticatedIpdRouteChildren: AuthenticatedIpdRouteChildren = {
   AuthenticatedIpdIdRoute: AuthenticatedIpdIdRouteWithChildren,
   AuthenticatedIpdBedsRoute: AuthenticatedIpdBedsRoute,
+  AuthenticatedIpdDeathRegisterRoute: AuthenticatedIpdDeathRegisterRoute,
   AuthenticatedIpdNewRoute: AuthenticatedIpdNewRoute,
   AuthenticatedIpdIndexRoute: AuthenticatedIpdIndexRoute,
 }
