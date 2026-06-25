@@ -25,6 +25,10 @@ const STATUS_FLOW = ["scheduled", "pre_op", "in_progress", "recovery", "complete
 function OtDetail() {
   const { id } = useParams({ from: "/_authenticated/ot/$id" });
   const qc = useQueryClient();
+  const { roles } = useAuth();
+  const canEdit = can(roles, "ot", "edit");
+  const canApprove = can(roles, "ot", "approve");
+  const canBill = can(roles, "billing", "create") || canApprove || canEdit;
 
   const { data: s } = useQuery({
     queryKey: ["ot-detail", id],
