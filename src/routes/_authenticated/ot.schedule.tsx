@@ -10,11 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Printer, Play, CheckCircle2, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, Printer, Play, CheckCircle2, Save, XCircle, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { inr } from "@/lib/format";
 import { PriorityBadge, StatusBadge } from "./ot.index";
+import { useAuth } from "@/lib/auth-context";
+import { can } from "@/lib/permissions";
+import { Can } from "@/components/can";
 
 export const Route = createFileRoute("/_authenticated/ot/schedule")({ component: OtSchedule });
 
@@ -38,9 +41,18 @@ const empty: FormState = {
 
 function OtSchedule() {
   const qc = useQueryClient();
+  const { roles } = useAuth();
+  const canCreate = can(roles, "ot", "create");
+  const canEdit = can(roles, "ot", "edit");
+  const canDelete = can(roles, "ot", "delete");
+  const canApprove = can(roles, "ot", "approve");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(empty);
+  const [cancelTarget, setCancelTarget] = useState<any | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [reschedTarget, setReschedTarget] = useState<any | null>(null);
+  const [reschedForm, setReschedForm] = useState({ scheduled_start: "", scheduled_end: "", reason: "" });
 
   const { data: rows = [] } = useQuery({
     queryKey: ["ot-schedule"],
@@ -125,6 +137,7 @@ function OtSchedule() {
   }
 
   async function remove(id: string) {
+    if (!canDelete) return toast.error("You don't have permission to delete surgeries.");
     if (!confirm("Delete this surgery?")) return;
     const { error } = await (supabase as any).from("surgeries").delete().eq("id", id);
     if (error) return toast.error(error.message);
@@ -132,13 +145,69 @@ function OtSchedule() {
     qc.invalidateQueries({ queryKey: ["ot-schedule"] });
   }
 
-  async function setStatus(id: string, status: string) {
+  async function setStatus(id: string, status: string, row?: any) {
+    if (row?.status === "cancelled") return toast.error("Cancelled surgery cannot change status. Reschedule first.");
+    if (status === "in_progress" && !canEdit) return toast.error("No permission to start surgery.");
+    if (status === "completed" && !canApprove && !canEdit) return toast.error("No permission to complete surgery.");
     const patch: any = { status };
     if (status === "in_progress") patch.actual_start = new Date().toISOString();
     if (status === "completed") patch.actual_end = new Date().toISOString();
     const { error } = await (supabase as any).from("surgeries").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Status updated");
+    qc.invalidateQueries({ queryKey: ["ot-schedule"] });
+  }
+
+  async function cancelSurgery() {
+    if (!cancelTarget) return;
+    if (!canEdit) return toast.error("No permission to cancel surgery.");
+    if (["completed", "cancelled"].includes(cancelTarget.status)) return toast.error("This surgery can no longer be cancelled.");
+    if (!cancelReason.trim()) return toast.error("Cancellation reason is required.");
+    const user = (await supabase.auth.getUser()).data.user;
+    const { error } = await (supabase as any).from("surgeries").update({
+      status: "cancelled",
+      cancelled_at: new Date().toISOString(),
+      cancelled_by: user?.id,
+      cancellation_reason: cancelReason.trim(),
+    }).eq("id", cancelTarget.id);
+    if (error) return toast.error(error.message);
+    toast.success("Surgery cancelled");
+    setCancelTarget(null); setCancelReason("");
+    qc.invalidateQueries({ queryKey: ["ot-schedule"] });
+  }
+
+  function openReschedule(r: any) {
+    setReschedTarget(r);
+    setReschedForm({
+      scheduled_start: r.scheduled_start ? r.scheduled_start.slice(0, 16) : "",
+      scheduled_end: r.scheduled_end ? r.scheduled_end.slice(0, 16) : "",
+      reason: "",
+    });
+  }
+
+  async function applyReschedule() {
+    if (!reschedTarget) return;
+    if (!canEdit) return toast.error("No permission to reschedule.");
+    if (reschedTarget.status === "completed") return toast.error("Completed surgery cannot be rescheduled.");
+    if (!reschedForm.scheduled_start || !reschedForm.scheduled_end) return toast.error("Both start and end are required.");
+    if (!reschedForm.reason.trim()) return toast.error("Reschedule reason is required.");
+    const patch: any = {
+      scheduled_start: new Date(reschedForm.scheduled_start).toISOString(),
+      scheduled_end: new Date(reschedForm.scheduled_end).toISOString(),
+      reschedule_count: (Number(reschedTarget.reschedule_count) || 0) + 1,
+      last_reschedule_reason: reschedForm.reason.trim(),
+      last_rescheduled_at: new Date().toISOString(),
+    };
+    if (!reschedTarget.original_scheduled_start) patch.original_scheduled_start = reschedTarget.scheduled_start;
+    // If was cancelled, bring back to scheduled and clear cancel metadata
+    if (reschedTarget.status === "cancelled") {
+      patch.status = "scheduled";
+      patch.cancelled_at = null; patch.cancelled_by = null; patch.cancellation_reason = null;
+    }
+    const { error } = await (supabase as any).from("surgeries").update(patch).eq("id", reschedTarget.id);
+    if (error) return toast.error(error.message);
+    toast.success("Rescheduled");
+    setReschedTarget(null);
     qc.invalidateQueries({ queryKey: ["ot-schedule"] });
   }
 
@@ -150,7 +219,7 @@ function OtSchedule() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => window.print()}><Printer className="size-4" /> Print</Button>
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild><Button onClick={openNew}><Plus className="size-4" /> Schedule Surgery</Button></DialogTrigger>
+              {canCreate && <DialogTrigger asChild><Button onClick={openNew}><Plus className="size-4" /> Schedule Surgery</Button></DialogTrigger>}
               <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>{editId ? "Edit Surgery" : "Schedule Surgery"}</DialogTitle></DialogHeader>
                 <div className="grid grid-cols-2 gap-3">
@@ -264,10 +333,16 @@ function OtSchedule() {
                   <TableCell>{inr(r.estimated_cost ?? 0)}</TableCell>
                   <TableCell className="flex gap-1 flex-wrap">
                     <Button asChild size="sm" variant="outline"><Link to="/ot/$id" params={{ id: r.id }}>Open</Link></Button>
-                    {r.status === "scheduled" && <Button size="sm" variant="outline" onClick={() => setStatus(r.id, "in_progress")}><Play className="size-3" /></Button>}
-                    {r.status === "in_progress" && <Button size="sm" onClick={() => setStatus(r.id, "completed")}><CheckCircle2 className="size-3" /></Button>}
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(r)}><Pencil className="size-3" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="size-3 text-rose-600" /></Button>
+                    {r.status === "scheduled" && canEdit && <Button size="sm" variant="outline" onClick={() => setStatus(r.id, "in_progress", r)} title="Start"><Play className="size-3" /></Button>}
+                    {r.status === "in_progress" && (canApprove || canEdit) && <Button size="sm" onClick={() => setStatus(r.id, "completed", r)} title="Complete"><CheckCircle2 className="size-3" /></Button>}
+                    {canEdit && !["completed"].includes(r.status) && (
+                      <Button size="sm" variant="ghost" onClick={() => openReschedule(r)} title="Reschedule"><CalendarClock className="size-3" /></Button>
+                    )}
+                    {canEdit && !["completed", "cancelled"].includes(r.status) && (
+                      <Button size="sm" variant="ghost" onClick={() => { setCancelTarget(r); setCancelReason(""); }} title="Cancel"><XCircle className="size-3 text-rose-600" /></Button>
+                    )}
+                    {canEdit && <Button size="sm" variant="ghost" onClick={() => openEdit(r)}><Pencil className="size-3" /></Button>}
+                    {canDelete && <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="size-3 text-rose-600" /></Button>}
                   </TableCell>
                 </TableRow>
               ))}
@@ -275,6 +350,46 @@ function OtSchedule() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!cancelTarget} onOpenChange={(o) => !o && setCancelTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Cancel Surgery</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              {cancelTarget && <>Cancelling <b>{cancelTarget.surgery_no}</b> — {cancelTarget.procedure_name} for {cancelTarget.patients?.full_name}.</>}
+            </div>
+            <div>
+              <Label>Reason *</Label>
+              <Textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="Why is this surgery being cancelled?" />
+            </div>
+            <div className="text-xs text-amber-600">Once cancelled, this surgery will be excluded from billing. You can reschedule later to reactivate it.</div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelTarget(null)}>Back</Button>
+            <Button variant="destructive" onClick={cancelSurgery}><XCircle className="size-4" /> Confirm Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!reschedTarget} onOpenChange={(o) => !o && setReschedTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reschedule Surgery</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              {reschedTarget && <>{reschedTarget.surgery_no} — {reschedTarget.procedure_name}. Previously rescheduled <b>{reschedTarget.reschedule_count ?? 0}</b> time(s).</>}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>New Start *</Label><Input type="datetime-local" value={reschedForm.scheduled_start} onChange={(e) => setReschedForm({ ...reschedForm, scheduled_start: e.target.value })} /></div>
+              <div><Label>New End *</Label><Input type="datetime-local" value={reschedForm.scheduled_end} onChange={(e) => setReschedForm({ ...reschedForm, scheduled_end: e.target.value })} /></div>
+            </div>
+            <div><Label>Reason *</Label><Textarea value={reschedForm.reason} onChange={(e) => setReschedForm({ ...reschedForm, reason: e.target.value })} placeholder="Reason for rescheduling" /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReschedTarget(null)}>Back</Button>
+            <Button onClick={applyReschedule}><CalendarClock className="size-4" /> Reschedule</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

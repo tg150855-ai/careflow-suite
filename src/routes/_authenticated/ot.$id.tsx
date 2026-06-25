@@ -9,12 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Mic } from "lucide-react";
+import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { inr } from "@/lib/format";
 import { VoiceDictate } from "@/components/voice-dictate";
 import { PriorityBadge, StatusBadge } from "./ot.index";
+import { useAuth } from "@/lib/auth-context";
+import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/ot/$id")({ component: OtDetail });
 
@@ -23,6 +25,10 @@ const STATUS_FLOW = ["scheduled", "pre_op", "in_progress", "recovery", "complete
 function OtDetail() {
   const { id } = useParams({ from: "/_authenticated/ot/$id" });
   const qc = useQueryClient();
+  const { roles } = useAuth();
+  const canEdit = can(roles, "ot", "edit");
+  const canApprove = can(roles, "ot", "approve");
+  const canBill = can(roles, "billing", "create") || canApprove || canEdit;
 
   const { data: s } = useQuery({
     queryKey: ["ot-detail", id],
@@ -37,6 +43,9 @@ function OtDetail() {
   });
 
   async function setStatus(status: string) {
+    if (s?.status === "cancelled") return toast.error("This surgery is cancelled. Reschedule it from the Schedule page to continue.");
+    if (status === "completed" && !(canApprove || canEdit)) return toast.error("No permission to complete surgery.");
+    if (status !== "completed" && !canEdit) return toast.error("No permission to update surgery status.");
     const patch: any = { status };
     if (status === "in_progress" && !s?.actual_start) patch.actual_start = new Date().toISOString();
     if (status === "completed") patch.actual_end = new Date().toISOString();
@@ -48,7 +57,11 @@ function OtDetail() {
   }
 
   async function syncBillToIPD() {
-    if (!s?.admission_id) { toast.message("No IPD admission linked — charges saved on surgery only."); return; }
+    if (!s) return;
+    if (s.status === "cancelled") return toast.error("Cancelled surgery cannot be billed.");
+    if (s.billed) return toast.message("OT charges already pushed to IPD bill.");
+    if (!canBill) return toast.error("No permission to push OT charges to billing.");
+    if (!s.admission_id) { toast.message("No IPD admission linked — charges saved on surgery only."); return; }
     const items = [
       { category: "OT", description: `OT Charge — ${s.procedure_name}`, quantity: 1, unit_price: Number(s.ot_charge ?? 0), amount: Number(s.ot_charge ?? 0) },
       { category: "OT", description: `Surgeon Fee — ${s.procedure_name}`, quantity: 1, unit_price: Number(s.surgeon_charge ?? 0), amount: Number(s.surgeon_charge ?? 0) },
@@ -56,11 +69,17 @@ function OtDetail() {
       { category: "OT", description: `Anesthesia — ${s.procedure_name}`, quantity: 1, unit_price: Number(s.anesthesia_charge ?? 0), amount: Number(s.anesthesia_charge ?? 0) },
       { category: "OT", description: `Consumables — ${s.procedure_name}`, quantity: 1, unit_price: Number(s.consumables_charge ?? 0), amount: Number(s.consumables_charge ?? 0) },
     ].filter((i) => i.amount > 0);
-    if (items.length === 0) { toast.message("No OT charges to push."); return; }
+    if (items.length === 0) {
+      // still mark as billed so we don't keep prompting
+      await (supabase as any).from("surgeries").update({ billed: true }).eq("id", id);
+      qc.invalidateQueries({ queryKey: ["ot-detail", id] });
+      toast.message("No OT charges to push.");
+      return;
+    }
 
-    // Find or create draft IPD bill for this admission
+    // Find or create active (draft/partial) IPD bill for the linked admission
     let { data: bill } = await (supabase as any).from("bills")
-      .select("id, subtotal, total, pending")
+      .select("id, subtotal, total, pending, status")
       .eq("admission_id", s.admission_id).in("status", ["draft", "partial"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
     const user = (await supabase.auth.getUser()).data.user;
     if (!bill) {
@@ -80,6 +99,7 @@ function OtDetail() {
     const newPending = Number(bill.pending ?? 0) + addTotal;
     await (supabase as any).from("bills").update({ subtotal: newSubtotal, total: newTotal, pending: newPending }).eq("id", bill.id);
     await (supabase as any).from("surgeries").update({ billed: true }).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["ot-detail", id] });
     toast.success(`OT charges (${inr(addTotal)}) added to IPD bill.`);
   }
 
@@ -132,16 +152,27 @@ function OtDetail() {
             <div>Scheduled: {s.scheduled_start ? format(new Date(s.scheduled_start), "dd MMM yyyy HH:mm") : "—"} → {s.scheduled_end ? format(new Date(s.scheduled_end), "HH:mm") : "—"}</div>
             <div>Actual: {s.actual_start ? format(new Date(s.actual_start), "dd MMM HH:mm") : "—"} → {s.actual_end ? format(new Date(s.actual_end), "HH:mm") : "—"}</div>
           </div>
-          <div className="flex flex-wrap gap-2 mt-3">
-            {s.status === "scheduled" && <Button size="sm" onClick={() => setStatus("pre_op")}>Move to Pre-Op</Button>}
-            {s.status === "pre_op" && <Button size="sm" onClick={() => setStatus("in_progress")}><Play className="size-3" /> Start Surgery</Button>}
-            {s.status === "scheduled" && <Button size="sm" variant="outline" onClick={() => setStatus("in_progress")}><Play className="size-3" /> Start Surgery</Button>}
-            {s.status === "in_progress" && <Button size="sm" onClick={() => setStatus("recovery")}>Move to Recovery</Button>}
-            {s.status === "recovery" && <Button size="sm" onClick={() => setStatus("completed")}><CheckCircle2 className="size-3" /> Complete & Bill</Button>}
-            {s.status === "in_progress" && <Button size="sm" variant="outline" onClick={() => setStatus("completed")}><CheckCircle2 className="size-3" /> Complete & Bill</Button>}
-            {s.status === "completed" && !s.billed && <Button size="sm" variant="outline" onClick={syncBillToIPD}><Receipt className="size-3" /> Push to IPD Bill</Button>}
-            {s.billed && <Badge variant="secondary">Charges synced to IPD</Badge>}
-          </div>
+          {s.status === "cancelled" ? (
+            <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 text-rose-900 p-3 text-sm flex items-start gap-2">
+              <Ban className="size-4 mt-0.5" />
+              <div>
+                <div className="font-medium">Surgery cancelled</div>
+                <div className="text-xs">Reason: {s.cancellation_reason || "—"} · Billing disabled. Reschedule from the Schedule page to reactivate.</div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {s.status === "scheduled" && canEdit && <Button size="sm" onClick={() => setStatus("pre_op")}>Move to Pre-Op</Button>}
+              {s.status === "pre_op" && canEdit && <Button size="sm" onClick={() => setStatus("in_progress")}><Play className="size-3" /> Start Surgery</Button>}
+              {s.status === "scheduled" && canEdit && <Button size="sm" variant="outline" onClick={() => setStatus("in_progress")}><Play className="size-3" /> Start Surgery</Button>}
+              {s.status === "in_progress" && canEdit && <Button size="sm" onClick={() => setStatus("recovery")}>Move to Recovery</Button>}
+              {s.status === "recovery" && (canApprove || canEdit) && <Button size="sm" onClick={() => setStatus("completed")}><CheckCircle2 className="size-3" /> Complete & Bill</Button>}
+              {s.status === "in_progress" && (canApprove || canEdit) && <Button size="sm" variant="outline" onClick={() => setStatus("completed")}><CheckCircle2 className="size-3" /> Complete & Bill</Button>}
+              {s.status === "completed" && !s.billed && canBill && <Button size="sm" variant="outline" onClick={syncBillToIPD}><Receipt className="size-3" /> Push to IPD Bill</Button>}
+              {s.billed && <Badge variant="secondary">Charges synced to IPD</Badge>}
+              {s.reschedule_count > 0 && <Badge variant="outline">Rescheduled ×{s.reschedule_count}</Badge>}
+            </div>
+          )}
         </CardContent>
       </Card>
 

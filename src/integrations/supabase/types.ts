@@ -6098,12 +6098,18 @@ export type Database = {
           assistant_charge: number | null
           assistant_surgeon_id: string | null
           billed: boolean | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           consumables_charge: number | null
           created_at: string
           created_by: string | null
           estimated_cost: number
           id: string
+          last_reschedule_reason: string | null
+          last_rescheduled_at: string | null
           notes: string | null
+          original_scheduled_start: string | null
           ot_charge: number | null
           ot_room_id: string | null
           patient_id: string
@@ -6111,6 +6117,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["surgery_priority"]
           procedure_code: string | null
           procedure_name: string
+          reschedule_count: number
           scheduled_end: string
           scheduled_start: string
           status: Database["public"]["Enums"]["surgery_status"]
@@ -6127,12 +6134,18 @@ export type Database = {
           assistant_charge?: number | null
           assistant_surgeon_id?: string | null
           billed?: boolean | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           consumables_charge?: number | null
           created_at?: string
           created_by?: string | null
           estimated_cost?: number
           id?: string
+          last_reschedule_reason?: string | null
+          last_rescheduled_at?: string | null
           notes?: string | null
+          original_scheduled_start?: string | null
           ot_charge?: number | null
           ot_room_id?: string | null
           patient_id: string
@@ -6140,6 +6153,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["surgery_priority"]
           procedure_code?: string | null
           procedure_name: string
+          reschedule_count?: number
           scheduled_end: string
           scheduled_start: string
           status?: Database["public"]["Enums"]["surgery_status"]
@@ -6156,12 +6170,18 @@ export type Database = {
           assistant_charge?: number | null
           assistant_surgeon_id?: string | null
           billed?: boolean | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           consumables_charge?: number | null
           created_at?: string
           created_by?: string | null
           estimated_cost?: number
           id?: string
+          last_reschedule_reason?: string | null
+          last_rescheduled_at?: string | null
           notes?: string | null
+          original_scheduled_start?: string | null
           ot_charge?: number | null
           ot_room_id?: string | null
           patient_id?: string
@@ -6169,6 +6189,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["surgery_priority"]
           procedure_code?: string | null
           procedure_name?: string
+          reschedule_count?: number
           scheduled_end?: string
           scheduled_start?: string
           status?: Database["public"]["Enums"]["surgery_status"]
