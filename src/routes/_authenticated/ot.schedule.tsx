@@ -219,7 +219,7 @@ function OtSchedule() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => window.print()}><Printer className="size-4" /> Print</Button>
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild><Button onClick={openNew}><Plus className="size-4" /> Schedule Surgery</Button></DialogTrigger>
+              {canCreate && <DialogTrigger asChild><Button onClick={openNew}><Plus className="size-4" /> Schedule Surgery</Button></DialogTrigger>}
               <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>{editId ? "Edit Surgery" : "Schedule Surgery"}</DialogTitle></DialogHeader>
                 <div className="grid grid-cols-2 gap-3">
