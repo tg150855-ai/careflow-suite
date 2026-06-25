@@ -38,7 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, BedDouble, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, BedDouble, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { differenceInDays } from "date-fns";
