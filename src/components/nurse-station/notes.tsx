@@ -83,7 +83,7 @@ ${n.note}</pre>`);
         <div className="space-y-2">
           <Textarea rows={4} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Observation, intervention, response..." />
           <div className="flex justify-between">
-            <VoiceDictate onTranscript={(t) => setNote((n) => (n ? n + " " : "") + t)} />
+            <VoiceDictate onTranscript={(t: string) => setNote((n) => (n ? n + " " : "") + t)} />
             <div className="flex gap-2">
               {editId && <Button variant="outline" size="sm" onClick={() => { setEditId(null); setNote(""); }}>Cancel</Button>}
               <Button size="sm" onClick={save} disabled={!canEdit}><Save className="size-4 mr-1" /> Save</Button>
