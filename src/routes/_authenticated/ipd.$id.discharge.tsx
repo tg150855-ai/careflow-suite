@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Printer } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Printer, Sparkles, Share2, Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
