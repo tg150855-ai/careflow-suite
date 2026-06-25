@@ -11,8 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Printer, Download, Save, Pencil } from "lucide-react";
-import { useAuth } from "@/contexts/AuthProvider";
-import VoiceDictate from "@/components/voice-dictate";
+import { useAuth } from "@/lib/auth-context";
+import { VoiceDictate } from "@/components/voice-dictate";
 import { NS_QK, SHIFTS, loadActiveAdmissions } from "./shared";
 import { can } from "@/lib/permissions";
 
