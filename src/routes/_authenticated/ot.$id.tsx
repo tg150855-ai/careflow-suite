@@ -43,6 +43,9 @@ function OtDetail() {
   });
 
   async function setStatus(status: string) {
+    if (s?.status === "cancelled") return toast.error("This surgery is cancelled. Reschedule it from the Schedule page to continue.");
+    if (status === "completed" && !(canApprove || canEdit)) return toast.error("No permission to complete surgery.");
+    if (status !== "completed" && !canEdit) return toast.error("No permission to update surgery status.");
     const patch: any = { status };
     if (status === "in_progress" && !s?.actual_start) patch.actual_start = new Date().toISOString();
     if (status === "completed") patch.actual_end = new Date().toISOString();
@@ -54,7 +57,11 @@ function OtDetail() {
   }
 
   async function syncBillToIPD() {
-    if (!s?.admission_id) { toast.message("No IPD admission linked — charges saved on surgery only."); return; }
+    if (!s) return;
+    if (s.status === "cancelled") return toast.error("Cancelled surgery cannot be billed.");
+    if (s.billed) return toast.message("OT charges already pushed to IPD bill.");
+    if (!canBill) return toast.error("No permission to push OT charges to billing.");
+    if (!s.admission_id) { toast.message("No IPD admission linked — charges saved on surgery only."); return; }
     const items = [
       { category: "OT", description: `OT Charge — ${s.procedure_name}`, quantity: 1, unit_price: Number(s.ot_charge ?? 0), amount: Number(s.ot_charge ?? 0) },
       { category: "OT", description: `Surgeon Fee — ${s.procedure_name}`, quantity: 1, unit_price: Number(s.surgeon_charge ?? 0), amount: Number(s.surgeon_charge ?? 0) },
@@ -62,11 +69,17 @@ function OtDetail() {
       { category: "OT", description: `Anesthesia — ${s.procedure_name}`, quantity: 1, unit_price: Number(s.anesthesia_charge ?? 0), amount: Number(s.anesthesia_charge ?? 0) },
       { category: "OT", description: `Consumables — ${s.procedure_name}`, quantity: 1, unit_price: Number(s.consumables_charge ?? 0), amount: Number(s.consumables_charge ?? 0) },
     ].filter((i) => i.amount > 0);
-    if (items.length === 0) { toast.message("No OT charges to push."); return; }
+    if (items.length === 0) {
+      // still mark as billed so we don't keep prompting
+      await (supabase as any).from("surgeries").update({ billed: true }).eq("id", id);
+      qc.invalidateQueries({ queryKey: ["ot-detail", id] });
+      toast.message("No OT charges to push.");
+      return;
+    }
 
-    // Find or create draft IPD bill for this admission
+    // Find or create active (draft/partial) IPD bill for the linked admission
     let { data: bill } = await (supabase as any).from("bills")
-      .select("id, subtotal, total, pending")
+      .select("id, subtotal, total, pending, status")
       .eq("admission_id", s.admission_id).in("status", ["draft", "partial"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
     const user = (await supabase.auth.getUser()).data.user;
     if (!bill) {
@@ -86,6 +99,7 @@ function OtDetail() {
     const newPending = Number(bill.pending ?? 0) + addTotal;
     await (supabase as any).from("bills").update({ subtotal: newSubtotal, total: newTotal, pending: newPending }).eq("id", bill.id);
     await (supabase as any).from("surgeries").update({ billed: true }).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["ot-detail", id] });
     toast.success(`OT charges (${inr(addTotal)}) added to IPD bill.`);
   }
 
