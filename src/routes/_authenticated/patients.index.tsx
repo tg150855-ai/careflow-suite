@@ -202,9 +202,12 @@ function PatientsPage() {
               className="flex items-center justify-between gap-3 p-4 hover:bg-surface-muted transition-colors"
             >
               <div className="flex items-center gap-4 min-w-0">
-                <div className="size-11 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
-                  {p.full_name.slice(0, 2).toUpperCase()}
-                </div>
+                <Avatar className="size-11 shrink-0 border">
+                  {p.photo_url ? <AvatarImage src={patientPhotoPublicUrl(p.photo_url) ?? undefined} alt={p.full_name} /> : null}
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                    {p.full_name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="min-w-0">
                   <Link
                     to="/patients/$id"
