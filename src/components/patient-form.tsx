@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
+import { PatientPhotoField } from "@/components/patient-photo-field";
 
 const optionalText = (max = 255) => z.string().trim().max(max).optional().or(z.literal(""));
 
