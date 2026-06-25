@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
+import { PatientPhotoField } from "@/components/patient-photo-field";
 
 const optionalText = (max = 255) => z.string().trim().max(max).optional().or(z.literal(""));
 
@@ -45,6 +46,7 @@ export const patientFormSchema = z
     insurance_valid_from: optionalText(20),
     insurance_valid_to: optionalText(20),
     authorization_number: optionalText(120),
+    photo_url: z.string().trim().max(500).optional().or(z.literal("")).nullable(),
   })
   .superRefine((value, ctx) => {
     if (value.age) {
@@ -94,6 +96,7 @@ type PatientDefaultsSource = Partial<{
   emergency_contact_mobile: string | null;
   allergies: string | null;
   chronic_diseases: string | null;
+  photo_url: string | null;
 }>;
 
 type InsuranceDefaultsSource = Partial<{
@@ -128,6 +131,7 @@ const EMPTY_VALUES: PatientFormValues = {
   insurance_valid_from: "",
   insurance_valid_to: "",
   authorization_number: "",
+  photo_url: "",
 };
 
 export function buildPatientSubmission(values: PatientFormValues): PatientSubmission {
@@ -157,6 +161,7 @@ export function buildPatientSubmission(values: PatientFormValues): PatientSubmis
     emergency_contact_mobile: n(values.emergency_contact_mobile),
     allergies: n(values.allergies),
     chronic_diseases: n(values.chronic_diseases),
+    photo_url: n(values.photo_url ?? ""),
   };
 
   const hasInsurance = !!(
@@ -201,6 +206,7 @@ export function patientDefaults(
     emergency_contact_mobile: patient?.emergency_contact_mobile ?? "",
     allergies: patient?.allergies ?? "",
     chronic_diseases: patient?.chronic_diseases ?? "",
+    photo_url: patient?.photo_url ?? "",
     insurance_company_id: insurance?.company_id ?? "",
     insurance_policy_number: insurance?.policy_number ?? "",
     coverage_limit: insurance?.coverage_limit != null ? String(insurance.coverage_limit) : "",
@@ -253,6 +259,11 @@ export function PatientForm({
     <form onSubmit={form.handleSubmit(submit)} className="space-y-5 pb-20">
       <Card className="p-6 space-y-5">
         <h2 className="font-semibold">Basic information</h2>
+        <PatientPhotoField
+          value={form.watch("photo_url") ?? null}
+          onChange={(p) => form.setValue("photo_url", p ?? "", { shouldDirty: true })}
+          initials={(form.watch("full_name") || "PT").slice(0, 2).toUpperCase()}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Full name *" error={form.formState.errors.full_name?.message}>
             <Input {...form.register("full_name")} placeholder="Ramesh Kumar" />

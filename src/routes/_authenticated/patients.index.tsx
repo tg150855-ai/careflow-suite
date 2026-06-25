@@ -5,7 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Eye, Phone, Plus, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search, Trash2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 import { differenceInYears, format } from "date-fns";
 import {
   Select,
@@ -52,7 +54,7 @@ function PatientsPage() {
         .replace(/\s+/g, " ");
       let query = supabase
         .from("patients")
-        .select("id, uhid, full_name, mobile, gender, dob, blood_group, created_at", {
+        .select("id, uhid, full_name, mobile, gender, dob, blood_group, photo_url, created_at", {
           count: "exact",
         })
         .order("created_at", { ascending: false })
@@ -87,6 +89,36 @@ function PatientsPage() {
     queryClient.invalidateQueries({ queryKey: ["patients"] });
   }
 
+  async function downloadCsv() {
+    const { data, error } = await supabase
+      .from("patients")
+      .select("uhid, full_name, mobile, email, gender, dob, blood_group, city, state, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const rows = data ?? [];
+    const headers = ["UHID", "Name", "Mobile", "Email", "Gender", "DOB", "Blood Group", "City", "State", "Registered"];
+    const csv = [
+      headers.join(","),
+      ...rows.map((r: any) =>
+        [r.uhid, r.full_name, r.mobile, r.email ?? "", r.gender, r.dob ?? "", r.blood_group ?? "", r.city ?? "", r.state ?? "", r.created_at]
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .join(","),
+      ),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `patients-${format(new Date(), "yyyyMMdd-HHmm")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} patients`);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -96,12 +128,22 @@ function PatientsPage() {
             {total} record{total === 1 ? "" : "s"}
           </p>
         </div>
-        <Button asChild size="lg">
-          <Link to="/patients/new">
-            <Plus className="size-4 mr-2" />
-            New patient
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="lg" onClick={downloadCsv}>
+            <Download className="size-4 mr-2" />
+            Download
+          </Button>
+          <Button variant="outline" size="lg" onClick={() => window.print()}>
+            <Printer className="size-4 mr-2" />
+            Print
+          </Button>
+          <Button asChild size="lg">
+            <Link to="/patients/new">
+              <Plus className="size-4 mr-2" />
+              New patient
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="p-2">
@@ -160,9 +202,12 @@ function PatientsPage() {
               className="flex items-center justify-between gap-3 p-4 hover:bg-surface-muted transition-colors"
             >
               <div className="flex items-center gap-4 min-w-0">
-                <div className="size-11 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
-                  {p.full_name.slice(0, 2).toUpperCase()}
-                </div>
+                <Avatar className="size-11 shrink-0 border">
+                  {p.photo_url ? <AvatarImage src={patientPhotoPublicUrl(p.photo_url) ?? undefined} alt={p.full_name} /> : null}
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                    {p.full_name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="min-w-0">
                   <Link
                     to="/patients/$id"

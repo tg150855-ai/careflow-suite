@@ -52,6 +52,7 @@ import { format, differenceInYears } from "date-fns";
 import { inr } from "@/lib/format";
 import { PatientForm, type PatientSubmission } from "@/components/patient-form";
 import { toast } from "sonner";
+import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 
 export const Route = createFileRoute("/_authenticated/patients/$id")({
   validateSearch: (search: Record<string, unknown>): { edit?: string } => {
@@ -411,7 +412,7 @@ function PatientWorkspace() {
           <CardContent className="pt-5 pb-5">
             <div className="flex items-start gap-4 flex-wrap">
               <Avatar className="size-16 ring-2 ring-border">
-                <AvatarImage src={patient.photo_url ?? undefined} alt={patient.full_name} />
+                <AvatarImage src={patientPhotoPublicUrl(patient.photo_url) ?? undefined} alt={patient.full_name} />
                 <AvatarFallback className="text-base font-semibold">{initials}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">

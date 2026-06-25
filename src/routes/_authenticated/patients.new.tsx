@@ -11,9 +11,8 @@ import { logAudit } from "@/lib/audit";
 export const Route = createFileRoute("/_authenticated/patients/new")({ component: NewPatient });
 
 function NewPatient() {
-  const { user, hasAnyRole } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const canConsult = hasAnyRole(["doctor", "admin", "super_admin"]);
 
   const { data: insuranceCompanies = [] } = useQuery({
     queryKey: ["insurance-companies", "patient-form"],
@@ -118,10 +117,6 @@ function NewPatient() {
         insuranceCompanies={insuranceCompanies}
         submitLabel="Save patient"
         actions={[
-          { value: "appointment", label: "Save & book appointment", variant: "outline" },
-          ...(canConsult
-            ? [{ value: "consult" as const, label: "Save & start consultation", variant: "outline" as const }]
-            : []),
           { value: "print", label: "Save & print card", variant: "secondary" },
         ]}
         onSubmit={onSubmit}
