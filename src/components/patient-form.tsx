@@ -131,6 +131,7 @@ const EMPTY_VALUES: PatientFormValues = {
   insurance_valid_from: "",
   insurance_valid_to: "",
   authorization_number: "",
+  photo_url: "",
 };
 
 export function buildPatientSubmission(values: PatientFormValues): PatientSubmission {
