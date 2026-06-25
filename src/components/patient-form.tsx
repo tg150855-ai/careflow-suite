@@ -206,6 +206,7 @@ export function patientDefaults(
     emergency_contact_mobile: patient?.emergency_contact_mobile ?? "",
     allergies: patient?.allergies ?? "",
     chronic_diseases: patient?.chronic_diseases ?? "",
+    photo_url: patient?.photo_url ?? "",
     insurance_company_id: insurance?.company_id ?? "",
     insurance_policy_number: insurance?.policy_number ?? "",
     coverage_limit: insurance?.coverage_limit != null ? String(insurance.coverage_limit) : "",
