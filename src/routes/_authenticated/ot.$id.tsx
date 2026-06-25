@@ -152,16 +152,27 @@ function OtDetail() {
             <div>Scheduled: {s.scheduled_start ? format(new Date(s.scheduled_start), "dd MMM yyyy HH:mm") : "—"} → {s.scheduled_end ? format(new Date(s.scheduled_end), "HH:mm") : "—"}</div>
             <div>Actual: {s.actual_start ? format(new Date(s.actual_start), "dd MMM HH:mm") : "—"} → {s.actual_end ? format(new Date(s.actual_end), "HH:mm") : "—"}</div>
           </div>
-          <div className="flex flex-wrap gap-2 mt-3">
-            {s.status === "scheduled" && <Button size="sm" onClick={() => setStatus("pre_op")}>Move to Pre-Op</Button>}
-            {s.status === "pre_op" && <Button size="sm" onClick={() => setStatus("in_progress")}><Play className="size-3" /> Start Surgery</Button>}
-            {s.status === "scheduled" && <Button size="sm" variant="outline" onClick={() => setStatus("in_progress")}><Play className="size-3" /> Start Surgery</Button>}
-            {s.status === "in_progress" && <Button size="sm" onClick={() => setStatus("recovery")}>Move to Recovery</Button>}
-            {s.status === "recovery" && <Button size="sm" onClick={() => setStatus("completed")}><CheckCircle2 className="size-3" /> Complete & Bill</Button>}
-            {s.status === "in_progress" && <Button size="sm" variant="outline" onClick={() => setStatus("completed")}><CheckCircle2 className="size-3" /> Complete & Bill</Button>}
-            {s.status === "completed" && !s.billed && <Button size="sm" variant="outline" onClick={syncBillToIPD}><Receipt className="size-3" /> Push to IPD Bill</Button>}
-            {s.billed && <Badge variant="secondary">Charges synced to IPD</Badge>}
-          </div>
+          {s.status === "cancelled" ? (
+            <div className="mt-3 rounded-md border border-rose-200 bg-rose-50 text-rose-900 p-3 text-sm flex items-start gap-2">
+              <Ban className="size-4 mt-0.5" />
+              <div>
+                <div className="font-medium">Surgery cancelled</div>
+                <div className="text-xs">Reason: {s.cancellation_reason || "—"} · Billing disabled. Reschedule from the Schedule page to reactivate.</div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {s.status === "scheduled" && canEdit && <Button size="sm" onClick={() => setStatus("pre_op")}>Move to Pre-Op</Button>}
+              {s.status === "pre_op" && canEdit && <Button size="sm" onClick={() => setStatus("in_progress")}><Play className="size-3" /> Start Surgery</Button>}
+              {s.status === "scheduled" && canEdit && <Button size="sm" variant="outline" onClick={() => setStatus("in_progress")}><Play className="size-3" /> Start Surgery</Button>}
+              {s.status === "in_progress" && canEdit && <Button size="sm" onClick={() => setStatus("recovery")}>Move to Recovery</Button>}
+              {s.status === "recovery" && (canApprove || canEdit) && <Button size="sm" onClick={() => setStatus("completed")}><CheckCircle2 className="size-3" /> Complete & Bill</Button>}
+              {s.status === "in_progress" && (canApprove || canEdit) && <Button size="sm" variant="outline" onClick={() => setStatus("completed")}><CheckCircle2 className="size-3" /> Complete & Bill</Button>}
+              {s.status === "completed" && !s.billed && canBill && <Button size="sm" variant="outline" onClick={syncBillToIPD}><Receipt className="size-3" /> Push to IPD Bill</Button>}
+              {s.billed && <Badge variant="secondary">Charges synced to IPD</Badge>}
+              {s.reschedule_count > 0 && <Badge variant="outline">Rescheduled ×{s.reschedule_count}</Badge>}
+            </div>
+          )}
         </CardContent>
       </Card>
 
