@@ -23,8 +23,13 @@ export function NotificationBell() {
   }
 
   useEffect(() => {
+    if (!user?.id) return;
     load();
-    const ch = supabase.channel("notif").on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, load).subscribe();
+    // Unique channel name per mount avoids "cannot add callbacks after subscribe" on remount.
+    const ch = supabase
+      .channel(`notif:${user.id}:${Math.random().toString(36).slice(2, 8)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, load)
+      .subscribe();
     return () => { supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, roles.join(",")]);

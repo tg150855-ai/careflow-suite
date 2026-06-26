@@ -23,5 +23,31 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
+    // Split heavy libraries into their own chunks so initial page loads stay small
+    // and module routes can lazy-load charts/exports only when used.
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-helmet-async"],
+          "vendor-router": ["@tanstack/react-router", "@tanstack/react-query"],
+          "vendor-supabase": ["@supabase/supabase-js"],
+          "vendor-charts": ["recharts"],
+          "vendor-xlsx": ["xlsx"],
+          "vendor-motion": ["framer-motion"],
+          "vendor-icons": ["lucide-react"],
+          "vendor-date": ["date-fns"],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1200,
+  },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "@tanstack/react-router",
+      "@tanstack/react-query",
+      "@supabase/supabase-js",
+    ],
   },
 });

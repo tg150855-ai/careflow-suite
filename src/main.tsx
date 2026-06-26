@@ -18,13 +18,28 @@ link.type = "image/png";
 link.href = logoAsset.url;
 document.head.appendChild(link);
 
-const queryClient = new QueryClient();
+// Performance: sensible cache defaults so navigating between modules is instant
+// and we don't refire the same query on every focus/mount.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+    },
+  },
+});
 
 const router = createRouter({
   routeTree,
   context: { queryClient },
   scrollRestoration: true,
-  defaultPreloadStaleTime: 0,
+  // Preload routes on hover/focus so navigation feels instant
+  defaultPreload: "intent",
+  defaultPreloadStaleTime: 30_000,
+  defaultPendingMs: 100,
 });
 
 declare module "@tanstack/react-router" {
@@ -36,9 +51,12 @@ declare module "@tanstack/react-router" {
 function AuthInvalidator() {
   const qc = useQueryClient();
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      router.invalidate();
-      qc.invalidateQueries();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // Only invalidate on real auth transitions, not on token refresh
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        router.invalidate();
+        qc.invalidateQueries();
+      }
     });
     return () => subscription.unsubscribe();
   }, [qc]);
@@ -59,8 +77,4 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
