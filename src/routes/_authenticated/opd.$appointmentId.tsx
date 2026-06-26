@@ -499,9 +499,22 @@ function Consultation() {
 
           {/* Investigations */}
           <Card className="p-5 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <h2 className="font-semibold text-sm flex items-center gap-2"><FlaskConical className="size-4 text-primary" />Investigations / Tests</h2>
-              <Button size="sm" variant="ghost" onClick={() => setInvestigations([...investigations, { ...EMPTY_INV }])}><Plus className="size-3.5 mr-1" />Add test</Button>
+              <div className="flex items-center gap-2">
+                <DoctorDictate
+                  title="Dictate tests"
+                  contextPrompt="Investigation orders. Example: CBC, LFT and Chest X-ray."
+                  onTranscript={(text, mode) => {
+                    const parts = text.split(/(?:,|\band\b|\n|\.|;)/i).map(s => s.trim()).filter(s => s.length > 1);
+                    const parsed = parts.map((name) => ({ ...EMPTY_INV, name }));
+                    if (parsed.length === 0) return;
+                    if (mode === "replace") setInvestigations(parsed);
+                    else setInvestigations([...investigations.filter(i => i.name.trim()), ...parsed]);
+                  }}
+                />
+                <Button size="sm" variant="ghost" onClick={() => setInvestigations([...investigations, { ...EMPTY_INV }])}><Plus className="size-3.5 mr-1" />Add test</Button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {COMMON_TESTS.map(t => (
