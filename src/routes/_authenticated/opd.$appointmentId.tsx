@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { format, differenceInYears } from "date-fns";
+import { DoctorDictate, parseMedicationLine, splitDictationToLines } from "@/components/doctor-dictate";
 
 export const Route = createFileRoute("/_authenticated/opd/$appointmentId")({ component: Consultation });
 
