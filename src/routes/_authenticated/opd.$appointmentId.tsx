@@ -597,9 +597,16 @@ function VitalInput({ label, value, onChange, placeholder }: { label: string; va
   );
 }
 function FieldArea({ label, value, onChange, rows }: { label: string; value: string; onChange: (v: string) => void; rows: number }) {
+  const handleDictate = (text: string, mode: "append" | "replace") => {
+    if (mode === "replace") onChange(text);
+    else onChange(value ? `${value.replace(/\s+$/, "")} ${text}` : text);
+  };
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
+        <DoctorDictate onTranscript={handleDictate} contextPrompt={`Field: ${label}.`} title="Dictate" />
+      </div>
       <Textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className="resize-none" />
     </div>
   );
