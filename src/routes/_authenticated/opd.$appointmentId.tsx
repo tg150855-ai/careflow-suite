@@ -446,9 +446,25 @@ function Consultation() {
 
           {/* Medicines */}
           <Card className="p-5 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <h2 className="font-semibold text-sm flex items-center gap-2"><Pill className="size-4 text-primary" />Medicines</h2>
-              <Button size="sm" variant="ghost" onClick={() => setItems([...items, { ...EMPTY_RX }])}><Plus className="size-3.5 mr-1" />Add medicine</Button>
+              <div className="flex items-center gap-2">
+                <DoctorDictate
+                  title="Dictate Rx"
+                  contextPrompt="Prescription dictation. Example: Paracetamol 650 mg one tablet three times daily after food for five days."
+                  onTranscript={(text, mode) => {
+                    const lines = splitDictationToLines(text);
+                    const parsed = lines.map((l) => ({ ...EMPTY_RX, ...parseMedicationLine(l) }));
+                    if (parsed.length === 0) return;
+                    if (mode === "replace") setItems(parsed);
+                    else {
+                      const base = items.filter((it) => it.medicine_name.trim());
+                      setItems([...base, ...parsed]);
+                    }
+                  }}
+                />
+                <Button size="sm" variant="ghost" onClick={() => setItems([...items, { ...EMPTY_RX }])}><Plus className="size-3.5 mr-1" />Add medicine</Button>
+              </div>
             </div>
             <div className="space-y-3">
               {items.map((it, i) => (
