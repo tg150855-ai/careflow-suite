@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { format, differenceInYears } from "date-fns";
+import { DoctorDictate, parseMedicationLine, splitDictationToLines } from "@/components/doctor-dictate";
 
 export const Route = createFileRoute("/_authenticated/opd/$appointmentId")({ component: Consultation });
 
@@ -445,9 +446,25 @@ function Consultation() {
 
           {/* Medicines */}
           <Card className="p-5 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <h2 className="font-semibold text-sm flex items-center gap-2"><Pill className="size-4 text-primary" />Medicines</h2>
-              <Button size="sm" variant="ghost" onClick={() => setItems([...items, { ...EMPTY_RX }])}><Plus className="size-3.5 mr-1" />Add medicine</Button>
+              <div className="flex items-center gap-2">
+                <DoctorDictate
+                  title="Dictate Rx"
+                  contextPrompt="Prescription dictation. Example: Paracetamol 650 mg one tablet three times daily after food for five days."
+                  onTranscript={(text, mode) => {
+                    const lines = splitDictationToLines(text);
+                    const parsed = lines.map((l) => ({ ...EMPTY_RX, ...parseMedicationLine(l) }));
+                    if (parsed.length === 0) return;
+                    if (mode === "replace") setItems(parsed);
+                    else {
+                      const base = items.filter((it) => it.medicine_name.trim());
+                      setItems([...base, ...parsed]);
+                    }
+                  }}
+                />
+                <Button size="sm" variant="ghost" onClick={() => setItems([...items, { ...EMPTY_RX }])}><Plus className="size-3.5 mr-1" />Add medicine</Button>
+              </div>
             </div>
             <div className="space-y-3">
               {items.map((it, i) => (
@@ -482,9 +499,22 @@ function Consultation() {
 
           {/* Investigations */}
           <Card className="p-5 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <h2 className="font-semibold text-sm flex items-center gap-2"><FlaskConical className="size-4 text-primary" />Investigations / Tests</h2>
-              <Button size="sm" variant="ghost" onClick={() => setInvestigations([...investigations, { ...EMPTY_INV }])}><Plus className="size-3.5 mr-1" />Add test</Button>
+              <div className="flex items-center gap-2">
+                <DoctorDictate
+                  title="Dictate tests"
+                  contextPrompt="Investigation orders. Example: CBC, LFT and Chest X-ray."
+                  onTranscript={(text, mode) => {
+                    const parts = text.split(/(?:,|\band\b|\n|\.|;)/i).map(s => s.trim()).filter(s => s.length > 1);
+                    const parsed = parts.map((name) => ({ ...EMPTY_INV, name }));
+                    if (parsed.length === 0) return;
+                    if (mode === "replace") setInvestigations(parsed);
+                    else setInvestigations([...investigations.filter(i => i.name.trim()), ...parsed]);
+                  }}
+                />
+                <Button size="sm" variant="ghost" onClick={() => setInvestigations([...investigations, { ...EMPTY_INV }])}><Plus className="size-3.5 mr-1" />Add test</Button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {COMMON_TESTS.map(t => (
@@ -596,9 +626,16 @@ function VitalInput({ label, value, onChange, placeholder }: { label: string; va
   );
 }
 function FieldArea({ label, value, onChange, rows }: { label: string; value: string; onChange: (v: string) => void; rows: number }) {
+  const handleDictate = (text: string, mode: "append" | "replace") => {
+    if (mode === "replace") onChange(text);
+    else onChange(value ? `${value.replace(/\s+$/, "")} ${text}` : text);
+  };
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
+        <DoctorDictate onTranscript={handleDictate} contextPrompt={`Field: ${label}.`} title="Dictate" />
+      </div>
       <Textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className="resize-none" />
     </div>
   );

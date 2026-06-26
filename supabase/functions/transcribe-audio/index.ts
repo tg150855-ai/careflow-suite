@@ -24,6 +24,10 @@ Deno.serve(async (req) => {
     const mime = (file.type || "audio/webm").split(";")[0];
     const ext = ({ "audio/webm": "webm", "audio/mp4": "mp4", "audio/mpeg": "mp3", "audio/wav": "wav" } as Record<string, string>)[mime] ?? "webm";
     upstream.append("file", file, `recording.${ext}`);
+    const language = form.get("language");
+    if (typeof language === "string" && language.trim()) upstream.append("language", language.trim());
+    const prompt = form.get("prompt");
+    if (typeof prompt === "string" && prompt.trim()) upstream.append("prompt", prompt.trim());
 
     const r = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
       method: "POST",
