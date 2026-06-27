@@ -154,6 +154,10 @@ export function DoctorDictate({
 
       const { data, error } = await supabase.functions.invoke("transcribe-audio", { body: fd });
       if (error) throw error;
+      if (data?.error) {
+        setState("error");
+        return toast.error(String(data.error));
+      }
       const text = String(data?.text ?? "").trim();
       if (!text) {
         setState("idle");
