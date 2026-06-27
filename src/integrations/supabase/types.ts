@@ -3849,6 +3849,7 @@ export type Database = {
           order_no: string
           patient_id: string
           status: Database["public"]["Enums"]["lab_order_status"]
+          test_stage: Database["public"]["Enums"]["test_stage"]
           total_amount: number
           updated_at: string
         }
@@ -3863,6 +3864,7 @@ export type Database = {
           order_no?: string
           patient_id: string
           status?: Database["public"]["Enums"]["lab_order_status"]
+          test_stage?: Database["public"]["Enums"]["test_stage"]
           total_amount?: number
           updated_at?: string
         }
@@ -3877,6 +3879,7 @@ export type Database = {
           order_no?: string
           patient_id?: string
           status?: Database["public"]["Enums"]["lab_order_status"]
+          test_stage?: Database["public"]["Enums"]["test_stage"]
           total_amount?: number
           updated_at?: string
         }
@@ -3964,6 +3967,53 @@ export type Database = {
             columns: ["test_id"]
             isOneToOne: false
             referencedRelation: "lab_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          patient_id: string | null
+          room: string | null
+          scheduled_at: string
+          technician: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          room?: string | null
+          scheduled_at: string
+          technician?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          room?: string | null
+          scheduled_at?: string
+          technician?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_schedules_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]
@@ -7362,6 +7412,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "postponed"
+      test_stage: "patient" | "opd" | "ipd" | "icu"
       triage_level: "red" | "orange" | "yellow" | "green"
       ward_type: "icu" | "general" | "semi_private" | "private" | "emergency"
     }
@@ -7586,6 +7637,7 @@ export const Constants = {
         "cancelled",
         "postponed",
       ],
+      test_stage: ["patient", "opd", "ipd", "icu"],
       triage_level: ["red", "orange", "yellow", "green"],
       ward_type: ["icu", "general", "semi_private", "private", "emergency"],
     },
