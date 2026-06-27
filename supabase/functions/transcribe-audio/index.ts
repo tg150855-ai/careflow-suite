@@ -36,9 +36,14 @@ Deno.serve(async (req) => {
     });
 
     if (!r.ok) {
-      const msg = await r.text().catch(() => "");
-      return new Response(JSON.stringify({ error: `Transcription failed (${r.status}): ${msg}` }), {
-        status: r.status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      const raw = await r.text().catch(() => "");
+      let friendly = `Transcription failed (${r.status})`;
+      if (r.status === 402) friendly = "AI credits exhausted. Please top up Lovable AI credits to use voice dictation.";
+      else if (r.status === 429) friendly = "Voice service is rate-limited. Please try again in a moment.";
+      else if (r.status >= 500) friendly = "Voice service temporarily unavailable. Please try again.";
+      // Always return 200 so supabase.functions.invoke surfaces the JSON instead of a generic non-2xx error.
+      return new Response(JSON.stringify({ error: friendly, code: r.status, details: raw.slice(0, 500) }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const data = await r.json();
