@@ -1,85 +1,87 @@
+## Scope
 
-# HMIS — Phase 1 Build Plan
+This is a large, multi-module incremental enhancement. Nothing existing will be removed, renamed, or restyled. All work is additive and reuses the current design tokens, card style, and navigation. PACS is **hidden, not deleted**. Payroll is **untouched**.
 
-Full-stack from day one using **Lovable Cloud** (Postgres + Auth + server functions). No mock data. Design direction: **Clinical Calm** (white + emerald + soft blue, Apple Settings spaciousness).
+Because the request touches ~10 modules and dozens of routes, I will ship it in **6 sequential phases**, each independently verifiable. After every phase I will confirm existing routes still load before starting the next.
 
-## 1. Backend (Lovable Cloud)
+---
 
-Enable Cloud, then create schema:
+## Phase 0 — Shared primitives (foundation, ~1 turn)
 
-**Tables**
-- `profiles` — id (FK auth.users), full_name, phone, avatar_url, created_at
-- `user_roles` — id, user_id, role (enum) — separate table per security rules
-- `patients` — uhid (auto), full_name, mobile, email, gender, dob, blood_group, address fields, aadhaar, emergency contact, allergies, chronic diseases, photo_url, created_by, timestamps
-- `doctors` — id, user_id (nullable), name, specialization, department, consultation_fee, active
-- `departments` — id, name, code
-- `appointments` — id, patient_id, doctor_id, scheduled_at, token_no, status (booked/checked_in/waiting/completed/cancelled), notes
-- `opd_visits` — id, patient_id, doctor_id, appointment_id, chief_complaints, symptoms, diagnosis, clinical_findings, vitals (jsonb: bp, pulse, temp, spo2, weight, height), notes, follow_up_date, created_at
-- `prescriptions` — id, opd_visit_id, created_at
-- `prescription_items` — id, prescription_id, medicine_name, dosage, timing, food_instruction, duration_days, notes
-- `audit_logs` — id, user_id, action, entity, entity_id, payload, created_at
+Build once, reuse everywhere — this is what keeps the rollout non-destructive and visually consistent.
 
-**Enums**
-- `app_role`: admin, doctor, receptionist, nurse, pharmacist, lab_technician, accountant
-- `appointment_status`: booked, checked_in, waiting, completed, cancelled
+1. `src/components/common/action-bar.tsx` — `<ModuleActionBar />` rendering only the buttons passed in as props (Add, Edit, Delete, Save, Download PDF, Print, Export CSV/XLSX, Settings, WhatsApp Share). Each button is opt-in so existing pages don't get duplicate buttons.
+2. `src/components/common/date-range-tabs.tsx` — `<DayMonthYearTabs />` with Day / Month / Year / Custom, returning `{from, to}`.
+3. `src/components/common/search-box.tsx` — debounced search input (reuses existing Input styling).
+4. `src/lib/share.ts` — `shareOnWhatsApp(text, url?)` → opens `https://wa.me/?text=...`.
+5. `src/lib/export.ts` — `exportCsv(rows, filename)`, `exportXlsx(...)` (xlsx already in deps), `printNode(ref)`, `downloadPdf(node, filename)` using existing print routes / `window.print()` pattern.
 
-**RLS** — enabled on every table. `has_role(uuid, app_role)` security-definer function. Policies:
-- patients/appointments/opd_visits/prescriptions: any authenticated staff role can read; only admin/receptionist/doctor can write (per entity)
-- user_roles: only admin can mutate; users can read their own
-- profiles: users read/update own; admin reads all
+No DB changes. No route changes. No visual changes to existing pages.
 
-**Triggers**
-- Auto-create `profiles` row on signup
-- UHID generator: `HMS-YYYYMM-XXXXXX` sequential per month
+## Phase 1 — Laboratory
 
-## 2. Auth + RBAC
+- Mount `<ModuleActionBar/>` on `laboratory.index.tsx` and `laboratory.tests.tsx`.
+- Add filter tabs `All | Pending | Complete` on lab orders (mirror radiology pattern already in repo).
+- Add `test_stage` column to `lab_orders` (enum: `patient | opd | ipd | icu`, default `patient`); auto-set on insert based on source (admission_id → ipd/icu, appointment_id → opd, else patient). GRANTs + RLS preserved.
+- Add `notes` column to `lab_orders` if missing; surface in entry form.
+- Lab Assistant role: add `lab_orders.upload` and `lab_results.create` to `role_permissions`. Patient detail page already renders lab results — add stage badge + "Send on WhatsApp" per row.
+- Add Scheduling sub-tab (new lightweight table `lab_schedules` with Add + WhatsApp share).
+- Add Add/Remove test toggle inside an order (soft-remove via existing `status`).
+- "Patients with lab orders" view: filtered list on `laboratory.index.tsx`.
 
-- `/login` — split-screen, email/password (Cloud default). Role badge shown post-login from `user_roles`.
-- `_authenticated` layout route — `beforeLoad` redirects to `/login`
-- `useAuth()` hook — current user + roles + `hasRole()` helper
-- Sidebar items filtered by role
-- Seed first admin via signup flow (first user becomes admin)
+## Phase 2 — Radiology + PACS hide
 
-## 3. App Shell
+- Mount action bar on `radiology.tsx`.
+- Add `test_stage` to `radiology_orders` (same enum) with auto-attach; quick-attach chips on patient page.
+- Add `priority` field (`normal | urgent`) — column already nullable, add UI dropdown.
+- Add "Template Edit" dialog (stores JSON in `radiology_reports.template`).
+- Add patient search, Day/Month/Year filters, and `All | Referring | Complete` tabs.
+- Attachments section reused from shared component for OPD/IPD/ICU patient tabs.
+- **PACS hide**: comment out PACS, Queue Display, and Queue routes in `src/components/app-shell.tsx` sidebar with `// disabled per request — module preserved for potential future re-enable.` Routes and tables remain.
 
-- Collapsible left sidebar (Dashboard, OPD, Patients, Appointments, + future module placeholders disabled)
-- Top navbar: hospital name, live date/time, global search (patients by name/UHID/mobile), notifications stub, profile menu
-- Clinical Calm theme tokens in `src/styles.css` (oklch): off-white bg, deep blue primary, emerald accent, soft slate text. Generous radii, soft shadows.
+## Phase 3 — Blood Bank, Dialysis, Beds, Death Register
 
-## 4. Core Modules (real CRUD)
+- Action bar + patient search on Blood Bank.
+- Dialysis: action bar, patient search, Day/Month/Year filters, "Follow-up Due" panel (derive from `dialysis_sessions.next_session_at`).
+- `ipd.beds.tsx`: action bar.
+- `ipd.death-register.tsx`: action bar, patient search, Day/Month/Year filters.
 
-**Dashboard** — server fn aggregates: today's OPD count, today's appointments, total patients, pending appointments. Recent activity feed. Simple revenue chart placeholder (no billing yet — empty state).
+## Phase 4 — Finance (Billing, Insurance, Accounting)
 
-**Patient Registration** — `/patients`
-- List view: searchable, paginated table
-- `/patients/new` — single-page form (react-hook-form + zod), auto UHID, instant duplicate detection by mobile
-- `/patients/$uhid` — profile with timeline of visits
+- **Billing** (`billing.index.tsx`, `billing.$id.tsx`, `billing.new.tsx`):
+  - Action bar + bill/patient search.
+  - Add `discount_amount`, `advance_amount` columns to `bills` (default 0); surface in form and totals math.
+  - Day/Month/Year filter tabs on Recent Bills.
+  - Resize: Monthly Revenue card → `lg:col-span-1`; Recent Bills → `lg:col-span-3` (Tailwind grid only, no data change).
+  - Auto-populate is already wired from OPD/IPD/ICU/OT; verify and add the same hook for any module missing it (lab/radiology line items only when result is final).
+  - New `payments` rows already cover Repayments; add a "Repayments" tab on `billing.$id.tsx`. "Payout Deposits" → small section on accounting page.
+- **Insurance**: action bar, search, Add/Remove insurer CRUD on `insurance_companies`, Day/Month/Year on claims, "Insurance" line on final bill summary (read from `insurance_claims` linked to bill).
+- **Finance & Accounting**: action bar, search, Day/Month/Year on transactions, Revenue Reports shell card (marked "Coming soon"), Executive BI summary card with WhatsApp share.
 
-**Appointments** — `/appointments`
-- Daily view with doctor columns, time slots
-- Quick-book dialog (patient search + doctor + time)
-- Status transitions (check in → waiting → completed)
+## Phase 5 — Pharmacy + HR + Cross-cutting
 
-**OPD Consultation** — `/opd/$appointmentId`
-- 3-pane layout: timeline (left) / consultation form (center) / prescription builder (right)
-- Save creates `opd_visits` + `prescriptions` + items in one server fn
-- Print-friendly prescription view at `/prescriptions/$id/print`
+- **Pharmacy**: action bar, patient/bill search, Day/Month/Year on Recent Sales. "Stock" already exists in `pharmacy.medicines.tsx` — confirm Add flow is full (name/price/qty/expiry). Doctor Consultation medicines combobox: extend existing medicine search to also show live `stock_qty` from `medicine_batches`.
+- **HR Employees**: action bar; add Documents tab using existing `employee_documents`; switch New Employee form to single column (Tailwind only).
+- **HR Attendance / Leave**: action bar, employee search, Day/Month/Year filters. Leave dashboard widget: Today / This week / Next month counts.
+- **HR Performance**: add Download Report + WhatsApp Share buttons only.
+- **HR removals**: hide "Shipping" link from nav (comment, do not delete).
+- **Inventory "Ideal New" group**: add sidebar group containing existing Assets, Vendors, Procurement, Biomedical routes (no new routes, just grouping). Action bar + search on each.
+- **Cross-cutting**: shared Attachments component already used in Phase 2; mount on OPD/IPD/ICU patient tabs that lack it. Day/Month/Year filter on "Recent Orders" lists. Patient search in Food Reimbursement (if route exists; otherwise skip and note).
 
-## 5. Out of Phase 1 (sidebar shows but routes are "Coming soon" stubs)
+## Technical notes (for review)
 
-IPD, Pharmacy, Lab, OT, Nurse Station, Billing, Insurance, Reports, Staff, Backup, Settings → phase 2-4 per your roadmap.
+- DB migrations are minimal and additive only: 3 columns (`lab_orders.test_stage`, `lab_orders.notes` if missing, `radiology_orders` already has needed fields, `bills.discount_amount`, `bills.advance_amount`), 1 new table (`lab_schedules`), 1 enum (`test_stage`). All include `GRANT` + RLS per project rules.
+- No edits to `routeTree.gen.ts`, `client.ts`, `types.ts`, `.env`, `config.toml`, or Nurse Station files.
+- Sidebar hides (PACS, Queue Display, Queue, HR Shipping) are commented links — routes remain reachable by URL.
+- After each phase: run `tsgo`, click through the touched routes in preview, confirm console is clean.
 
-## 6. Technical notes
+## Out of scope (explicitly deferred per your prompt)
 
-- TanStack Start + TanStack Query (template default)
-- Server functions for all DB access via `requireSupabaseAuth` middleware
-- `client.server` admin client only for admin-role-management ops
-- All forms: react-hook-form + zod schemas shared client/server
-- Framer Motion for page/list transitions
-- No browser dictation/webcam in Phase 1 (can add later — kept scope tight)
+- Payroll changes
+- Admin / Digital / Patient / Compliance / Smart OS placeholders (left as code comment backlog only)
 
-## Deliverables this turn
+---
 
-Schema migration, RLS policies, role infra, login page, app shell with role-gated sidebar, Dashboard, Patients (list + new + profile), Appointments (day view + booking), OPD consultation page + print view. Real Postgres, real auth.
+**Estimated turns:** Phase 0 = 1, Phases 1–5 = 2–3 each → ~12–15 turns total.
 
-Approve to proceed.
+Approve and I'll start with Phase 0 + Phase 1 in the next turn.
