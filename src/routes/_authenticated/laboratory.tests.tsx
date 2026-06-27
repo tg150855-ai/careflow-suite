@@ -10,6 +10,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { ArrowLeft, Plus } from "lucide-react";
 import { inr } from "@/lib/format";
 import { toast } from "sonner";
+import { ModuleActionBar } from "@/components/common/action-bar";
+import { SearchBox } from "@/components/common/search-box";
+import { exportCsv, printPage, downloadAsPdf } from "@/lib/export";
+import { shareOnWhatsApp } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/laboratory/tests")({ component: LabTests });
 
@@ -42,7 +46,14 @@ function LabTests() {
         <NewTestDialog onSubmit={(v) => create.mutate(v)} />
       </div>
 
-      <Card className="p-3"><Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, department or code..." className="h-11 bg-surface-muted border-transparent" /></Card>
+      <ModuleActionBar
+        leading={<SearchBox value={q} onChange={setQ} placeholder="Search by name, department or code…" />}
+        onExport={() => exportCsv(tests as any[], `lab-tests-${Date.now()}`)}
+        onPrint={printPage}
+        onDownloadReport={() => downloadAsPdf(`Lab-tests`)}
+        onWhatsAppShare={() => shareOnWhatsApp(`Lab tests catalog (${tests.length} active tests)`)}
+        onSettings={() => toast.info("Lab settings coming soon")}
+      />
 
       <Card>
         <table className="w-full text-sm">
