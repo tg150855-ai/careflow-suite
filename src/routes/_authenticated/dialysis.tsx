@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,20 +8,31 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Activity, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { ModuleActionBar } from "@/components/common/action-bar";
+import { SearchBox } from "@/components/common/search-box";
+import { DayMonthYearTabs, useDateRange } from "@/components/common/date-range-tabs";
+import { exportCsv, exportXlsx, printPage, downloadAsPdf } from "@/lib/export";
+import { shareOnWhatsApp } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/dialysis")({ component: DialysisPage });
+
+type StatusFilter = "all" | "scheduled" | "in_progress" | "completed" | "cancelled";
 
 function DialysisPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [doctors, setDoctors] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [statusF, setStatusF] = useState<StatusFilter>("all");
+  const { range, preset, setPreset } = useDateRange("month");
 
   const load = () => {
-    supabase.from("dialysis_sessions" as any).select("*, patients(full_name, uhid), doctors(name)")
-      .order("session_date", { ascending: false }).limit(200)
+    supabase.from("dialysis_sessions" as any).select("*, patients(full_name, uhid, mobile), doctors(name)")
+      .order("session_date", { ascending: false }).limit(500)
       .then(({ data }) => setSessions(data ?? []));
   };
 
@@ -36,25 +47,79 @@ function DialysisPage() {
     load();
   };
 
+  const inRange = (d?: string | null) => {
+    if (!d || preset === "all") return true;
+    const t = new Date(d).getTime();
+    return t >= range.from.getTime() && t <= range.to.getTime();
+  };
+
+  const filtered = useMemo(() => sessions.filter((s) => {
+    if (statusF !== "all" && s.status !== statusF) return false;
+    if (!inRange(s.session_date)) return false;
+    if (search) {
+      const hay = `${s.patients?.full_name ?? ""} ${s.patients?.uhid ?? ""} ${s.machine_no ?? ""} ${s.doctors?.name ?? ""}`.toLowerCase();
+      if (!hay.includes(search.toLowerCase())) return false;
+    }
+    return true;
+  }), [sessions, search, statusF, range, preset]);
+
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+
+  function exportRows(kind: "csv" | "xlsx") {
+    const rows = filtered.map((s) => ({
+      date: s.session_date, patient: s.patients?.full_name, uhid: s.patients?.uhid,
+      doctor: s.doctors?.name, machine: s.machine_no, status: s.status,
+      pre_weight: s.pre_weight, post_weight: s.post_weight, duration_min: s.duration_min,
+    }));
+    const name = `dialysis-${format(new Date(), "yyyyMMdd")}`;
+    kind === "csv" ? exportCsv(rows, name) : exportXlsx(rows, name);
+  }
+
+  function whatsappSummary() {
+    const txt = `Dialysis Summary (${format(new Date(), "dd MMM yyyy")})\nToday: ${sessions.filter((s) => s.session_date === todayKey).length} · In progress: ${sessions.filter((s) => s.status === "in_progress").length} · Completed: ${sessions.filter((s) => s.status === "completed").length}`;
+    shareOnWhatsApp(txt);
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2"><Activity className="size-6 text-primary" /> Dialysis Center</h1>
-          <p className="text-sm text-muted-foreground">Scheduling, session tracking and dialysis summaries.</p>
-        </div>
-        <NewSessionDialog patients={patients} doctors={doctors} onCreated={load} />
+      <div>
+        <h1 className="text-2xl font-semibold flex items-center gap-2"><Activity className="size-6 text-primary" /> Dialysis Center</h1>
+        <p className="text-sm text-muted-foreground">Scheduling, session tracking and dialysis summaries.</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Today's Sessions" value={sessions.filter((s) => s.session_date === format(new Date(), "yyyy-MM-dd")).length} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Today's Sessions" value={sessions.filter((s) => s.session_date === todayKey).length} />
+        <StatCard label="Scheduled" value={sessions.filter((s) => s.status === "scheduled").length} />
         <StatCard label="In Progress" value={sessions.filter((s) => s.status === "in_progress").length} />
-        <StatCard label="Completed (Total)" value={sessions.filter((s) => s.status === "completed").length} />
+        <StatCard label="Completed" value={sessions.filter((s) => s.status === "completed").length} />
+      </div>
+
+      <ModuleActionBar
+        leading={<SearchBox value={search} onChange={setSearch} placeholder="Search patient, UHID, machine, doctor…" />}
+        onExport={() => exportRows("csv")}
+        onPrint={printPage}
+        onDownloadReport={() => downloadAsPdf("Dialysis Report")}
+        onWhatsAppShare={whatsappSummary}
+        extra={<DayMonthYearTabs value={preset} onChange={(p) => setPreset(p)} />}
+      />
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Tabs value={statusF} onValueChange={(v) => setStatusF(v as StatusFilter)}>
+          <TabsList className="h-8">
+            {(["all", "scheduled", "in_progress", "completed", "cancelled"] as StatusFilter[]).map((s) => (
+              <TabsTrigger key={s} value={s} className="text-xs h-7 px-3 capitalize">{s.replace("_", " ")}</TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => exportRows("xlsx")}>Excel</Button>
+          <NewSessionDialog patients={patients} doctors={doctors} onCreated={load} />
+        </div>
       </div>
 
       <Card>
         <CardContent className="p-0 divide-y">
-          {sessions.map((s) => (
+          {filtered.map((s) => (
             <div key={s.id} className="p-4 flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <div className="font-medium">{s.patients?.full_name} <span className="text-muted-foreground text-xs">({s.patients?.uhid})</span></div>
@@ -71,9 +136,15 @@ function DialysisPage() {
                 const min = Math.round((end.getTime() - start.getTime()) / 60000);
                 update(s.id, { status: "completed", end_time: end.toISOString(), duration_min: min });
               }}>Complete</Button>}
+              {s.patients?.mobile && (
+                <Button size="sm" variant="ghost" onClick={() => shareOnWhatsApp(
+                  `Hi ${s.patients?.full_name}, your dialysis session on ${format(new Date(s.session_date), "dd MMM yyyy")} at Machine ${s.machine_no ?? "—"} is ${s.status.replace("_", " ")}.`,
+                  undefined, s.patients.mobile,
+                )}>WhatsApp</Button>
+              )}
             </div>
           ))}
-          {sessions.length === 0 && <div className="p-12 text-center text-sm text-muted-foreground">No dialysis sessions yet.</div>}
+          {filtered.length === 0 && <div className="p-12 text-center text-sm text-muted-foreground">No dialysis sessions match.</div>}
         </CardContent>
       </Card>
     </div>
@@ -98,7 +169,7 @@ function NewSessionDialog({ patients, doctors, onCreated }: any) {
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button><Plus className="size-4 mr-2" />Schedule Session</Button></DialogTrigger>
+      <DialogTrigger asChild><Button size="sm"><Plus className="size-4 mr-2" />Schedule Session</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>New Dialysis Session</DialogTitle></DialogHeader>
         <div className="space-y-3">
