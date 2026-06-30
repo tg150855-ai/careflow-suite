@@ -86,6 +86,7 @@ import { Route as AuthenticatedCdssRouteImport } from './routes/_authenticated/c
 import { Route as AuthenticatedBranchesRouteImport } from './routes/_authenticated/branches'
 import { Route as AuthenticatedBloodBankRouteImport } from './routes/_authenticated/blood-bank'
 import { Route as AuthenticatedBiomedicalRouteImport } from './routes/_authenticated/biomedical'
+import { Route as AuthenticatedBillingCenterRouteImport } from './routes/_authenticated/billing-center'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedBiRouteImport } from './routes/_authenticated/bi'
 import { Route as AuthenticatedBackupsRouteImport } from './routes/_authenticated/backups'
@@ -551,6 +552,12 @@ const AuthenticatedBiomedicalRoute = AuthenticatedBiomedicalRouteImport.update({
   path: '/biomedical',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedBillingCenterRoute =
+  AuthenticatedBillingCenterRouteImport.update({
+    id: '/billing-center',
+    path: '/billing-center',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
@@ -870,6 +877,7 @@ export interface FileRoutesByFullPath {
   '/backups': typeof AuthenticatedBackupsRoute
   '/bi': typeof AuthenticatedBiRoute
   '/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/billing-center': typeof AuthenticatedBillingCenterRoute
   '/biomedical': typeof AuthenticatedBiomedicalRoute
   '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
@@ -1003,6 +1011,7 @@ export interface FileRoutesByTo {
   '/authority': typeof AuthenticatedAuthorityRoute
   '/backups': typeof AuthenticatedBackupsRoute
   '/bi': typeof AuthenticatedBiRoute
+  '/billing-center': typeof AuthenticatedBillingCenterRoute
   '/biomedical': typeof AuthenticatedBiomedicalRoute
   '/blood-bank': typeof AuthenticatedBloodBankRoute
   '/branches': typeof AuthenticatedBranchesRoute
@@ -1133,6 +1142,7 @@ export interface FileRoutesById {
   '/_authenticated/backups': typeof AuthenticatedBackupsRoute
   '/_authenticated/bi': typeof AuthenticatedBiRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRouteWithChildren
+  '/_authenticated/billing-center': typeof AuthenticatedBillingCenterRoute
   '/_authenticated/biomedical': typeof AuthenticatedBiomedicalRoute
   '/_authenticated/blood-bank': typeof AuthenticatedBloodBankRoute
   '/_authenticated/branches': typeof AuthenticatedBranchesRoute
@@ -1269,6 +1279,7 @@ export interface FileRouteTypes {
     | '/backups'
     | '/bi'
     | '/billing'
+    | '/billing-center'
     | '/biomedical'
     | '/blood-bank'
     | '/branches'
@@ -1402,6 +1413,7 @@ export interface FileRouteTypes {
     | '/authority'
     | '/backups'
     | '/bi'
+    | '/billing-center'
     | '/biomedical'
     | '/blood-bank'
     | '/branches'
@@ -1531,6 +1543,7 @@ export interface FileRouteTypes {
     | '/_authenticated/backups'
     | '/_authenticated/bi'
     | '/_authenticated/billing'
+    | '/_authenticated/billing-center'
     | '/_authenticated/biomedical'
     | '/_authenticated/blood-bank'
     | '/_authenticated/branches'
@@ -2202,6 +2215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBiomedicalRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/billing-center': {
+      id: '/_authenticated/billing-center'
+      path: '/billing-center'
+      fullPath: '/billing-center'
+      preLoaderRoute: typeof AuthenticatedBillingCenterRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/billing': {
       id: '/_authenticated/billing'
       path: '/billing'
@@ -2783,6 +2803,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBackupsRoute: typeof AuthenticatedBackupsRoute
   AuthenticatedBiRoute: typeof AuthenticatedBiRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRouteWithChildren
+  AuthenticatedBillingCenterRoute: typeof AuthenticatedBillingCenterRoute
   AuthenticatedBiomedicalRoute: typeof AuthenticatedBiomedicalRoute
   AuthenticatedBloodBankRoute: typeof AuthenticatedBloodBankRoute
   AuthenticatedBranchesRoute: typeof AuthenticatedBranchesRoute
@@ -2874,6 +2895,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBackupsRoute: AuthenticatedBackupsRoute,
   AuthenticatedBiRoute: AuthenticatedBiRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRouteWithChildren,
+  AuthenticatedBillingCenterRoute: AuthenticatedBillingCenterRoute,
   AuthenticatedBiomedicalRoute: AuthenticatedBiomedicalRoute,
   AuthenticatedBloodBankRoute: AuthenticatedBloodBankRoute,
   AuthenticatedBranchesRoute: AuthenticatedBranchesRoute,
