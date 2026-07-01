@@ -162,7 +162,7 @@ function DischargeForm() {
                 Settle the outstanding amount in the Billing Center before completing discharge.
               </div>
               <Button asChild size="sm" variant="outline" className="mt-3">
-                <Link to="/billing-center" search={{ patient: adm.patient_id } as any}>Open Billing Center</Link>
+                <Link to="/billing-center">Open Billing Center</Link>
               </Button>
             </div>
           </div>
