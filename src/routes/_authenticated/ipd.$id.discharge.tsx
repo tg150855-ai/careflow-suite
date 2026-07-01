@@ -204,7 +204,7 @@ function DischargeForm() {
       <div className="flex justify-end gap-3 flex-wrap">
         <Button variant="outline" asChild><Link to="/ipd/$id" params={{ id }}>Cancel</Link></Button>
         <Button variant="outline" onClick={shareWhatsApp}><Share2 className="size-4 mr-2" />WhatsApp share</Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button onClick={() => save.mutate()} disabled={save.isPending || (billingSummary?.totals.pending ?? pendingTotal) > 0}>
           <Download className="size-4 mr-2" />{save.isPending ? "Saving…" : "Save & download PDF"}
         </Button>
       </div>
