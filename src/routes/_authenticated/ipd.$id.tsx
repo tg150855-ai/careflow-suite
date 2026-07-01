@@ -63,10 +63,11 @@ function AdmissionDetail() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <InfoCard label="Admitted on" value={format(new Date(adm.admitted_at), "dd MMM yyyy, p")} />
+        <InfoCard label="Discharged on" value={adm.discharged_at ? format(new Date(adm.discharged_at), "dd MMM yyyy, p") : "—"} sub={adm.discharged_at ? `${days} day stay` : "In hospital"} />
         <InfoCard label="Treating doctor" value={adm.doctors?.name ?? "—"} sub={adm.doctors?.specialization} />
-        <InfoCard label="Reason" value={adm.reason ?? "—"} />
         <InfoCard label="Bed charge" value={adm.beds?.charge_per_day ? `₹${adm.beds.charge_per_day}/day` : "—"} sub={`Est ${adm.estimated_stay_days ?? "—"} days`} />
       </div>
+
 
       <Tabs defaultValue="vitals">
         <TabsList className="flex-wrap h-auto">
