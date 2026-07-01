@@ -150,10 +150,22 @@ function DischargeForm() {
         </Button>
       </div>
 
-      {pendingTotal > 0 && (
-        <Card className="p-4 bg-warning/10 border-warning/30">
-          <div className="text-sm font-medium">Pending payments: ₹{pendingTotal.toLocaleString("en-IN")}</div>
-          <div className="text-xs text-muted-foreground mt-1">Please settle outstanding bills before completing discharge.</div>
+      {(billingSummary?.totals.pending ?? pendingTotal) > 0 && (
+        <Card className="p-4 bg-destructive/10 border-destructive/40">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="size-5 text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold text-destructive">
+                Discharge blocked — pending balance ₹{(billingSummary?.totals.pending ?? pendingTotal).toLocaleString("en-IN")}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Settle the outstanding amount in the Billing Center before completing discharge.
+              </div>
+              <Button asChild size="sm" variant="outline" className="mt-3">
+                <Link to="/billing-center" search={{ patient: adm.patient_id } as any}>Open Billing Center</Link>
+              </Button>
+            </div>
+          </div>
         </Card>
       )}
 
