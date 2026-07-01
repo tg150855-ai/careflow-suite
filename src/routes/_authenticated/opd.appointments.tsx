@@ -321,23 +321,23 @@ function OpdAppointments() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditing(a);
-                      }}
-                      title="Edit"
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <RecordActions
+                        size="icon"
+                        deleteLabel={`appointment for ${a.patients?.full_name ?? "patient"}`}
+                        onEdit={() => setEditing(a)}
+                        onPrint={() => printAppt(a)}
+                        onWhatsApp={() => whatsAppAppt(a)}
+                        onDelete={() => deleteAppt(a.id)}
+                      />
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </Card>
+
 
         {/* Detail / timeline */}
         <div className="lg:col-span-2">
