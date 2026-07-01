@@ -10,6 +10,8 @@ import { ArrowLeft, Plus, Trash2, Printer, Sparkles, Share2, Download } from "lu
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { getPatientBillingSummary } from "@/lib/billing-aggregator";
+import { AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ipd/$id/discharge")({ component: DischargeForm });
 
