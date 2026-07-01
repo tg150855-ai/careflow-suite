@@ -22,6 +22,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
+import { RecordActions } from "@/components/common/record-actions";
 
 export const Route = createFileRoute("/_authenticated/opd/appointments")({
   component: OpdAppointments,
