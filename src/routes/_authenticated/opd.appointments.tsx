@@ -22,6 +22,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
+import { RecordActions } from "@/components/common/record-actions";
 
 export const Route = createFileRoute("/_authenticated/opd/appointments")({
   component: OpdAppointments,
@@ -141,6 +142,43 @@ function OpdAppointments() {
     qc.invalidateQueries({ queryKey: ["opd-appts"] });
     qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
     qc.invalidateQueries({ queryKey: ["opd-consult-queue"] });
+  }
+
+  async function deleteAppt(id: string) {
+    const { error } = await supabase.from("appointments").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Appointment deleted");
+    if (selectedId === id) setSelectedId(null);
+    qc.invalidateQueries({ queryKey: ["opd-appts"] });
+    qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
+    qc.invalidateQueries({ queryKey: ["opd-consult-queue"] });
+  }
+
+  function printAppt(a: any) {
+    const w = window.open("", "_blank", "width=720,height=900");
+    if (!w) return;
+    w.document.write(`<html><head><title>Appointment ${a.token_no ?? ""}</title>
+      <style>body{font-family:system-ui;padding:24px;color:#111}h1{margin:0 0 4px}
+      .row{margin:6px 0}.k{color:#666;display:inline-block;width:140px}</style></head><body>
+      <h1>Appointment Slip</h1>
+      <div class="row"><span class="k">Token</span> #${a.token_no ?? "-"}</div>
+      <div class="row"><span class="k">Date/Time</span> ${format(new Date(a.scheduled_at), "PPpp")}</div>
+      <div class="row"><span class="k">Patient</span> ${a.patients?.full_name ?? "-"} (${a.patients?.uhid ?? ""})</div>
+      <div class="row"><span class="k">Mobile</span> ${a.patients?.mobile ?? "-"}</div>
+      <div class="row"><span class="k">Doctor</span> ${a.doctors?.name ?? "-"}${a.doctors?.specialization ? ` (${a.doctors.specialization})` : ""}</div>
+      <div class="row"><span class="k">Status</span> ${a.status}</div>
+      ${a.notes ? `<div class="row"><span class="k">Notes</span> ${a.notes}</div>` : ""}
+      <script>window.print()</script></body></html>`);
+    w.document.close();
+  }
+
+  function whatsAppAppt(a: any) {
+    const mobile = (a.patients?.mobile ?? "").replace(/[^0-9]/g, "");
+    const msg = `Appointment confirmed for ${a.patients?.full_name ?? ""} on ${format(new Date(a.scheduled_at), "PPp")} with ${a.doctors?.name ?? ""}${a.token_no ? ` (Token #${a.token_no})` : ""}.`;
+    const url = mobile
+      ? `https://wa.me/${mobile.length === 10 ? "91" + mobile : mobile}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank");
   }
 
   return (
@@ -283,23 +321,23 @@ function OpdAppointments() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditing(a);
-                      }}
-                      title="Edit"
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <RecordActions
+                        size="icon"
+                        deleteLabel={`appointment for ${a.patients?.full_name ?? "patient"}`}
+                        onEdit={() => setEditing(a)}
+                        onPrint={() => printAppt(a)}
+                        onWhatsApp={() => whatsAppAppt(a)}
+                        onDelete={() => deleteAppt(a.id)}
+                      />
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </Card>
+
 
         {/* Detail / timeline */}
         <div className="lg:col-span-2">
