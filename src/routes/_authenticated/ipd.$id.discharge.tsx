@@ -31,6 +31,12 @@ function DischargeForm() {
     enabled: !!adm,
     queryFn: async () => (await supabase.from("bills").select("id, bill_no, total, paid, pending, status").eq("patient_id", adm!.patient_id)).data ?? [],
   });
+  const { data: billingSummary } = useQuery({
+    queryKey: ["billing-summary-discharge", adm?.patient_id],
+    enabled: !!adm?.patient_id,
+    queryFn: () => getPatientBillingSummary(adm!.patient_id),
+    refetchOnWindowFocus: true,
+  });
 
   const [finalDx, setFinalDx] = useState("");
   const [procedures, setProcedures] = useState("");
