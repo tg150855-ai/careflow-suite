@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BedDouble, Plus, UserPlus, Activity, LogOut, Search, FileBarChart, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, differenceInDays } from "date-fns";
@@ -14,11 +15,16 @@ export const Route = createFileRoute("/_authenticated/ipd/")({ component: IPDDas
 
 function IPDDashboard() {
   const [q, setQ] = useState("");
+  const [tab, setTab] = useState<"active" | "discharged">("active");
+  const today = new Date().toISOString().slice(0, 10);
+  const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const [from, setFrom] = useState(monthAgo);
+  const [to, setTo] = useState(today);
 
   const { data } = useQuery({
     queryKey: ["ipd-dashboard"],
     queryFn: async () => {
-      const [active, today, beds, dischToday] = await Promise.all([
+      const [active, todayCount, beds, dischToday] = await Promise.all([
         supabase
           .from("admissions")
           .select("id, admission_no, admitted_at, status, reason, initial_diagnosis, patients(full_name, uhid, mobile), doctors(name), beds(bed_number), wards(name, type)")
@@ -33,7 +39,7 @@ function IPDDashboard() {
       const total = (beds.data ?? []).length;
       return {
         admissions: active.data ?? [],
-        admissionsToday: today.count ?? 0,
+        admissionsToday: todayCount.count ?? 0,
         dischargesToday: dischToday.count ?? 0,
         bedStats,
         occupancy: total ? Math.round((bedStats.occupied / total) * 100) : 0,
@@ -41,7 +47,24 @@ function IPDDashboard() {
     },
   });
 
-  const filtered = (data?.admissions ?? []).filter((a: any) => {
+  const { data: discharged = [] } = useQuery({
+    queryKey: ["ipd-discharged", from, to],
+    enabled: tab === "discharged",
+    queryFn: async () => {
+      const fromIso = new Date(from + "T00:00:00").toISOString();
+      const toIso = new Date(to + "T23:59:59").toISOString();
+      const res = await supabase
+        .from("admissions")
+        .select("id, admission_no, admitted_at, discharged_at, reason, patients(full_name, uhid, mobile), doctors(name), beds(bed_number), wards(name)")
+        .eq("status", "discharged")
+        .gte("discharged_at", fromIso)
+        .lte("discharged_at", toIso)
+        .order("discharged_at", { ascending: false });
+      return res.data ?? [];
+    },
+  });
+
+  const matchQ = (a: any) => {
     if (!q.trim()) return true;
     const t = q.toLowerCase();
     return (
@@ -50,7 +73,9 @@ function IPDDashboard() {
       a.admission_no?.toLowerCase().includes(t) ||
       a.beds?.bed_number?.toLowerCase().includes(t)
     );
-  });
+  };
+  const filteredActive = (data?.admissions ?? []).filter(matchQ);
+  const filteredDischarged = discharged.filter(matchQ);
 
   const cards = [
     { label: "Active admissions", value: data?.admissions.length ?? 0, icon: UserPlus, hint: "Currently in hospital" },
@@ -88,55 +113,114 @@ function IPDDashboard() {
       </div>
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-          <h2 className="font-semibold">Active admissions</h2>
-          <div className="relative w-72">
-            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search patient, UHID or bed" className="pl-9" />
-          </div>
-        </div>
-        <div className="overflow-x-auto -mx-6">
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground bg-surface-muted">
-              <tr>
-                <th className="text-left font-medium px-6 py-2.5">Admission #</th>
-                <th className="text-left font-medium py-2.5">Patient</th>
-                <th className="text-left font-medium py-2.5">Bed / Ward</th>
-                <th className="text-left font-medium py-2.5">Doctor</th>
-                <th className="text-left font-medium py-2.5">Days</th>
-                <th className="text-left font-medium py-2.5">Reason</th>
-                <th className="text-right font-medium px-6 py-2.5"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filtered.map((a: any) => {
-                const days = differenceInDays(new Date(), new Date(a.admitted_at)) + 1;
-                return (
-                  <tr key={a.id} className="hover:bg-surface-muted/60">
-                    <td className="px-6 py-3 font-mono text-xs">{a.admission_no}</td>
-                    <td className="py-3">
-                      <div className="font-medium">{a.patients?.full_name}</div>
-                      <div className="text-xs text-muted-foreground">{a.patients?.uhid}</div>
-                    </td>
-                    <td className="py-3">
-                      <div className="font-medium">{a.beds?.bed_number ?? "—"}</div>
-                      <div className="text-xs text-muted-foreground">{a.wards?.name}</div>
-                    </td>
-                    <td className="py-3">{a.doctors?.name}</td>
-                    <td className="py-3"><Badge variant="secondary">{days}d</Badge></td>
-                    <td className="py-3 max-w-xs truncate text-muted-foreground">{a.reason ?? a.initial_diagnosis ?? "—"}</td>
-                    <td className="px-6 py-3 text-right">
-                      <Button asChild size="sm" variant="ghost"><Link to="/ipd/$id" params={{ id: a.id }}>Open</Link></Button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="py-12 text-center text-sm text-muted-foreground">No active admissions.</td></tr>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+          <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+            <TabsList>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="discharged">Discharged</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2 flex-wrap">
+              {tab === "discharged" && (
+                <>
+                  <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
+                  <span className="text-muted-foreground text-sm">→</span>
+                  <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
+                </>
               )}
-            </tbody>
-          </table>
-        </div>
+              <div className="relative w-64">
+                <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search patient, UHID or bed" className="pl-9" />
+              </div>
+            </div>
+          </div>
+
+          <TabsContent value="active" className="mt-0">
+            <div className="overflow-x-auto -mx-6">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground bg-surface-muted">
+                  <tr>
+                    <th className="text-left font-medium px-6 py-2.5">Admission #</th>
+                    <th className="text-left font-medium py-2.5">Patient</th>
+                    <th className="text-left font-medium py-2.5">Bed / Ward</th>
+                    <th className="text-left font-medium py-2.5">Doctor</th>
+                    <th className="text-left font-medium py-2.5">Days</th>
+                    <th className="text-left font-medium py-2.5">Reason</th>
+                    <th className="text-right font-medium px-6 py-2.5"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredActive.map((a: any) => {
+                    const days = differenceInDays(new Date(), new Date(a.admitted_at)) + 1;
+                    return (
+                      <tr key={a.id} className="hover:bg-surface-muted/60">
+                        <td className="px-6 py-3 font-mono text-xs">{a.admission_no}</td>
+                        <td className="py-3">
+                          <div className="font-medium">{a.patients?.full_name}</div>
+                          <div className="text-xs text-muted-foreground">{a.patients?.uhid}</div>
+                        </td>
+                        <td className="py-3">
+                          <div className="font-medium">{a.beds?.bed_number ?? "—"}</div>
+                          <div className="text-xs text-muted-foreground">{a.wards?.name}</div>
+                        </td>
+                        <td className="py-3">{a.doctors?.name}</td>
+                        <td className="py-3"><Badge variant="secondary">{days}d</Badge></td>
+                        <td className="py-3 max-w-xs truncate text-muted-foreground">{a.reason ?? a.initial_diagnosis ?? "—"}</td>
+                        <td className="px-6 py-3 text-right">
+                          <Button asChild size="sm" variant="ghost"><Link to="/ipd/$id" params={{ id: a.id }}>Open</Link></Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredActive.length === 0 && (
+                    <tr><td colSpan={7} className="py-12 text-center text-sm text-muted-foreground">No active admissions.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="discharged" className="mt-0">
+            <div className="overflow-x-auto -mx-6">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground bg-surface-muted">
+                  <tr>
+                    <th className="text-left font-medium px-6 py-2.5">Admission #</th>
+                    <th className="text-left font-medium py-2.5">Patient</th>
+                    <th className="text-left font-medium py-2.5">Admitted</th>
+                    <th className="text-left font-medium py-2.5">Discharged</th>
+                    <th className="text-left font-medium py-2.5">Stay</th>
+                    <th className="text-left font-medium py-2.5">Doctor</th>
+                    <th className="text-right font-medium px-6 py-2.5"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredDischarged.map((a: any) => {
+                    const stay = a.discharged_at ? differenceInDays(new Date(a.discharged_at), new Date(a.admitted_at)) + 1 : 0;
+                    return (
+                      <tr key={a.id} className="hover:bg-surface-muted/60">
+                        <td className="px-6 py-3 font-mono text-xs">{a.admission_no}</td>
+                        <td className="py-3">
+                          <div className="font-medium">{a.patients?.full_name}</div>
+                          <div className="text-xs text-muted-foreground">{a.patients?.uhid}</div>
+                        </td>
+                        <td className="py-3 text-muted-foreground">{format(new Date(a.admitted_at), "dd MMM yyyy")}</td>
+                        <td className="py-3 text-muted-foreground">{a.discharged_at ? format(new Date(a.discharged_at), "dd MMM yyyy") : "—"}</td>
+                        <td className="py-3"><Badge variant="secondary">{stay}d</Badge></td>
+                        <td className="py-3">{a.doctors?.name}</td>
+                        <td className="px-6 py-3 text-right">
+                          <Button asChild size="sm" variant="ghost"><Link to="/ipd/$id" params={{ id: a.id }}>Open</Link></Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredDischarged.length === 0 && (
+                    <tr><td colSpan={7} className="py-12 text-center text-sm text-muted-foreground">No discharges in range.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );

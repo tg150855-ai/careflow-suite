@@ -10,6 +10,8 @@ import { ArrowLeft, Plus, Trash2, Printer, Sparkles, Share2, Download } from "lu
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { getPatientBillingSummary } from "@/lib/billing-aggregator";
+import { AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ipd/$id/discharge")({ component: DischargeForm });
 
@@ -28,6 +30,12 @@ function DischargeForm() {
     queryKey: ["adm-bills", id, adm?.patient_id],
     enabled: !!adm,
     queryFn: async () => (await supabase.from("bills").select("id, bill_no, total, paid, pending, status").eq("patient_id", adm!.patient_id)).data ?? [],
+  });
+  const { data: billingSummary } = useQuery({
+    queryKey: ["billing-summary-discharge", adm?.patient_id],
+    enabled: !!adm?.patient_id,
+    queryFn: () => getPatientBillingSummary(adm!.patient_id),
+    refetchOnWindowFocus: true,
   });
 
   const [finalDx, setFinalDx] = useState("");
@@ -142,10 +150,22 @@ function DischargeForm() {
         </Button>
       </div>
 
-      {pendingTotal > 0 && (
-        <Card className="p-4 bg-warning/10 border-warning/30">
-          <div className="text-sm font-medium">Pending payments: ₹{pendingTotal.toLocaleString("en-IN")}</div>
-          <div className="text-xs text-muted-foreground mt-1">Please settle outstanding bills before completing discharge.</div>
+      {(billingSummary?.totals.pending ?? pendingTotal) > 0 && (
+        <Card className="p-4 bg-destructive/10 border-destructive/40">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="size-5 text-destructive shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold text-destructive">
+                Discharge blocked — pending balance ₹{(billingSummary?.totals.pending ?? pendingTotal).toLocaleString("en-IN")}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Settle the outstanding amount in the Billing Center before completing discharge.
+              </div>
+              <Button asChild size="sm" variant="outline" className="mt-3">
+                <Link to="/billing-center">Open Billing Center</Link>
+              </Button>
+            </div>
+          </div>
         </Card>
       )}
 
@@ -184,7 +204,7 @@ function DischargeForm() {
       <div className="flex justify-end gap-3 flex-wrap">
         <Button variant="outline" asChild><Link to="/ipd/$id" params={{ id }}>Cancel</Link></Button>
         <Button variant="outline" onClick={shareWhatsApp}><Share2 className="size-4 mr-2" />WhatsApp share</Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        <Button onClick={() => save.mutate()} disabled={save.isPending || (billingSummary?.totals.pending ?? pendingTotal) > 0}>
           <Download className="size-4 mr-2" />{save.isPending ? "Saving…" : "Save & download PDF"}
         </Button>
       </div>
