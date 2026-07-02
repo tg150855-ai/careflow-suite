@@ -56,6 +56,26 @@ function EmergencyPage() {
     load();
   }
 
+  async function removeCase(id: string) {
+    const { error } = await (supabase as any).from("emergency_cases").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted"); load();
+  }
+
+  function printCase(c: ER) {
+    const w = window.open("", "_blank"); if (!w) return;
+    w.document.write(`<pre style="font-family:sans-serif;padding:24px;white-space:pre-wrap">Emergency Case Slip
+ER No: ${c.emergency_no}
+Patient: ${c.full_name}
+Gender/Age: ${c.gender ?? "—"}, ${c.approx_age ?? "—"}y
+Mobile: ${c.mobile ?? "—"}
+Triage: ${(c.triage ?? "").toUpperCase()}
+Type: ${c.emergency_type ?? "—"}
+Arrival: ${format(new Date(c.arrival_time), "dd MMM yyyy HH:mm")}
+Status: ${c.status}</pre>`);
+    w.document.close(); w.focus(); w.print();
+  }
+
   const waiting = cases.filter((c) => c.status === "waiting").length;
   const critical = cases.filter((c) => c.triage === "red" && c.status !== "discharged").length;
   const active = cases.filter((c) => ["waiting", "in_treatment"].includes(c.status)).length;
