@@ -11,7 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Siren, Plus, Activity, AlertOctagon, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
+import { RecordActions } from "@/components/common/record-actions";
+import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/emergency")({ component: EmergencyPage });
 
