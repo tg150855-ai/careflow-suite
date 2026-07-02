@@ -18,6 +18,8 @@ import { PriorityBadge, StatusBadge } from "./ot.index";
 import { useAuth } from "@/lib/auth-context";
 import { can } from "@/lib/permissions";
 import { Can } from "@/components/can";
+import { RecordActions } from "@/components/common/record-actions";
+import { shareOnWhatsApp } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/ot/schedule")({ component: OtSchedule });
 
@@ -211,6 +213,32 @@ function OtSchedule() {
     qc.invalidateQueries({ queryKey: ["ot-schedule"] });
   }
 
+  function printSurgery(r: any) {
+    const w = window.open("", "_blank", "width=800,height=900");
+    if (!w) return;
+    const total = Number(r.ot_charge ?? 0) + Number(r.surgeon_charge ?? 0) + Number(r.assistant_charge ?? 0) + Number(r.anesthesia_charge ?? 0) + Number(r.consumables_charge ?? 0);
+    w.document.write(`<html><head><title>${r.surgery_no}</title>
+      <style>body{font-family:system-ui;padding:24px;color:#111}h1{margin:0 0 4px}small{color:#666}table{width:100%;border-collapse:collapse;margin-top:12px}td{padding:6px 8px;border-bottom:1px solid #eee}.r{text-align:right}</style>
+      </head><body>
+      <h1>Surgery Slip — ${r.surgery_no}</h1>
+      <small>${format(new Date(), "dd MMM yyyy HH:mm")}</small>
+      <table>
+        <tr><td>Patient</td><td>${r.patients?.full_name ?? ""} (${r.patients?.uhid ?? ""})</td></tr>
+        <tr><td>Procedure</td><td>${r.procedure_name}</td></tr>
+        <tr><td>Scheduled</td><td>${format(new Date(r.scheduled_start), "dd MMM yyyy HH:mm")} → ${r.scheduled_end ? format(new Date(r.scheduled_end), "HH:mm") : "—"}</td></tr>
+        <tr><td>Primary Surgeon</td><td>${r.primary?.name ?? "—"}</td></tr>
+        <tr><td>Assistant</td><td>${r.assistant?.name ?? "—"}</td></tr>
+        <tr><td>Anesthetist</td><td>${r.anesthetist?.name ?? "—"}</td></tr>
+        <tr><td>OT Room</td><td>${r.ot_rooms?.name ?? "—"}</td></tr>
+        <tr><td>Priority</td><td>${r.priority}</td></tr>
+        <tr><td>Status</td><td>${r.status}</td></tr>
+        <tr><td><b>Estimated Cost</b></td><td class="r"><b>₹${total.toLocaleString("en-IN")}</b></td></tr>
+      </table>
+      <script>window.onload=()=>window.print()</script>
+      </body></html>`);
+    w.document.close();
+  }
+
   return (
     <div className="space-y-4">
       <Card>
@@ -341,8 +369,15 @@ function OtSchedule() {
                     {canEdit && !["completed", "cancelled"].includes(r.status) && (
                       <Button size="sm" variant="ghost" onClick={() => { setCancelTarget(r); setCancelReason(""); }} title="Cancel"><XCircle className="size-3 text-rose-600" /></Button>
                     )}
-                    {canEdit && <Button size="sm" variant="ghost" onClick={() => openEdit(r)}><Pencil className="size-3" /></Button>}
-                    {canDelete && <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="size-3 text-rose-600" /></Button>}
+                    <RecordActions
+                      deleteLabel={`surgery ${r.surgery_no}`}
+                      onEdit={canEdit ? () => openEdit(r) : undefined}
+                      onPrint={() => printSurgery(r)}
+                      onWhatsApp={() => shareOnWhatsApp(
+                        `Surgery ${r.surgery_no}\nPatient: ${r.patients?.full_name ?? ""} (${r.patients?.uhid ?? ""})\nProcedure: ${r.procedure_name}\nScheduled: ${format(new Date(r.scheduled_start), "dd MMM yyyy HH:mm")}\nSurgeon: ${r.primary?.name ?? "—"}\nStatus: ${r.status}`
+                      )}
+                      onDelete={canDelete ? () => remove(r.id) : undefined}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

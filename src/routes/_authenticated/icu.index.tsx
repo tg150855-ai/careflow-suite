@@ -33,6 +33,8 @@ import { format, differenceInDays } from "date-fns";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { ICU_STATUS, ICU_STATUS_STYLES, loadICUAdmissions, loadICUSettings } from "@/components/icu/shared";
+import { RecordActions } from "@/components/common/record-actions";
+import { shareOnWhatsApp } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/icu/")({ component: ICUDashboard });
 
@@ -258,10 +260,17 @@ function ICUDashboard() {
                   <div className="text-muted-foreground text-xs">Day</div>
                   <div>{days}</div>
                 </div>
-                <div className="col-span-1 flex justify-end">
+                <div className="col-span-1 flex justify-end items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   <Badge variant="outline" className={`capitalize ${ICU_STATUS_STYLES[a.icu_status ?? "stable"] ?? ""}`}>
                     {a.icu_status ?? "stable"}
                   </Badge>
+                  <RecordActions
+                    size="icon"
+                    deleteLabel={`ICU admission ${a.admission_no}`}
+                    onWhatsApp={() => shareOnWhatsApp(
+                      `ICU Update — ${a.patients?.full_name ?? ""} (${a.patients?.uhid ?? ""})\nAdmission: ${a.admission_no}\nBed: ${a.beds?.bed_number ?? "—"} · ${a.wards?.name ?? "—"}\nStatus: ${a.icu_status ?? "stable"}\nDoctor: ${a.doctors?.name ?? "—"}`
+                    )}
+                  />
                 </div>
               </div>
             );
