@@ -10,11 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Printer, Download, Save, Pencil } from "lucide-react";
+import { Download, Save } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { VoiceDictate } from "@/components/voice-dictate";
 import { NS_QK, SHIFTS, loadActiveAdmissions } from "./shared";
 import { can } from "@/lib/permissions";
+import { RecordActions } from "@/components/common/record-actions";
+import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 
 export function NSNotes() {
   const qc = useQueryClient();
