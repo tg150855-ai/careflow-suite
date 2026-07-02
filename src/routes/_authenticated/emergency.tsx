@@ -11,7 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Siren, Plus, Activity, AlertOctagon, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
+import { RecordActions } from "@/components/common/record-actions";
+import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/emergency")({ component: EmergencyPage });
 
@@ -52,6 +54,26 @@ function EmergencyPage() {
     if (status === "discharged" || status === "admitted") patch.treatment_end = new Date().toISOString();
     await (supabase as any).from("emergency_cases").update(patch as any).eq("id", id);
     load();
+  }
+
+  async function removeCase(id: string) {
+    const { error } = await (supabase as any).from("emergency_cases").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted"); load();
+  }
+
+  function printCase(c: ER) {
+    const w = window.open("", "_blank"); if (!w) return;
+    w.document.write(`<pre style="font-family:sans-serif;padding:24px;white-space:pre-wrap">Emergency Case Slip
+ER No: ${c.emergency_no}
+Patient: ${c.full_name}
+Gender/Age: ${c.gender ?? "—"}, ${c.approx_age ?? "—"}y
+Mobile: ${c.mobile ?? "—"}
+Triage: ${(c.triage ?? "").toUpperCase()}
+Type: ${c.emergency_type ?? "—"}
+Arrival: ${format(new Date(c.arrival_time), "dd MMM yyyy HH:mm")}
+Status: ${c.status}</pre>`);
+    w.document.close(); w.focus(); w.print();
   }
 
   const waiting = cases.filter((c) => c.status === "waiting").length;
@@ -120,12 +142,28 @@ function EmergencyPage() {
                   <TableCell className="text-sm">{c.emergency_type}</TableCell>
                   <TableCell className="text-xs">{formatDistanceToNow(new Date(c.arrival_time), { addSuffix: true })}</TableCell>
                   <TableCell><Badge variant="outline" className="capitalize">{c.status.replace("_", " ")}</Badge></TableCell>
-                  <TableCell className="flex gap-1">
-                    {c.status === "waiting" && <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, "in_treatment")}>Treat</Button>}
-                    {c.status === "in_treatment" && <>
-                      <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, "admitted")}>Admit</Button>
-                      <Button size="sm" onClick={() => updateStatus(c.id, "discharged")}>Discharge</Button>
-                    </>}
+                  <TableCell>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {c.status === "waiting" && <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, "in_treatment")}>Treat</Button>}
+                      {c.status === "in_treatment" && <>
+                        <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, "admitted")}>Admit</Button>
+                        <Button size="sm" onClick={() => updateStatus(c.id, "discharged")}>Discharge</Button>
+                      </>}
+                      <RecordActions
+                        size="sm"
+                        deleteLabel={`emergency case ${c.emergency_no}`}
+                        onPrint={() => printCase(c)}
+                        onWhatsApp={() => shareOnWhatsApp(summarizeRecord("Emergency Case", {
+                          ER: c.emergency_no,
+                          Patient: c.full_name,
+                          Triage: (c.triage ?? "").toUpperCase(),
+                          Type: c.emergency_type ?? "—",
+                          Status: c.status,
+                          Arrival: format(new Date(c.arrival_time), "dd MMM HH:mm"),
+                        }), undefined, c.mobile ?? undefined)}
+                        onDelete={() => removeCase(c.id)}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
