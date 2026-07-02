@@ -109,8 +109,25 @@ ${n.note}</pre>`);
                 <TableCell><Badge variant="outline">{n.shift}</Badge></TableCell>
                 <TableCell className="text-xs max-w-md truncate">{n.note}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => startEdit(n)} disabled={!canEdit}><Pencil className="size-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => printOne(n)}><Printer className="size-4" /></Button>
+                  <RecordActions
+                    size="sm"
+                    deleteLabel="this nursing note"
+                    onEdit={canEdit ? () => startEdit(n) : undefined}
+                    onPrint={() => printOne(n)}
+                    onWhatsApp={() => shareOnWhatsApp(summarizeRecord("Nursing Note", {
+                      Patient: n.admissions?.patients?.full_name ?? "—",
+                      UHID: n.admissions?.patients?.uhid ?? "—",
+                      Shift: n.shift,
+                      Time: format(new Date(n.created_at), "dd MMM HH:mm"),
+                      Note: n.note,
+                    }))}
+                    onDelete={async () => {
+                      const { error } = await supabase.from("nursing_notes").delete().eq("id", n.id);
+                      if (error) return toast.error(error.message);
+                      toast.success("Deleted");
+                      qc.invalidateQueries({ queryKey: NS_QK.notes });
+                    }}
+                  />
                 </TableCell>
               </TableRow>
             ))}
