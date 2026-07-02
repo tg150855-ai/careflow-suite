@@ -18,6 +18,8 @@ import { PriorityBadge, StatusBadge } from "./ot.index";
 import { useAuth } from "@/lib/auth-context";
 import { can } from "@/lib/permissions";
 import { Can } from "@/components/can";
+import { RecordActions } from "@/components/common/record-actions";
+import { shareOnWhatsApp } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/ot/schedule")({ component: OtSchedule });
 
@@ -341,8 +343,15 @@ function OtSchedule() {
                     {canEdit && !["completed", "cancelled"].includes(r.status) && (
                       <Button size="sm" variant="ghost" onClick={() => { setCancelTarget(r); setCancelReason(""); }} title="Cancel"><XCircle className="size-3 text-rose-600" /></Button>
                     )}
-                    {canEdit && <Button size="sm" variant="ghost" onClick={() => openEdit(r)}><Pencil className="size-3" /></Button>}
-                    {canDelete && <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="size-3 text-rose-600" /></Button>}
+                    <RecordActions
+                      deleteLabel={`surgery ${r.surgery_no}`}
+                      onEdit={canEdit ? () => openEdit(r) : undefined}
+                      onPrint={() => printSurgery(r)}
+                      onWhatsApp={() => shareOnWhatsApp(
+                        `Surgery ${r.surgery_no}\nPatient: ${r.patients?.full_name ?? ""} (${r.patients?.uhid ?? ""})\nProcedure: ${r.procedure_name}\nScheduled: ${format(new Date(r.scheduled_start), "dd MMM yyyy HH:mm")}\nSurgeon: ${r.primary?.name ?? "—"}\nStatus: ${r.status}`
+                      )}
+                      onDelete={canDelete ? () => remove(r.id) : undefined}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
