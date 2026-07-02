@@ -142,12 +142,28 @@ Status: ${c.status}</pre>`);
                   <TableCell className="text-sm">{c.emergency_type}</TableCell>
                   <TableCell className="text-xs">{formatDistanceToNow(new Date(c.arrival_time), { addSuffix: true })}</TableCell>
                   <TableCell><Badge variant="outline" className="capitalize">{c.status.replace("_", " ")}</Badge></TableCell>
-                  <TableCell className="flex gap-1">
-                    {c.status === "waiting" && <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, "in_treatment")}>Treat</Button>}
-                    {c.status === "in_treatment" && <>
-                      <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, "admitted")}>Admit</Button>
-                      <Button size="sm" onClick={() => updateStatus(c.id, "discharged")}>Discharge</Button>
-                    </>}
+                  <TableCell>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {c.status === "waiting" && <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, "in_treatment")}>Treat</Button>}
+                      {c.status === "in_treatment" && <>
+                        <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, "admitted")}>Admit</Button>
+                        <Button size="sm" onClick={() => updateStatus(c.id, "discharged")}>Discharge</Button>
+                      </>}
+                      <RecordActions
+                        size="sm"
+                        deleteLabel={`emergency case ${c.emergency_no}`}
+                        onPrint={() => printCase(c)}
+                        onWhatsApp={() => shareOnWhatsApp(summarizeRecord("Emergency Case", {
+                          ER: c.emergency_no,
+                          Patient: c.full_name,
+                          Triage: (c.triage ?? "").toUpperCase(),
+                          Type: c.emergency_type ?? "—",
+                          Status: c.status,
+                          Arrival: format(new Date(c.arrival_time), "dd MMM HH:mm"),
+                        }), undefined, c.mobile ?? undefined)}
+                        onDelete={() => removeCase(c.id)}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
