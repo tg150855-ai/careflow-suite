@@ -5,10 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 import { differenceInYears, format } from "date-fns";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Select,
   SelectContent,
@@ -17,21 +18,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
-import { useAuth } from "@/lib/auth-context";
-import { can } from "@/lib/permissions";
+import { RecordActions } from "@/components/common/record-actions";
+import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/patients/")({ component: PatientsPage });
 
@@ -40,10 +30,8 @@ function PatientsPage() {
   const [gender, setGender] = useState("all");
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
-  const { roles } = useAuth();
+  const navigate = useNavigate();
   const pageSize = 20;
-  const canDelete = can(roles, "patients", "delete");
-  const canEdit = can(roles, "patients", "edit");
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["patients", q, gender, page],
@@ -239,44 +227,25 @@ function PatientsPage() {
                     <Eye className="size-4" />
                   </Link>
                 </Button>
-                {canEdit && (
-                  <Button asChild variant="outline" size="sm">
-                    <Link to="/patients/$id" params={{ id: p.id }} search={{ edit: "1" } as any}>
-                      Edit
-                    </Link>
-                  </Button>
-                )}
-                {canDelete && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete patient record?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete {p.full_name} and linked insurance details.
-                          Clinical records may block deletion if already linked.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          onClick={() => deletePatient(p)}
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
+                <RecordActions
+                  onEdit={() => navigate({ to: "/patients/$id", params: { id: p.id }, search: { edit: "1" } as any })}
+                  onPrint={() => window.open(`/patient-card/${p.id}/print`, "_blank")}
+                  onWhatsApp={() =>
+                    shareOnWhatsApp(
+                      summarizeRecord(`Patient — ${p.full_name}`, {
+                        UHID: p.uhid,
+                        Mobile: p.mobile,
+                        Gender: p.gender,
+                        "Blood Group": p.blood_group,
+                        Age: p.dob ? `${differenceInYears(new Date(), new Date(p.dob))} yrs` : null,
+                      }),
+                      undefined,
+                      p.mobile,
+                    )
+                  }
+                  onDelete={() => deletePatient(p)}
+                  deleteLabel={`patient ${p.full_name}`}
+                />
               </div>
             </div>
           ))}
