@@ -19,6 +19,8 @@ import { ModuleActionBar } from "@/components/common/action-bar";
 import { SearchBox } from "@/components/common/search-box";
 import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 import { exportCsv, downloadAsPdf, printPage } from "@/lib/export";
+import { RecordActions } from "@/components/common/record-actions";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/laboratory/")({ component: LabDashboard });
 
