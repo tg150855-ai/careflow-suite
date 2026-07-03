@@ -14,6 +14,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/pharmacy/")({ component: PharmacyDashboard });
 
 function PharmacyDashboard() {
+  const qc = useQueryClient();
   const { data } = useQuery({
     queryKey: ["pharm-dashboard"],
     queryFn: async () => {
