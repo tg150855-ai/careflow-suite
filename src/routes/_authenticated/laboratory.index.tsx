@@ -200,13 +200,9 @@ function LabDashboard() {
                     <Badge variant={(STATUS_TONE[o.status] as any) ?? "outline"} className="text-[10px] capitalize">{o.status.replace("_", " ")}</Badge>
                   </div>
                 </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 text-emerald-700"
-                  title="Share on WhatsApp"
-                  onClick={(e) => {
-                    e.preventDefault();
+                <RecordActions
+                  onEdit={() => navigate({ to: "/laboratory/$id", params: { id: o.id } })}
+                  onWhatsApp={() =>
                     shareOnWhatsApp(
                       summarizeRecord(`Lab order ${o.order_no}`, {
                         Patient: o.patients?.full_name,
@@ -218,11 +214,16 @@ function LabDashboard() {
                       }),
                       undefined,
                       o.patients?.phone,
-                    );
+                    )
+                  }
+                  onDelete={async () => {
+                    const { error } = await supabase.from("lab_orders").delete().eq("id", o.id);
+                    if (error) return toast.error(error.message);
+                    toast.success("Lab order deleted");
+                    qc.invalidateQueries({ queryKey: ["lab-dashboard"] });
                   }}
-                >
-                  <Share2 className="size-4" />
-                </Button>
+                  deleteLabel={`lab order ${o.order_no}`}
+                />
               </div>
             </div>
           ))}
