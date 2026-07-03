@@ -14,6 +14,7 @@ import { Scan, Plus, FileText, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { inr } from "@/lib/format";
+import { RecordActions } from "@/components/common/record-actions";
 
 export const Route = createFileRoute("/_authenticated/radiology")({ component: RadiologyPage });
 
