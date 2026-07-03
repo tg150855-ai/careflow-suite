@@ -133,6 +133,12 @@ function RadiologyPage() {
                     <Badge variant="outline" className="capitalize">{o.status}</Badge>
                     {o.status !== "completed" && <Button size="sm" variant="outline" onClick={() => updateStatus(o.id, "completed")}>Mark Done</Button>}
                     {o.status === "completed" && <Button size="sm" onClick={() => setReportFor(o)}>Report</Button>}
+                    <RecordActions
+                      onPrint={() => printOrder(o)}
+                      onWhatsApp={() => whatsAppOrder(o)}
+                      onDelete={() => removeOrder(o.id)}
+                      deleteLabel="this radiology order"
+                    />
                   </div>
                 ))}
                 {orders.length === 0 && <div className="p-12 text-center text-sm text-muted-foreground">No radiology orders yet.</div>}
