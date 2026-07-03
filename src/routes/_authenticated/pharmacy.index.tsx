@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { Pill, AlertTriangle, Clock, XCircle, Plus, Package } from "lucide-react
 import { motion } from "framer-motion";
 import { inr } from "@/lib/format";
 import { addDays, format } from "date-fns";
+import { RecordActions } from "@/components/common/record-actions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/pharmacy/")({ component: PharmacyDashboard });
 
