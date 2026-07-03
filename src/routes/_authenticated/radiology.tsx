@@ -14,6 +14,7 @@ import { Scan, Plus, FileText, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { inr } from "@/lib/format";
+import { RecordActions } from "@/components/common/record-actions";
 
 export const Route = createFileRoute("/_authenticated/radiology")({ component: RadiologyPage });
 
@@ -62,6 +63,38 @@ function RadiologyPage() {
     load();
   };
 
+  const removeOrder = async (id: string) => {
+    const { error } = await supabase.from("radiology_orders" as any).delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted"); load();
+  };
+
+  const printOrder = (o: any) => {
+    const w = window.open("", "_blank"); if (!w) return;
+    w.document.write(`<html><head><title>Radiology Order</title><style>body{font-family:system-ui;padding:24px;max-width:640px;margin:auto}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:12px}td{padding:6px 8px;border-bottom:1px solid #eee;font-size:13px}td:first-child{color:#666;width:40%}</style></head><body>
+      <h1>Radiology Order</h1>
+      <table><tbody>
+        <tr><td>Patient</td><td>${o.patients?.full_name ?? ""} (${o.patients?.uhid ?? ""})</td></tr>
+        <tr><td>Doctor</td><td>${o.doctors?.name ?? "—"}</td></tr>
+        <tr><td>Modality</td><td>${o.modality}</td></tr>
+        <tr><td>Investigation</td><td>${o.investigation}</td></tr>
+        <tr><td>Priority</td><td>${o.priority}</td></tr>
+        <tr><td>Status</td><td>${o.status}</td></tr>
+        <tr><td>Amount</td><td>${inr(Number(o.amount || 0))}</td></tr>
+        <tr><td>Ordered</td><td>${format(new Date(o.created_at), "dd MMM yyyy HH:mm")}</td></tr>
+      </tbody></table>
+      <script>window.print()</script></body></html>`);
+    w.document.close();
+  };
+
+  const whatsAppOrder = async (o: any) => {
+    const { data: p } = await supabase.from("patients").select("mobile").eq("id", o.patient_id).maybeSingle();
+    const msg = `Radiology Order\nPatient: ${o.patients?.full_name} (${o.patients?.uhid})\n${o.modality} - ${o.investigation}\nStatus: ${o.status}\nAmount: ${inr(Number(o.amount || 0))}`;
+    const phone = (p?.mobile ?? "").replace(/\D/g, "");
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -100,6 +133,12 @@ function RadiologyPage() {
                     <Badge variant="outline" className="capitalize">{o.status}</Badge>
                     {o.status !== "completed" && <Button size="sm" variant="outline" onClick={() => updateStatus(o.id, "completed")}>Mark Done</Button>}
                     {o.status === "completed" && <Button size="sm" onClick={() => setReportFor(o)}>Report</Button>}
+                    <RecordActions
+                      onPrint={() => printOrder(o)}
+                      onWhatsApp={() => whatsAppOrder(o)}
+                      onDelete={() => removeOrder(o.id)}
+                      deleteLabel="this radiology order"
+                    />
                   </div>
                 ))}
                 {orders.length === 0 && <div className="p-12 text-center text-sm text-muted-foreground">No radiology orders yet.</div>}
