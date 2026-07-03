@@ -5,10 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 import { differenceInYears, format } from "date-fns";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Select,
   SelectContent,
@@ -17,21 +18,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
-import { useAuth } from "@/lib/auth-context";
-import { can } from "@/lib/permissions";
+import { RecordActions } from "@/components/common/record-actions";
+import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/patients/")({ component: PatientsPage });
 
