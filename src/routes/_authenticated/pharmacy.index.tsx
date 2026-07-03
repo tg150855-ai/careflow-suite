@@ -80,9 +80,26 @@ function PharmacyDashboard() {
           <div className="flex items-center justify-between mb-4"><h2 className="font-semibold">Recent sales</h2><div className="text-sm text-muted-foreground">Today: <span className="font-semibold text-foreground">{inr(data?.todayRevenue ?? 0)}</span></div></div>
           <div className="divide-y">
             {(data?.recentSales ?? []).map((s: any) => (
-              <div key={s.id} className="flex items-center justify-between py-3">
-                <div className="min-w-0"><div className="text-sm font-medium truncate">{s.patients?.full_name ?? "Walk-in"}</div><div className="text-xs text-muted-foreground font-mono">{s.invoice_no} · {format(new Date(s.created_at), "dd MMM HH:mm")}</div></div>
+              <div key={s.id} className="flex items-center justify-between py-3 gap-3">
+                <div className="min-w-0 flex-1"><div className="text-sm font-medium truncate">{s.patients?.full_name ?? "Walk-in"}</div><div className="text-xs text-muted-foreground font-mono">{s.invoice_no} · {format(new Date(s.created_at), "dd MMM HH:mm")}</div></div>
                 <div className="text-sm font-medium tabular-nums">{inr(s.total)}</div>
+                <RecordActions
+                  onPrint={() => {
+                    const w = window.open("", "_blank"); if (!w) return;
+                    w.document.write(`<html><head><title>${s.invoice_no}</title><style>body{font-family:system-ui;padding:24px;max-width:520px;margin:auto}h1{font-size:16px}p{font-size:13px;color:#555}</style></head><body><h1>Pharmacy Invoice ${s.invoice_no}</h1><p>Patient: ${s.patients?.full_name ?? "Walk-in"}</p><p>Date: ${format(new Date(s.created_at), "dd MMM yyyy HH:mm")}</p><p>Total: ${inr(Number(s.total))}</p><script>window.print()</script></body></html>`); w.document.close();
+                  }}
+                  onWhatsApp={() => {
+                    const msg = `Pharmacy Invoice ${s.invoice_no}\nPatient: ${s.patients?.full_name ?? "Walk-in"}\nTotal: ${inr(Number(s.total))}`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+                  }}
+                  onDelete={async () => {
+                    const { error } = await supabase.from("pharmacy_sales").delete().eq("id", s.id);
+                    if (error) return toast.error(error.message);
+                    toast.success("Sale deleted");
+                    qc.invalidateQueries({ queryKey: ["pharm-dashboard"] });
+                  }}
+                  deleteLabel={`sale ${s.invoice_no}`}
+                />
               </div>
             ))}
             {(data?.recentSales ?? []).length === 0 && <div className="py-8 text-sm text-muted-foreground text-center">No sales yet.</div>}
