@@ -36,6 +36,7 @@ type StageFilter = "all" | "patient" | "opd" | "ipd" | "icu";
 
 function LabDashboard() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [stage, setStage] = useState<StageFilter>("all");
