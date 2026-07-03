@@ -30,10 +30,8 @@ function PatientsPage() {
   const [gender, setGender] = useState("all");
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
-  const { roles } = useAuth();
+  const navigate = useNavigate();
   const pageSize = 20;
-  const canDelete = can(roles, "patients", "delete");
-  const canEdit = can(roles, "patients", "edit");
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["patients", q, gender, page],
