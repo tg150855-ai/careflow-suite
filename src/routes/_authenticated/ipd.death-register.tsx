@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -8,22 +9,27 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Printer, Skull, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Plus, Skull } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { RecordActions } from "@/components/common/record-actions";
+import { ModuleActionBar } from "@/components/common/action-bar";
+import { SearchBox } from "@/components/common/search-box";
+import { DayMonthYearTabs, useDateRange } from "@/components/common/date-range-tabs";
+import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
+import { exportXlsx, printPage } from "@/lib/export";
 
 export const Route = createFileRoute("/_authenticated/ipd/death-register")({ component: DeathRegister });
 
 function DeathRegister() {
   const qc = useQueryClient();
-  const { user, hasAnyRole } = useAuth();
-  const canDelete = hasAnyRole(["admin", "super_admin"]);
+  const [search, setSearch] = useState("");
+  const { range, preset, setPreset } = useDateRange("month");
 
   const { data: rows = [] } = useQuery({
     queryKey: ["death-register"],
-    queryFn: async () => (await supabase.from("death_register").select("*, patients(full_name, uhid, gender, dob), admissions(admission_no)").order("died_at", { ascending: false })).data ?? [],
+    queryFn: async () => (await supabase.from("death_register").select("*, patients(full_name, uhid, gender, dob, mobile), admissions(admission_no)").order("died_at", { ascending: false })).data ?? [],
   });
 
   const del = useMutation({
@@ -32,6 +38,27 @@ function DeathRegister() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const inRange = (d?: string | null) => {
+    if (!d || preset === "all") return true;
+    const t = new Date(d).getTime();
+    return t >= range.from.getTime() && t <= range.to.getTime();
+  };
+
+  const filtered = useMemo(() => (rows as any[]).filter((r) => {
+    if (!inRange(r.died_at)) return false;
+    if (!search) return true;
+    const hay = `${r.patients?.full_name ?? ""} ${r.patients?.uhid ?? ""} ${r.admissions?.admission_no ?? ""} ${r.cause_of_death ?? ""}`.toLowerCase();
+    return hay.includes(search.toLowerCase());
+  }), [rows, search, range, preset]);
+
+  const doExport = () => exportXlsx(
+    filtered.map((r) => ({
+      Patient: r.patients?.full_name, UHID: r.patients?.uhid, Admission: r.admissions?.admission_no,
+      "Died at": r.died_at, Cause: r.cause_of_death, Doctor: r.certifying_doctor_name, Place: r.place_of_death,
+    })),
+    `death-register-${format(new Date(), "yyyyMMdd")}.xlsx`,
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -39,11 +66,15 @@ function DeathRegister() {
           <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2"><Skull className="size-5" />Death register</h1>
           <p className="text-sm text-muted-foreground mt-1">Mortality records with audit trail.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.print()}><Printer className="size-4 mr-2" />Print register</Button>
-          <NewDeathDialog />
-        </div>
+        <NewDeathDialog />
       </div>
+
+      <ModuleActionBar
+        leading={<SearchBox value={search} onChange={setSearch} placeholder="Search patient, UHID, admission, cause…" />}
+        onExport={doExport}
+        onPrint={printPage}
+        extra={<DayMonthYearTabs value={preset} onChange={setPreset} />}
+      />
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
@@ -60,7 +91,7 @@ function DeathRegister() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {rows.map((r: any) => (
+              {filtered.map((r: any) => (
                 <tr key={r.id}>
                   <td className="px-4 py-2 font-medium">{r.patients?.full_name}</td>
                   <td className="py-2 font-mono text-xs">{r.patients?.uhid}</td>
@@ -69,11 +100,28 @@ function DeathRegister() {
                   <td className="py-2 max-w-xs truncate">{r.cause_of_death}</td>
                   <td className="py-2">{r.certifying_doctor_name ?? "—"}</td>
                   <td className="text-right px-4 py-2">
-                    {canDelete && <Button size="icon" variant="ghost" className="size-7 text-muted-foreground hover:text-destructive" onClick={() => del.mutate(r.id)}><Trash2 className="size-3.5" /></Button>}
+                    <RecordActions
+                      size="icon"
+                      deleteLabel={`death record for ${r.patients?.full_name ?? "patient"}`}
+                      onPrint={() => window.print()}
+                      onWhatsApp={() => shareOnWhatsApp(
+                        summarizeRecord("Death Record", {
+                          Patient: r.patients?.full_name,
+                          UHID: r.patients?.uhid,
+                          "Died at": format(new Date(r.died_at), "dd MMM yyyy, p"),
+                          Cause: r.cause_of_death,
+                          Doctor: r.certifying_doctor_name ?? "—",
+                          Place: r.place_of_death ?? "—",
+                        }),
+                        undefined,
+                        r.patients?.mobile ?? undefined,
+                      )}
+                      onDelete={() => del.mutate(r.id)}
+                    />
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={7} className="py-12 text-center text-muted-foreground text-sm">No deaths recorded.</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={7} className="py-12 text-center text-muted-foreground text-sm">No deaths recorded.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -81,6 +129,7 @@ function DeathRegister() {
     </div>
   );
 }
+
 
 function NewDeathDialog() {
   const qc = useQueryClient();
