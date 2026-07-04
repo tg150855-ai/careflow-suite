@@ -50,6 +50,7 @@ const GROUPS: NavGroup[] = [
       { to: "/dialysis", label: "Dialysis", icon: Activity },
       { to: "/ipd/beds", label: "Bed Management", icon: BedDouble },
       { to: "/ipd/death-register", label: "Death Register", icon: BedDouble },
+      { to: "/ipd/birth-register", label: "Birth Register", icon: BedDouble },
       { to: "/ambulance", label: "Ambulance", icon: Ambulance },
       { to: "/assets", label: "Assets", icon: Boxes },
       { to: "/vendors", label: "Vendors", icon: Truck },
