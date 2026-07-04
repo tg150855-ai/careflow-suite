@@ -16,7 +16,8 @@ import { ModuleActionBar } from "@/components/common/action-bar";
 import { SearchBox } from "@/components/common/search-box";
 import { DayMonthYearTabs, useDateRange } from "@/components/common/date-range-tabs";
 import { exportCsv, exportXlsx, printPage, downloadAsPdf } from "@/lib/export";
-import { shareOnWhatsApp } from "@/lib/share";
+import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
+import { RecordActions } from "@/components/common/record-actions";
 
 export const Route = createFileRoute("/_authenticated/blood-bank")({ component: BloodBankPage });
 
@@ -149,6 +150,12 @@ function BloodBankPage() {
                     {days < 0 ? "Expired" : `${days}d to expiry`}
                   </Badge>
                   <Badge variant="outline" className="capitalize">{i.status}</Badge>
+                  <RecordActions
+                    size="icon"
+                    deleteLabel={`bag ${i.bag_no ?? i.id.slice(0, 6)}`}
+                    onWhatsApp={() => shareOnWhatsApp(summarizeRecord("Blood Unit", { Group: i.blood_group, Component: i.component, Bag: i.bag_no ?? "—", Expiry: i.expiry_date, Status: i.status }))}
+                    onDelete={async () => { await supabase.from("blood_inventory" as any).delete().eq("id", i.id); toast.success("Deleted"); load(); }}
+                  />
                 </div>
               );
             })}
@@ -172,7 +179,12 @@ function BloodBankPage() {
                   <div className="text-sm font-medium">{d.full_name} <Badge variant="outline" className="ml-2">{d.blood_group}</Badge></div>
                   <div className="text-xs text-muted-foreground">{d.mobile ?? "—"} · {d.total_donations ?? 0} donations · Last: {d.last_donation_at ? format(new Date(d.last_donation_at), "dd MMM yyyy") : "—"}</div>
                 </div>
-                <Button size="sm" variant="ghost" onClick={() => shareOnWhatsApp(`Hi ${d.full_name}, thank you for being a registered ${d.blood_group} donor. We may reach out for an upcoming requirement.`, undefined, d.mobile)}>WhatsApp</Button>
+                <RecordActions
+                  size="icon"
+                  deleteLabel={`donor ${d.full_name}`}
+                  onWhatsApp={() => shareOnWhatsApp(`Hi ${d.full_name}, thank you for being a registered ${d.blood_group} donor. We may reach out for an upcoming requirement.`, undefined, d.mobile)}
+                  onDelete={async () => { await supabase.from("blood_donors" as any).delete().eq("id", d.id); toast.success("Deleted"); load(); }}
+                />
               </div>
             ))}
             {filteredDonors.length === 0 && <div className="p-12 text-center text-sm text-muted-foreground">No donors match.</div>}
@@ -198,6 +210,12 @@ function BloodBankPage() {
                 <Badge variant={r.status === "issued" ? "outline" : r.status === "approved" ? "default" : "secondary"} className="capitalize">{r.status}</Badge>
                 {r.status === "pending" && <Button size="sm" variant="outline" onClick={async () => { await supabase.from("blood_requests" as any).update({ status: "approved" }).eq("id", r.id); toast.success("Approved"); load(); }}>Approve</Button>}
                 {r.status === "approved" && <Button size="sm" onClick={async () => { await supabase.from("blood_requests" as any).update({ status: "issued" }).eq("id", r.id); toast.success("Issued"); load(); }}>Issue</Button>}
+                <RecordActions
+                  size="icon"
+                  deleteLabel={`request for ${r.patients?.full_name ?? "patient"}`}
+                  onWhatsApp={() => shareOnWhatsApp(summarizeRecord("Blood Request", { Patient: r.patients?.full_name, UHID: r.patients?.uhid, Group: r.blood_group, Component: r.component, Units: r.units, Priority: r.priority, Status: r.status }), undefined, r.patients?.mobile)}
+                  onDelete={async () => { await supabase.from("blood_requests" as any).delete().eq("id", r.id); toast.success("Deleted"); load(); }}
+                />
               </div>
             ))}
             {filteredRequests.length === 0 && <div className="p-12 text-center text-sm text-muted-foreground">No requests match.</div>}
