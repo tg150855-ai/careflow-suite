@@ -960,6 +960,75 @@ export type Database = {
         }
         Relationships: []
       }
+      birth_register: {
+        Row: {
+          admission_id: string | null
+          attending_doctor_name: string | null
+          baby_name: string | null
+          born_at: string
+          created_at: string
+          created_by: string | null
+          delivery_type: string | null
+          id: string
+          mother_patient_id: string | null
+          place_of_birth: string | null
+          remarks: string | null
+          sex: string | null
+          updated_at: string
+          updated_by: string | null
+          weight_grams: number | null
+        }
+        Insert: {
+          admission_id?: string | null
+          attending_doctor_name?: string | null
+          baby_name?: string | null
+          born_at?: string
+          created_at?: string
+          created_by?: string | null
+          delivery_type?: string | null
+          id?: string
+          mother_patient_id?: string | null
+          place_of_birth?: string | null
+          remarks?: string | null
+          sex?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          weight_grams?: number | null
+        }
+        Update: {
+          admission_id?: string | null
+          attending_doctor_name?: string | null
+          baby_name?: string | null
+          born_at?: string
+          created_at?: string
+          created_by?: string | null
+          delivery_type?: string | null
+          id?: string
+          mother_patient_id?: string | null
+          place_of_birth?: string | null
+          remarks?: string | null
+          sex?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          weight_grams?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_register_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_register_mother_patient_id_fkey"
+            columns: ["mother_patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blood_donors: {
         Row: {
           address: string | null
