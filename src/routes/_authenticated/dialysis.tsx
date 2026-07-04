@@ -16,7 +16,8 @@ import { ModuleActionBar } from "@/components/common/action-bar";
 import { SearchBox } from "@/components/common/search-box";
 import { DayMonthYearTabs, useDateRange } from "@/components/common/date-range-tabs";
 import { exportCsv, exportXlsx, printPage, downloadAsPdf } from "@/lib/export";
-import { shareOnWhatsApp } from "@/lib/share";
+import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
+import { RecordActions } from "@/components/common/record-actions";
 
 export const Route = createFileRoute("/_authenticated/dialysis")({ component: DialysisPage });
 
@@ -136,12 +137,23 @@ function DialysisPage() {
                 const min = Math.round((end.getTime() - start.getTime()) / 60000);
                 update(s.id, { status: "completed", end_time: end.toISOString(), duration_min: min });
               }}>Complete</Button>}
-              {s.patients?.mobile && (
-                <Button size="sm" variant="ghost" onClick={() => shareOnWhatsApp(
-                  `Hi ${s.patients?.full_name}, your dialysis session on ${format(new Date(s.session_date), "dd MMM yyyy")} at Machine ${s.machine_no ?? "—"} is ${s.status.replace("_", " ")}.`,
-                  undefined, s.patients.mobile,
-                )}>WhatsApp</Button>
-              )}
+              <RecordActions
+                size="icon"
+                deleteLabel={`dialysis session for ${s.patients?.full_name ?? "patient"}`}
+                onWhatsApp={() => shareOnWhatsApp(
+                  summarizeRecord("Dialysis Session", {
+                    Patient: s.patients?.full_name,
+                    UHID: s.patients?.uhid,
+                    Date: format(new Date(s.session_date), "dd MMM yyyy"),
+                    Machine: s.machine_no ?? "—",
+                    Doctor: s.doctors?.name ?? "—",
+                    Status: s.status.replace("_", " "),
+                  }),
+                  undefined,
+                  s.patients?.mobile,
+                )}
+                onDelete={async () => { await supabase.from("dialysis_sessions" as any).delete().eq("id", s.id); toast.success("Deleted"); load(); }}
+              />
             </div>
           ))}
           {filtered.length === 0 && <div className="p-12 text-center text-sm text-muted-foreground">No dialysis sessions match.</div>}
