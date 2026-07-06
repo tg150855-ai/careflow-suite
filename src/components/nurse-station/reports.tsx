@@ -92,9 +92,7 @@ export function NSReports() {
 
   const exportExcel = () => {
     const data = (rows as any[]).map((r) => Object.fromEntries(columns.map((c) => [c.label, c.get(r)])));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, report.slice(0, 30));
-    XLSX.writeFile(wb, `nurse-${report.toLowerCase().replace(/\s+/g, "-")}-${date}.xlsx`);
+    exportXlsx({ [report.slice(0, 30)]: data }, `nurse-${report.toLowerCase().replace(/\s+/g, "-")}-${date}.xlsx`);
   };
 
   const downloadCsv = () => {
