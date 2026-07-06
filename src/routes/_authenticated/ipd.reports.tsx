@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileBarChart, BedDouble, LogOut, ArrowLeftRight, Skull, IndianRupee, Download, Printer, Share2, FileSpreadsheet, ArrowLeft } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, CartesianGrid, PieChart, Pie, Cell, Legend } from "recharts";
 import { format, startOfDay, endOfDay, subDays, startOfMonth, startOfYear, eachDayOfInterval, eachMonthOfInterval } from "date-fns";
-import * as XLSX from "xlsx";
+import { exportXlsx } from "@/lib/export";
 
 export const Route = createFileRoute("/_authenticated/ipd/reports")({ component: IpdReports });
 
