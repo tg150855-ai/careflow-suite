@@ -48,16 +48,16 @@ function OtReports() {
   const cancelled = rows.filter((r: any) => r.status === "cancelled").length;
 
   function exportExcel() {
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(rows.map((r: any) => ({
-      "Surgery No": r.surgery_no, Patient: r.patients?.full_name, UHID: r.patients?.uhid, Procedure: r.procedure_name,
-      Surgeon: r.primary?.name, "OT Room": r.ot_rooms?.name, Priority: r.priority, Status: r.status,
-      "Scheduled": r.scheduled_start ? format(new Date(r.scheduled_start), "dd MMM yyyy HH:mm") : "",
-      "OT": r.ot_charge, "Surgeon Fee": r.surgeon_charge, "Assistant": r.assistant_charge,
-      "Anesthesia": r.anesthesia_charge, "Consumables": r.consumables_charge, "Total": r.estimated_cost,
-    })));
-    XLSX.utils.book_append_sheet(wb, ws, "Surgeries");
-    XLSX.writeFile(wb, `ot-report-${range}-${Date.now()}.xlsx`);
+    exportXlsx(
+      rows.map((r: any) => ({
+        "Surgery No": r.surgery_no, Patient: r.patients?.full_name, UHID: r.patients?.uhid, Procedure: r.procedure_name,
+        Surgeon: r.primary?.name, "OT Room": r.ot_rooms?.name, Priority: r.priority, Status: r.status,
+        "Scheduled": r.scheduled_start ? format(new Date(r.scheduled_start), "dd MMM yyyy HH:mm") : "",
+        "OT": r.ot_charge, "Surgeon Fee": r.surgeon_charge, "Assistant": r.assistant_charge,
+        "Anesthesia": r.anesthesia_charge, "Consumables": r.consumables_charge, "Total": r.estimated_cost,
+      })),
+      `ot-report-${range}-${Date.now()}.xlsx`,
+    );
   }
 
   function shareWhatsApp() {
