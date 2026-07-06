@@ -173,13 +173,12 @@ function IpdReports() {
   }
 
   function exportExcel() {
-    const wb = XLSX.utils.book_new();
     const sheets = buildAllSheets();
+    const data: Record<string, Record<string, unknown>[]> = {};
     Object.entries(sheets).forEach(([name, rows]) => {
-      const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ Info: "No data" }]);
-      XLSX.utils.book_append_sheet(wb, ws, name);
+      data[name] = rows.length ? rows : [{ Info: "No data" }];
     });
-    XLSX.writeFile(wb, `ipd-report-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`);
+    exportXlsx(data, `ipd-report-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`);
   }
 
   function exportCsv() {
