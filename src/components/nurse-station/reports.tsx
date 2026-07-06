@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, Printer, Share2, FileSpreadsheet } from "lucide-react";
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
-import * as XLSX from "xlsx";
+import { exportXlsx } from "@/lib/export";
 import { NS_QK } from "./shared";
 
 const REPORTS = ["Nursing Notes", "Medication Administration", "Shift Handover", "Vitals"];
