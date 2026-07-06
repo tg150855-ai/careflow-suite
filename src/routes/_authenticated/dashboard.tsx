@@ -948,17 +948,16 @@ function PatientDashboard() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <Section title="My health" span={2}>
         <div className="space-y-2">
-          <ActionLink href="/patient-portal" label="Open patient portal" icon={HeartPulse} />
           <ActionLink href="/appointments" label="Book appointment" icon={CalendarDays} />
-          <ActionLink href="/telemedicine" label="Start telemedicine" icon={Stethoscope} />
         </div>
       </Section>
       <Section title="Records">
-        <ActionLink href="/health-records" label="My medical records" icon={ClipboardList} />
+        <ActionLink href="/patients" label="My records" icon={ClipboardList} />
       </Section>
     </div>
   );
 }
+
 
 /* ---------- helpers ---------- */
 function MiniStat({
