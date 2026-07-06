@@ -32,7 +32,7 @@ export default defineConfig({
           "vendor-router": ["@tanstack/react-router", "@tanstack/react-query"],
           "vendor-supabase": ["@supabase/supabase-js"],
           "vendor-charts": ["recharts"],
-          "vendor-xlsx": ["xlsx"],
+          "vendor-xlsx": ["exceljs"],
           "vendor-motion": ["framer-motion"],
           "vendor-icons": ["lucide-react"],
           "vendor-date": ["date-fns"],
