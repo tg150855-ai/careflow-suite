@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 /** Trigger a browser download of arbitrary text/blob content. */
 function download(filename: string, blob: Blob) {
@@ -27,20 +27,37 @@ export function exportCsv<T extends Record<string, unknown>>(rows: T[], filename
   download(filename.endsWith(".csv") ? filename : `${filename}.csv`, new Blob([csv], { type: "text/csv;charset=utf-8" }));
 }
 
+function appendSheet(wb: ExcelJS.Workbook, name: string, rows: Record<string, unknown>[]) {
+  const ws = wb.addWorksheet(name.slice(0, 31) || "Sheet1");
+  if (!rows.length) return;
+  const cols = Object.keys(rows[0]);
+  ws.columns = cols.map((c) => ({ header: c, key: c }));
+  for (const r of rows) {
+    const row: Record<string, unknown> = {};
+    for (const c of cols) {
+      const v = r[c];
+      row[c] = v instanceof Date ? v : v == null ? "" : typeof v === "object" ? JSON.stringify(v) : v;
+    }
+    ws.addRow(row);
+  }
+}
+
 /** Export rows (or multiple sheets) to an .xlsx file. */
-export function exportXlsx(
+export async function exportXlsx(
   data: Record<string, unknown>[] | Record<string, Record<string, unknown>[]>,
   filename: string,
 ) {
-  const wb = XLSX.utils.book_new();
+  const wb = new ExcelJS.Workbook();
   if (Array.isArray(data)) {
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "Sheet1");
+    appendSheet(wb, "Sheet1", data);
   } else {
     for (const [name, rows] of Object.entries(data)) {
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), name.slice(0, 31));
+      appendSheet(wb, name, rows);
     }
   }
-  XLSX.writeFile(wb, filename.endsWith(".xlsx") ? filename : `${filename}.xlsx`);
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  download(filename.endsWith(".xlsx") ? filename : `${filename}.xlsx`, blob);
 }
 
 /** Print the current page. Callers that want a scoped print should use a print stylesheet or dedicated print route. */
