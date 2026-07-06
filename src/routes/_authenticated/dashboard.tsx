@@ -930,13 +930,13 @@ function OwnerDashboard() {
             <MiniStat label="Occupancy" value={`${occRate}%`} />
           </div>
         </Section>
-        <Section title="AI Insights">
+        <Section title="Insights">
           <div className="space-y-2">
-            <ActionLink href="/forecast" label="Revenue forecast" icon={TrendingUp} />
-            <ActionLink href="/predictions" label="Growth predictions" icon={Crown} />
             <ActionLink href="/bi" label="BI dashboard" icon={FileBarChart} />
+            <ActionLink href="/reports" label="Revenue reports" icon={FileBarChart} />
           </div>
         </Section>
+
       </div>
     </>
   );
