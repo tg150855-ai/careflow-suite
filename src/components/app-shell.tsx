@@ -92,67 +92,8 @@ const GROUPS: NavGroup[] = [
       { to: "/mobile-api", label: "Mobile API & Push", icon: Smartphone },
     ],
   },
-  {
-    key: "digital", label: "Digital", icon: Sparkles, items: [
-      { to: "/telemedicine", label: "Telemedicine", icon: Video },
-      { to: "/whatsapp", label: "WhatsApp Center", icon: Send },
-      { to: "/communications", label: "SMS / Messaging", icon: MessageSquare },
-      { to: "/crm", label: "Patient CRM", icon: HeartHandshake },
-      { to: "/ai-assistant", label: "AI Assistant", icon: Sparkles },
-      { to: "/copilot", label: "Hospital Copilot", icon: Bot },
-      { to: "/voice-hmis", label: "Voice HMIS", icon: Mic },
-      { to: "/payments-online", label: "Online Payments", icon: CreditCard },
-      { to: "/health-packages", label: "Health Packages", icon: Star },
-    ],
-  },
-  {
-    key: "patient", label: "Patient", icon: Heart, items: [
-      { to: "/patient-portal", label: "Patient Portal", icon: Heart },
-      { to: "/emr", label: "Patient Timeline", icon: FileText },
-      { to: "/health-records", label: "Medical Records", icon: FileText },
-      { to: "/documents", label: "Documents", icon: Files },
-      { to: "/engagement", label: "Engagement & Feedback", icon: HeartHandshake },
-      { to: "/vaccinations", label: "Vaccinations & Follow-ups", icon: Bell },
-      { to: "/remote-care", label: "Remote Care", icon: HomeIcon },
-      { to: "/kiosk", label: "Self Check-In", icon: Printer },
-    ],
-  },
-  {
-    key: "compliance", label: "Compliance", icon: ShieldCheck, items: [
-      { to: "/nabh", label: "NABH", icon: ShieldCheck },
-      { to: "/jci", label: "JCI", icon: ShieldCheck },
-      { to: "/quality", label: "Quality Management", icon: Activity },
-      { to: "/incidents", label: "Incident Reporting", icon: AlertTriangle },
-      { to: "/clinical-audits", label: "Audit Management", icon: ClipboardCheck },
-      { to: "/compliance-dashboard", label: "Compliance Dashboard", icon: ShieldCheck },
-      { to: "/compliance-ai", label: "Compliance AI", icon: ShieldCheck },
-      { to: "/infection-control", label: "Infection Control", icon: Bug },
-      { to: "/patient-safety", label: "Patient Safety", icon: ShieldAlert },
-      { to: "/consents", label: "Consent Forms", icon: FileText },
-      { to: "/mrd", label: "MRD Archive", icon: Files },
-      { to: "/regulatory", label: "Regulatory Reports", icon: FileBarChart },
-      { to: "/privacy", label: "Data Privacy", icon: ShieldCheck },
-      { to: "/cdss", label: "Clinical Decision Support", icon: Lightbulb },
-      { to: "/research", label: "Research Studies", icon: Flask },
-      { to: "/hl7", label: "HL7 Engine", icon: Network },
-      { to: "/fhir", label: "FHIR Resources", icon: Network },
-      { to: "/ehr", label: "EHR Sharing", icon: Network },
-    ],
-  },
-  {
-    key: "smartos", label: "Smart OS", icon: Cpu, items: [
-      { to: "/command-center", label: "Command Center", icon: Activity },
-      { to: "/iot-devices", label: "Real-Time / IoT Monitoring", icon: Cpu },
-      { to: "/digital-twin", label: "Digital Twin / Smart ICU", icon: Building2 },
-      { to: "/forecast", label: "Forecasting", icon: TrendingUp },
-      { to: "/predictions", label: "AI Analytics", icon: TrendingUp },
-      { to: "/risk-detection", label: "Risk Detection", icon: ShieldAlert },
-      { to: "/pharmacy-intel", label: "Pharmacy Intel", icon: Pill },
-      { to: "/knowledge", label: "Knowledge Base", icon: FileText },
-      { to: "/recovery", label: "Disaster Recovery", icon: Database },
-    ],
-  },
 ];
+
 
 
 const STORAGE_KEY = "medicore.sidebar.expanded";
