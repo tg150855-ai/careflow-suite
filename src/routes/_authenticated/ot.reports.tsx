@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, FileSpreadsheet, Printer, Share2 } from "lucide-react";
 import { startOfDay, endOfDay, startOfMonth, startOfYear, format } from "date-fns";
-import * as XLSX from "xlsx";
+import { exportXlsx } from "@/lib/export";
 import { inr } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/ot/reports")({ component: OtReports });
