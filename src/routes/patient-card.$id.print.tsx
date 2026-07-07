@@ -43,9 +43,11 @@ function PrintCard() {
       <div className="border-2 border-black rounded-lg p-6 space-y-4">
         <header className="flex items-center justify-between pb-3 border-b border-black">
           <div className="flex items-center gap-3">
-            <BrandMark size={48} />
+            {hospital?.logo_url && (
+              <img src={hospital.logo_url} alt={hospital.hospital_name} style={{ maxHeight: 48, maxWidth: 100, objectFit: "contain" }} />
+            )}
             <div>
-              <div className="font-bold text-lg leading-tight">{BRAND.name}</div>
+              <div className="font-bold text-lg leading-tight">{hospital?.hospital_name}</div>
               <div className="text-xs">Patient Identification Card</div>
             </div>
           </div>
