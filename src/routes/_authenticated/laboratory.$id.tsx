@@ -72,17 +72,13 @@ function LabOrderView() {
       </div>
 
       <Card className="p-8 print:shadow-none print:border-0">
-        <div className="flex justify-between items-start pb-6 border-b">
-          <div>
-            <div className="text-xl font-bold">SBG Arogya Plus Laboratory</div>
-            <div className="text-sm text-muted-foreground">Pathology & Diagnostics</div>
-          </div>
-          <div className="text-right">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Lab Report</div>
-            <div className="font-mono font-semibold">{o.order_no}</div>
-            <Badge variant="outline" className="capitalize mt-2">{o.status.replace("_"," ")}</Badge>
-          </div>
-        </div>
+        <PrintHeader
+          title="Laboratory Report"
+          documentNo={o.order_no}
+          timestamp={o.created_at}
+          rightSlot={<Badge variant="outline" className="capitalize">{o.status.replace("_"," ")}</Badge>}
+        />
+
 
         <div className="grid grid-cols-2 gap-8 py-6 border-b text-sm">
           <div>
