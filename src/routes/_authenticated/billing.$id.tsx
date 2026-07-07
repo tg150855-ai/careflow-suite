@@ -14,6 +14,7 @@ import { inr } from "@/lib/format";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { PrintHeader } from "@/components/print-header";
 
 export const Route = createFileRoute("/_authenticated/billing/$id")({ component: BillView });
 
