@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { Printer } from "lucide-react";
-import { BRAND, BrandMark } from "@/components/brand";
+import { useHospitalProfile } from "@/components/print-header";
 
 export const Route = createFileRoute("/patient-card/$id/print")({ component: PrintCard });
 
