@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { inr } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { PrintHeader } from "@/components/print-header";
 
 export const Route = createFileRoute("/_authenticated/laboratory/$id")({ component: LabOrderView });
 
