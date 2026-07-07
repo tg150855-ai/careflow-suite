@@ -10,6 +10,7 @@ export const Route = createFileRoute("/patient-card/$id/print")({ component: Pri
 
 function PrintCard() {
   const { id } = Route.useParams();
+  const { data: hospital } = useHospitalProfile();
   const { data } = useQuery({
     queryKey: ["patient-card", id],
     queryFn: async () => {
