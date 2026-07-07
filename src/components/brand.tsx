@@ -37,9 +37,10 @@ type BrandLogoProps = {
   size?: number;
   alt?: string;
   src?: string;
+  style?: React.CSSProperties;
 };
 
-export function BrandLogo({ className, size, alt, src }: BrandLogoProps) {
+export function BrandLogo({ className, size, alt, src, style }: BrandLogoProps) {
   const { data } = useHospitalBrand();
   const url = src || data?.logoUrl || BRAND.logoUrl;
   return (
@@ -48,7 +49,7 @@ export function BrandLogo({ className, size, alt, src }: BrandLogoProps) {
       alt={alt ?? data?.name ?? BRAND.name}
       height={size}
       className={className}
-      style={{ height: size ? `${size}px` : undefined, width: "auto", objectFit: "contain" }}
+      style={style ?? { height: size ? `${size}px` : undefined, width: "auto", objectFit: "contain" }}
     />
   );
 }

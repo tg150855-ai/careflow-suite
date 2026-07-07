@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Printer, Heart, MessageCircle } from "lucide-react";
+import { Printer, MessageCircle } from "lucide-react";
+import { PrintHeader } from "@/components/print-header";
 
 export const Route = createFileRoute("/prescriptions/$id/print")({ component: PrintRx });
 
@@ -69,19 +70,17 @@ function PrintRx() {
         <Button onClick={() => window.print()}><Printer className="size-4 mr-2" />Print</Button>
       </div>
 
-      <header className="flex items-start justify-between pb-4 border-b-2 border-black">
-        <div className="flex items-center gap-3">
-          <div className="size-12 rounded-xl bg-black text-white flex items-center justify-center"><Heart className="size-6" /></div>
+      <PrintHeader
+        title="Prescription"
+        timestamp={data.rx.created_at}
+        rightSlot={
           <div>
-            <div className="text-xl font-bold">SBG Arogya Plus</div>
-            <div className="text-xs">Multi-Specialty · 24×7 Emergency · +91 80000 00000</div>
+            <div className="font-semibold">{v.doctors?.name}</div>
+            <div className="text-gray-600">{v.doctors?.specialization}</div>
           </div>
-        </div>
-        <div className="text-right text-xs">
-          <div className="font-semibold">{v.doctors?.name}</div>
-          <div>{v.doctors?.specialization}</div>
-        </div>
-      </header>
+        }
+      />
+
 
       <h1 className="sr-only">Medical Prescription for {v.patients?.full_name}</h1>
 

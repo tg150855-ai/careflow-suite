@@ -14,6 +14,7 @@ import { inr } from "@/lib/format";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { PrintHeader } from "@/components/print-header";
 
 export const Route = createFileRoute("/_authenticated/billing/$id")({ component: BillView });
 
@@ -90,17 +91,13 @@ function BillView() {
       </div>
 
       <Card className="p-8 print:shadow-none print:border-0">
-        <div className="flex justify-between items-start pb-6 border-b">
-          <div>
-            <div className="text-xl font-bold">SBG Arogya Plus</div>
-            <div className="text-sm text-muted-foreground">123 Health Street · +91 98765 43210</div>
-          </div>
-          <div className="text-right">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Invoice</div>
-            <div className="font-mono font-semibold">{bill.bill_no}</div>
-            <Badge variant={bill.status === "paid" ? "secondary" : "outline"} className="capitalize mt-2">{bill.status}</Badge>
-          </div>
-        </div>
+        <PrintHeader
+          title="OPD Consultation Bill"
+          documentNo={bill.bill_no}
+          timestamp={bill.created_at}
+          rightSlot={<Badge variant={bill.status === "paid" ? "secondary" : "outline"} className="capitalize">{bill.status}</Badge>}
+        />
+
 
         <div className="grid grid-cols-2 gap-8 py-6 border-b text-sm">
           <div>

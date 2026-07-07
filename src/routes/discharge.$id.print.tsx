@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { format } from "date-fns";
+import { PrintHeader } from "@/components/print-header";
 
 export const Route = createFileRoute("/discharge/$id/print")({ component: PrintDischarge });
 
@@ -31,10 +32,12 @@ function PrintDischarge() {
           <Button onClick={() => window.print()}><Printer className="size-4 mr-2" />Print</Button>
         </div>
 
-        <div className="border-b-2 border-black pb-4 mb-6">
-          <h2 className="text-2xl font-bold text-center">SBG Arogya Plus</h2>
-          <div className="text-center text-sm">Discharge Summary</div>
-        </div>
+        <PrintHeader
+          title="Discharge Summary"
+          documentNo={adm?.admission_no}
+          timestamp={ds.discharge_date ?? undefined}
+        />
+
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-6">
           <Field label="Patient" value={p?.full_name} />

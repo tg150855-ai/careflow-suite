@@ -147,11 +147,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           transition={{ duration: 0.25, ease: "easeOut" }}
           className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shrink-0 h-screen"
         >
-          <div className="h-16 flex items-center gap-2 px-4 border-b border-sidebar-border shrink-0 bg-white">
+          <div className="h-16 flex items-center justify-center gap-2 px-3 border-b border-sidebar-border shrink-0 bg-white">
             {collapsed ? (
               <BrandMark size={36} className="rounded-lg shrink-0" />
             ) : (
-              <BrandLogo size={40} className="shrink-0" />
+              <BrandLogo
+                className="shrink-0"
+                style={{ maxHeight: 48, maxWidth: 160, width: "auto", height: "auto", objectFit: "contain" }}
+              />
             )}
           </div>
 
