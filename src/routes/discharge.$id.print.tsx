@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { format } from "date-fns";
+import { PrintHeader } from "@/components/print-header";
 
 export const Route = createFileRoute("/discharge/$id/print")({ component: PrintDischarge });
 
