@@ -5,10 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search } from "lucide-react";
+import {
+  ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search,
+  Users, UserPlus, CalendarDays, Activity, BedDouble, Siren, FileSpreadsheet,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
-import { differenceInYears, format } from "date-fns";
+import { differenceInYears, format, startOfDay, startOfMonth } from "date-fns";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Select,
@@ -22,8 +25,109 @@ import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { RecordActions } from "@/components/common/record-actions";
 import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
+import { exportXlsx } from "@/lib/export";
 
 export const Route = createFileRoute("/_authenticated/patients/")({ component: PatientsPage });
+
+function PatientsDashboardCards() {
+  const { data } = useQuery({
+    queryKey: ["patients-dash"],
+    queryFn: async () => {
+      const todayIso = startOfDay(new Date()).toISOString();
+      const monthIso = startOfMonth(new Date()).toISOString();
+      const endToday = new Date(); endToday.setHours(23, 59, 59, 999);
+      const [total, today, month, ipd, opd, er, breakdown] = await Promise.all([
+        supabase.from("patients").select("id", { count: "exact", head: true }),
+        supabase.from("patients").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
+        supabase.from("patients").select("id", { count: "exact", head: true }).gte("created_at", monthIso),
+        (supabase as any).from("admissions").select("id", { count: "exact", head: true }).is("discharge_at", null),
+        supabase.from("appointments").select("id", { count: "exact", head: true }).gte("scheduled_at", todayIso).lte("scheduled_at", endToday.toISOString()),
+        (supabase as any).from("emergency_cases").select("id", { count: "exact", head: true }).in("status", ["waiting", "in_treatment"]),
+        supabase.from("patients").select("gender, dob, blood_group").limit(5000),
+      ]);
+      const rows = (breakdown.data ?? []) as any[];
+      const gender = { male: 0, female: 0, other: 0 };
+      const age = { "0-12": 0, "13-25": 0, "26-45": 0, "46-60": 0, "60+": 0 };
+      const blood: Record<string, number> = {};
+      const now = new Date();
+      for (const r of rows) {
+        const g = (r.gender ?? "").toLowerCase();
+        if (g === "male" || g === "female") gender[g]++; else gender.other++;
+        if (r.dob) {
+          const y = differenceInYears(now, new Date(r.dob));
+          if (y <= 12) age["0-12"]++;
+          else if (y <= 25) age["13-25"]++;
+          else if (y <= 45) age["26-45"]++;
+          else if (y <= 60) age["46-60"]++;
+          else age["60+"]++;
+        }
+        if (r.blood_group) blood[r.blood_group] = (blood[r.blood_group] ?? 0) + 1;
+      }
+      return {
+        total: total.count ?? 0,
+        today: today.count ?? 0,
+        month: month.count ?? 0,
+        ipd: ipd.count ?? 0,
+        opd: opd.count ?? 0,
+        er: er.count ?? 0,
+        gender, age, blood,
+      };
+    },
+  });
+  const d = data;
+  const stat = (label: string, value: React.ReactNode, Icon: any, tone: string) => (
+    <Card className="p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-xs font-medium text-muted-foreground">{label}</div>
+          <div className="text-2xl font-semibold tracking-tight mt-1 tabular-nums">{value ?? "—"}</div>
+        </div>
+        <div className={`size-9 rounded-xl flex items-center justify-center shrink-0 ${tone}`}>
+          <Icon className="size-4" />
+        </div>
+      </div>
+    </Card>
+  );
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        {stat("Total Patients", d?.total, Users, "bg-primary/10 text-primary")}
+        {stat("New Today", d?.today, UserPlus, "bg-emerald-100 text-emerald-700")}
+        {stat("New This Month", d?.month, CalendarDays, "bg-blue-100 text-blue-700")}
+        {stat("Active IPD", d?.ipd, BedDouble, "bg-purple-100 text-purple-700")}
+        {stat("OPD Today", d?.opd, Activity, "bg-amber-100 text-amber-700")}
+        {stat("Emergency Active", d?.er, Siren, "bg-red-100 text-red-700")}
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        <Card className="p-4">
+          <div className="text-xs font-medium text-muted-foreground mb-2">Gender</div>
+          <div className="flex justify-between text-sm">
+            <span>Male: <b className="tabular-nums">{d?.gender.male ?? 0}</b></span>
+            <span>Female: <b className="tabular-nums">{d?.gender.female ?? 0}</b></span>
+            <span>Other: <b className="tabular-nums">{d?.gender.other ?? 0}</b></span>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs font-medium text-muted-foreground mb-2">Age groups</div>
+          <div className="grid grid-cols-5 gap-1 text-xs text-center">
+            {d && Object.entries(d.age).map(([k, v]) => (
+              <div key={k}><div className="font-semibold tabular-nums">{v}</div><div className="text-muted-foreground">{k}</div></div>
+            ))}
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs font-medium text-muted-foreground mb-2">Blood groups</div>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
+            {d && Object.keys(d.blood).length === 0 && <span className="text-muted-foreground text-xs">—</span>}
+            {d && Object.entries(d.blood).sort().map(([k, v]) => (
+              <span key={k}>{k}: <b className="tabular-nums">{v}</b></span>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
 
 function PatientsPage() {
   const [q, setQ] = useState("");
