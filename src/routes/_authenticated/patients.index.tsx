@@ -223,11 +223,15 @@ function PatientsPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="lg" onClick={downloadCsv}>
             <Download className="size-4 mr-2" />
-            Download
+            CSV
+          </Button>
+          <Button variant="outline" size="lg" onClick={downloadXlsx}>
+            <FileSpreadsheet className="size-4 mr-2" />
+            Excel
           </Button>
           <Button variant="outline" size="lg" onClick={() => window.print()}>
             <Printer className="size-4 mr-2" />
-            Print
+            Print / PDF
           </Button>
           <Button asChild size="lg">
             <Link to="/patients/new">
@@ -237,6 +241,8 @@ function PatientsPage() {
           </Button>
         </div>
       </div>
+
+      <PatientsDashboardCards />
 
       <Card className="p-2">
         <div className="p-3 grid grid-cols-1 md:grid-cols-[1fr_180px] gap-3">
