@@ -52,7 +52,7 @@ function PatientsDashboardCards() {
       const now = new Date();
       for (const r of rows) {
         const g = (r.gender ?? "").toLowerCase();
-        if (g === "male" || g === "female") gender[g]++; else gender.other++;
+        if (g === "male" || g === "female") (gender as any)[g]++; else gender.other++;
         if (r.dob) {
           const y = differenceInYears(now, new Date(r.dob));
           if (y <= 12) age["0-12"]++;
