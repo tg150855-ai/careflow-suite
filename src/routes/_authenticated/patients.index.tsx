@@ -211,6 +211,26 @@ function PatientsPage() {
     toast.success(`Exported ${rows.length} patients`);
   }
 
+  async function downloadXlsx() {
+    const { data, error } = await supabase
+      .from("patients")
+      .select("uhid, full_name, mobile, gender, dob, blood_group, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (error) { toast.error(error.message); return; }
+    const rows = (data ?? []).map((r: any) => ({
+      UHID: r.uhid ?? "—",
+      Name: r.full_name ?? "—",
+      Mobile: r.mobile ?? "—",
+      Gender: r.gender ?? "—",
+      Age: r.dob ? differenceInYears(new Date(), new Date(r.dob)) : "—",
+      "Blood Group": r.blood_group ?? "—",
+      "Registered": r.created_at ? format(new Date(r.created_at), "dd MMM yyyy") : "—",
+    }));
+    await exportXlsx(rows, `patients-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`);
+    toast.success(`Exported ${rows.length} patients`);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
