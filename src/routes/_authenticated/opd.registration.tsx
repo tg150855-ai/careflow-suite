@@ -372,6 +372,10 @@ function PatientDetail({ patient }: { patient: any }) {
           </Link>
         </Button>
       </div>
+
+      <div className="pt-2 border-t">
+        <PatientAttachments patientId={patient.id} patient={patient} defaultDepartment="OPD" />
+      </div>
     </Card>
   );
 }
