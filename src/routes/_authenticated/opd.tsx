@@ -140,15 +140,9 @@ function OpdDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Quick actions */}
-      <div className="flex flex-wrap gap-2">
-        <Button asChild><Link to="/opd/registration"><UserPlus className="size-4" />New Patient Registration</Link></Button>
-        <Button asChild variant="secondary"><Link to="/opd/appointments"><CalendarPlus className="size-4" />Book Appointment</Link></Button>
-        <Button asChild variant="outline"><Link to="/opd/consultation"><PlayCircle className="size-4" />Start Consultation</Link></Button>
-      </div>
-
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
         <StatCard label="Patients today" value={appts.length} icon={Users} tone="default" />
         <StatCard label="Waiting" value={waiting.length} icon={Clock} tone="warning" />
         <StatCard label="In consultation" value={inProgress.length} icon={Activity} tone="info" />
