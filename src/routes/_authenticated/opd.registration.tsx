@@ -16,6 +16,7 @@ import {
   Stethoscope, Loader2, ChevronRight, History,
 } from "lucide-react";
 import { format } from "date-fns";
+import { PatientAttachments } from "@/components/patient-attachments";
 
 export const Route = createFileRoute("/_authenticated/opd/registration")({
   component: OpdRegistration,
@@ -370,6 +371,10 @@ function PatientDetail({ patient }: { patient: any }) {
             Edit details
           </Link>
         </Button>
+      </div>
+
+      <div className="pt-2 border-t">
+        <PatientAttachments patientId={patient.id} patient={patient} defaultDepartment="OPD" />
       </div>
     </Card>
   );

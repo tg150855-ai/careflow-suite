@@ -4802,6 +4802,56 @@ export type Database = {
           },
         ]
       }
+      patient_documents: {
+        Row: {
+          created_at: string
+          department: string
+          description: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          patient_id: string
+          storage_path: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          department?: string
+          description?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          patient_id: string
+          storage_path: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          description?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          patient_id?: string
+          storage_path?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_documents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_engagement_logs: {
         Row: {
           channel: string | null

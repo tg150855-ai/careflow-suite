@@ -10,10 +10,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Receipt, Plus, Trash2, Save, Printer, Pill, Search, IndianRupee,
-  CheckCircle2, Clock, FileText,
+  CheckCircle2, Clock, FileText, Pencil,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useIsSuperAdmin } from "@/lib/use-super-admin";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -34,10 +39,30 @@ function startOfDayIso() { const d = new Date(); d.setHours(0,0,0,0); return d.t
 
 function BillingPage() {
   const { user } = useAuth();
+  const canDelete = useIsSuperAdmin();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
   const [draftVisit, setDraftVisit] = useState<any | null>(null); // unbilled visit selected for new bill
+  const [pendingDelete, setPendingDelete] = useState<any | null>(null);
+
+  async function confirmDeleteBill() {
+    if (!pendingDelete) return;
+    try {
+      const id = pendingDelete.id;
+      await supabase.from("payments").delete().eq("bill_id", id);
+      await supabase.from("bill_items").delete().eq("bill_id", id);
+      const { error } = await supabase.from("bills").delete().eq("id", id);
+      if (error) throw error;
+      if (selectedBillId === id) setSelectedBillId(null);
+      toast.success("Invoice deleted");
+      qc.invalidateQueries({ queryKey: ["opd-bills"] });
+    } catch (err: any) {
+      toast.error(err.message ?? "Delete failed");
+    } finally {
+      setPendingDelete(null);
+    }
+  }
 
   const { data: bills = [] } = useQuery({
     queryKey: ["opd-bills"],
@@ -175,21 +200,35 @@ function BillingPage() {
             ) : (
               <div className="space-y-1.5 max-h-[45vh] overflow-y-auto pr-1">
                 {filteredBills.map((b: any) => (
-                  <button key={b.id} onClick={() => { setDraftVisit(null); setSelectedBillId(b.id); }}
-                    className={`w-full text-left rounded-lg border px-3 py-2 transition ${selectedBillId === b.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-[11px] text-muted-foreground">{b.bill_no}</span>
-                      <StatusBadge status={b.status} />
+                  <div key={b.id}
+                    className={`group relative rounded-lg border px-3 py-2 transition ${selectedBillId === b.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}>
+                    <button type="button" onClick={() => { setDraftVisit(null); setSelectedBillId(b.id); }} className="w-full text-left">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-[11px] text-muted-foreground">{b.bill_no}</span>
+                        <StatusBadge status={b.status} />
+                      </div>
+                      <div className="font-medium text-sm truncate mt-0.5">{b.patients?.full_name ?? "—"}</div>
+                      <div className="flex items-center justify-between gap-2 mt-0.5">
+                        <span className="text-[11px] text-muted-foreground font-mono">{b.patients?.uhid ?? "—"}</span>
+                        <span className="text-xs font-semibold">₹{Number(b.total).toFixed(0)}</span>
+                      </div>
+                      {Number(b.pending) > 0 && (
+                        <div className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">Pending ₹{Number(b.pending).toFixed(0)}</div>
+                      )}
+                    </button>
+                    <div className="mt-1.5 flex items-center gap-1 justify-end">
+                      <Button size="icon" variant="ghost" className="size-7" title="Edit invoice"
+                        onClick={(e) => { e.stopPropagation(); setDraftVisit(null); setSelectedBillId(b.id); }}>
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      {canDelete && (
+                        <Button size="icon" variant="ghost" className="size-7 text-destructive" title="Delete invoice (Admin)"
+                          onClick={(e) => { e.stopPropagation(); setPendingDelete(b); }}>
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      )}
                     </div>
-                    <div className="font-medium text-sm truncate mt-0.5">{b.patients?.full_name}</div>
-                    <div className="flex items-center justify-between gap-2 mt-0.5">
-                      <span className="text-[11px] text-muted-foreground font-mono">{b.patients?.uhid}</span>
-                      <span className="text-xs font-semibold">₹{Number(b.total).toFixed(0)}</span>
-                    </div>
-                    {Number(b.pending) > 0 && (
-                      <div className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">Pending ₹{Number(b.pending).toFixed(0)}</div>
-                    )}
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -207,6 +246,21 @@ function BillingPage() {
           )}
         </div>
       </div>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this bill?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete invoice <b>{pendingDelete?.bill_no}</b>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteBill} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   Clock, CheckCircle2, User, ExternalLink, Search,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { PatientAttachments } from "@/components/patient-attachments";
 import { toast } from "sonner";
 import { differenceInMinutes, format, formatDistanceToNow } from "date-fns";
 
@@ -509,6 +510,13 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
           ))}
         </div>
       </div>
+
+      {/* Attachments */}
+      {p?.id && (
+        <div className="pt-3 border-t">
+          <PatientAttachments patientId={p.id} patient={p} defaultDepartment="OPD" />
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex items-center justify-between gap-2 pt-3 border-t">
