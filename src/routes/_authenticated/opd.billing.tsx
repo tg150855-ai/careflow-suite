@@ -10,10 +10,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Receipt, Plus, Trash2, Save, Printer, Pill, Search, IndianRupee,
-  CheckCircle2, Clock, FileText,
+  CheckCircle2, Clock, FileText, Pencil,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useIsSuperAdmin } from "@/lib/use-super-admin";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
