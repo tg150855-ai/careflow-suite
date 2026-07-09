@@ -16,6 +16,7 @@ import {
   Stethoscope, Loader2, ChevronRight, History,
 } from "lucide-react";
 import { format } from "date-fns";
+import { PatientAttachments } from "@/components/patient-attachments";
 
 export const Route = createFileRoute("/_authenticated/opd/registration")({
   component: OpdRegistration,
