@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Stethoscope, Users, Clock, CheckCircle2, Activity,
-  IndianRupee, AlertCircle, UserPlus, CalendarPlus, PlayCircle,
+  IndianRupee, AlertCircle, UserPlus,
 } from "lucide-react";
 import { format } from "date-fns";
 import { OpdSubNav } from "@/components/opd-sub-nav";
