@@ -14,6 +14,7 @@ import {
   Clock, CheckCircle2, User, ExternalLink, Search,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { PatientAttachments } from "@/components/patient-attachments";
 import { toast } from "sonner";
 import { differenceInMinutes, format, formatDistanceToNow } from "date-fns";
 
