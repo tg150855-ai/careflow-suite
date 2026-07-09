@@ -39,10 +39,30 @@ function startOfDayIso() { const d = new Date(); d.setHours(0,0,0,0); return d.t
 
 function BillingPage() {
   const { user } = useAuth();
+  const canDelete = useIsSuperAdmin();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
   const [draftVisit, setDraftVisit] = useState<any | null>(null); // unbilled visit selected for new bill
+  const [pendingDelete, setPendingDelete] = useState<any | null>(null);
+
+  async function confirmDeleteBill() {
+    if (!pendingDelete) return;
+    try {
+      const id = pendingDelete.id;
+      await supabase.from("payments").delete().eq("bill_id", id);
+      await supabase.from("bill_items").delete().eq("bill_id", id);
+      const { error } = await supabase.from("bills").delete().eq("id", id);
+      if (error) throw error;
+      if (selectedBillId === id) setSelectedBillId(null);
+      toast.success("Invoice deleted");
+      qc.invalidateQueries({ queryKey: ["opd-bills"] });
+    } catch (err: any) {
+      toast.error(err.message ?? "Delete failed");
+    } finally {
+      setPendingDelete(null);
+    }
+  }
 
   const { data: bills = [] } = useQuery({
     queryKey: ["opd-bills"],
