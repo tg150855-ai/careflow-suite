@@ -51,6 +51,9 @@ function IPDDashboard() {
     },
   });
 
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+
   const { data: discharged = [] } = useQuery({
     queryKey: ["ipd-discharged", from, to],
     enabled: tab === "discharged",
@@ -59,7 +62,7 @@ function IPDDashboard() {
       const toIso = new Date(to + "T23:59:59").toISOString();
       const res = await supabase
         .from("admissions")
-        .select("id, admission_no, admitted_at, discharged_at, reason, patients(full_name, uhid, mobile), doctors(name), beds(bed_number), wards(name)")
+        .select("id, admission_no, admitted_at, discharged_at, reason, patients(full_name, uhid, mobile), doctors(name), beds(bed_number), wards(name), discharge_summaries(id, final_diagnosis, follow_up_date)")
         .eq("status", "discharged")
         .gte("discharged_at", fromIso)
         .lte("discharged_at", toIso)
