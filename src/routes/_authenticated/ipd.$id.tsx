@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Activity, Stethoscope, Pill, ClipboardList, LogOut, AlertCircle, ArrowLeftRight, FlaskConical, Scan, Syringe, Receipt, Printer, Trash2, Plus, Skull, FileSpreadsheet, Package as PackageIcon } from "lucide-react";
 import { exportXlsx } from "@/lib/export";
-import { format as fmtDate } from "date-fns";
 import { format, differenceInDays } from "date-fns";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
