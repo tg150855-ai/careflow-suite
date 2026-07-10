@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,10 @@ import { BedDouble, Plus, UserPlus, Activity, LogOut, Search, FileBarChart, Sett
 import { motion } from "framer-motion";
 import { format, differenceInDays } from "date-fns";
 import { useState } from "react";
+import { RecordActions } from "@/components/common/record-actions";
+import { shareOnWhatsApp } from "@/lib/share";
+import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/ipd/")({ component: IPDDashboard });
 
