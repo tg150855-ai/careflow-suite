@@ -215,7 +215,41 @@ function IPDDashboard() {
                         <td className="py-3"><Badge variant="secondary">{stay}d</Badge></td>
                         <td className="py-3">{a.doctors?.name}</td>
                         <td className="px-6 py-3 text-right">
-                          <Button asChild size="sm" variant="ghost"><Link to="/ipd/$id" params={{ id: a.id }}>Open</Link></Button>
+                          {(() => {
+                            const ds = Array.isArray(a.discharge_summaries) ? a.discharge_summaries[0] : a.discharge_summaries;
+                            return (
+                              <RecordActions
+                                size="icon"
+                                onEdit={() => navigate({ to: "/ipd/$id/discharge", params: { id: a.id } })}
+                                onPrint={() => {
+                                  if (ds?.id) window.open(`/discharge/${ds.id}/print`, "_blank");
+                                  else toast.error("No discharge summary saved yet");
+                                }}
+                                onWhatsApp={() => {
+                                  const lines = [
+                                    `*Discharge* — ${a.patients?.full_name} (${a.patients?.uhid})`,
+                                    `Admission: ${a.admission_no}`,
+                                    `Admitted: ${format(new Date(a.admitted_at), "dd MMM yyyy")}`,
+                                    a.discharged_at && `Discharged: ${format(new Date(a.discharged_at), "dd MMM yyyy")}`,
+                                    `Stay: ${stay} day(s)`,
+                                    ds?.final_diagnosis && `Diagnosis: ${ds.final_diagnosis}`,
+                                    ds?.follow_up_date && `Follow-up: ${format(new Date(ds.follow_up_date), "dd MMM yyyy")}`,
+                                  ].filter(Boolean).join("\n");
+                                  const url = ds?.id ? `${window.location.origin}/discharge/${ds.id}/print` : undefined;
+                                  shareOnWhatsApp(lines, url, a.patients?.mobile ?? undefined);
+                                }}
+                                deleteLabel={`discharge ${a.admission_no}`}
+                                onDelete={async () => {
+                                  if (ds?.id) await supabase.from("discharge_summaries").delete().eq("id", ds.id);
+                                  await supabase.from("admissions").update({ status: "active", discharged_at: null }).eq("id", a.id);
+                                  toast.success("Discharge reverted — admission set back to active");
+                                  qc.invalidateQueries({ queryKey: ["ipd-discharged"] });
+                                  qc.invalidateQueries({ queryKey: ["ipd-dashboard"] });
+                                }}
+                              />
+                            );
+                          })()}
+                          <Button asChild size="sm" variant="ghost" className="ml-1"><Link to="/ipd/$id" params={{ id: a.id }}>Open</Link></Button>
                         </td>
                       </tr>
                     );
