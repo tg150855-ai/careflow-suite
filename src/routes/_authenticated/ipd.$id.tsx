@@ -896,11 +896,48 @@ function BillingTab({ admission, days }: { admission: any; days: number }) {
             <h3 className="font-semibold">IPD bill summary</h3>
             {bill && <div className="text-xs text-muted-foreground mt-0.5">Invoice <span className="font-mono">{bill.bill_no}</span> · <Badge variant="outline" className="capitalize">{bill.status}</Badge></div>}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {bill && <Button asChild variant="outline" size="sm"><Link to="/billing/$id" params={{ id: bill.id }}><Receipt className="size-3.5 mr-1.5" />Open invoice</Link></Button>}
             <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="size-3.5 mr-1.5" />Print</Button>
+            <Button size="sm" variant="outline" onClick={() => {
+              const patient = admission.patients;
+              const meta = [
+                { Field: "Patient", Value: patient?.full_name ?? "—" },
+                { Field: "UHID", Value: patient?.uhid ?? "—" },
+                { Field: "Mobile", Value: patient?.mobile ?? "—" },
+                { Field: "Admission #", Value: admission.admission_no ?? "—" },
+                { Field: "Doctor", Value: admission.doctors?.name ?? "—" },
+                { Field: "Ward / Bed", Value: `${admission.wards?.name ?? "—"} / ${admission.beds?.bed_number ?? "—"}` },
+                { Field: "Days", Value: days },
+                { Field: "Bill No", Value: bill?.bill_no ?? "(unsaved)" },
+                { Field: "Subtotal", Value: subtotal },
+                { Field: "Discount", Value: disc },
+                { Field: "GST", Value: gst },
+                { Field: "Total", Value: total },
+                { Field: "Paid", Value: Number(bill?.paid ?? 0) },
+                { Field: "Pending", Value: Math.max(0, total - Number(bill?.paid ?? 0)) },
+              ];
+              const items = aggregateItems.map((it) => ({ Category: it.category, Description: it.description, Qty: it.quantity, Rate: it.unit_price, Amount: it.amount }));
+              const payments = (bill?.payments ?? []).map((p: any) => ({ Date: format(new Date(p.paid_at), "dd MMM yyyy HH:mm"), Method: p.method, Reference: p.reference ?? "", Amount: Number(p.amount) }));
+              exportXlsx({ Summary: meta, "Line items": items, Payments: payments }, `ipd-bill-${admission.admission_no ?? admissionId}.xlsx`);
+              toast.success("Report downloaded");
+            }}><FileSpreadsheet className="size-3.5 mr-1.5" />Report</Button>
           </div>
         </div>
+
+        {packages.length > 0 && (
+          <div className="mb-4 p-3 rounded-md bg-primary/5 border border-primary/20 flex items-center gap-2 flex-wrap">
+            <PackageIcon className="size-4 text-primary" />
+            <span className="text-sm font-medium">Package billing:</span>
+            <Select value={selectedPackage} onValueChange={setSelectedPackage}>
+              <SelectTrigger className="w-72 h-9"><SelectValue placeholder="Select a health package…" /></SelectTrigger>
+              <SelectContent>
+                {packages.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name} — ₹{Number(p.price).toLocaleString("en-IN")}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button size="sm" onClick={addPackage} disabled={!selectedPackage}><Plus className="size-3.5 mr-1.5" />Add package</Button>
+          </div>
+        )}
 
         <div className="overflow-x-auto -mx-6">
           <table className="w-full text-sm">
