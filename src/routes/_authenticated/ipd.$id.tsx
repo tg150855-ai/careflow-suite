@@ -804,6 +804,10 @@ function BillingTab({ admission, days }: { admission: any; days: number }) {
     queryKey: ["pharm-bill", patientId],
     queryFn: async () => (await supabase.from("pharmacy_sales").select("invoice_no, total, created_at").eq("patient_id", patientId)).data ?? [],
   });
+  const { data: packages = [] } = useQuery({
+    queryKey: ["health-packages-active"],
+    queryFn: async () => (await supabase.from("health_packages").select("id, name, price, category").eq("active", true).order("name")).data ?? [],
+  });
 
   const bedCharge = Number(admission.beds?.charge_per_day ?? 0) * days;
   const labTotal = lab.reduce((s: number, r: any) => s + Number(r.total_amount ?? 0), 0);
@@ -813,6 +817,15 @@ function BillingTab({ admission, days }: { admission: any; days: number }) {
   const [extra, setExtra] = useState<{ id: string; description: string; category: string; quantity: string; unit_price: string }[]>([]);
   const [discount, setDiscount] = useState("0");
   const [gstPct, setGstPct] = useState("0");
+  const [selectedPackage, setSelectedPackage] = useState<string>("");
+
+  const addPackage = () => {
+    const pkg = packages.find((p: any) => p.id === selectedPackage);
+    if (!pkg) { toast.error("Select a package"); return; }
+    setExtra((prev) => [...prev, { id: crypto.randomUUID(), category: "Package", description: `Package: ${pkg.name}${pkg.category ? " (" + pkg.category + ")" : ""}`, quantity: "1", unit_price: String(pkg.price ?? 0) }]);
+    setSelectedPackage("");
+    toast.success(`Added package: ${pkg.name}`);
+  };
 
   const aggregateItems = useMemo(() => {
     const items: { category: string; description: string; quantity: number; unit_price: number; amount: number }[] = [];
