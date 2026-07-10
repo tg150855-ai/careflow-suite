@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Printer, Sparkles, Share2, Download } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Plus, Trash2, Sparkles, Share2, Download, AlertTriangle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { getPatientBillingSummary } from "@/lib/billing-aggregator";
-import { AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/ipd/$id/discharge")({ component: DischargeForm });
 
@@ -38,6 +37,17 @@ function DischargeForm() {
     refetchOnWindowFocus: true,
   });
 
+  // Load existing discharge summary (edit mode)
+  const { data: existing, isFetched: existingFetched } = useQuery({
+    queryKey: ["discharge-existing", id],
+    queryFn: async () => {
+      const { data: ds } = await supabase.from("discharge_summaries").select("*").eq("admission_id", id).maybeSingle();
+      if (!ds) return null;
+      const { data: meds } = await supabase.from("discharge_medications").select("*").eq("discharge_id", ds.id).order("position");
+      return { ds, meds: meds ?? [] };
+    },
+  });
+
   const [finalDx, setFinalDx] = useState("");
   const [procedures, setProcedures] = useState("");
   const [course, setCourse] = useState("");
@@ -46,8 +56,26 @@ function DischargeForm() {
   const [followUpInstr, setFollowUpInstr] = useState("");
   const [followUpDate, setFollowUpDate] = useState("");
   const [meds, setMeds] = useState<Med[]>([]);
+  const hydratedRef = useRef(false);
 
   const pendingTotal = bills.reduce((s: number, b: any) => s + Number(b.pending), 0);
+
+  // Hydrate from existing discharge summary
+  useEffect(() => {
+    if (!existing || hydratedRef.current) return;
+    hydratedRef.current = true;
+    const ds: any = existing.ds;
+    setFinalDx(ds.final_diagnosis ?? "");
+    setProcedures(ds.procedures_performed ?? "");
+    setCourse(ds.hospital_course ?? "");
+    setCondition(ds.condition_at_discharge ?? "Stable");
+    setAdvice(ds.advice ?? "");
+    setFollowUpInstr(ds.follow_up_instructions ?? "");
+    setFollowUpDate(ds.follow_up_date ?? "");
+    setMeds((existing.meds ?? []).map((m: any) => ({
+      id: m.id, medicine_name: m.medicine_name, dosage: m.dosage ?? "", duration: m.duration ?? "", instructions: m.instructions ?? "",
+    })));
+  }, [existing]);
 
   const autofill = useMutation({
     mutationFn: async () => {
@@ -73,7 +101,6 @@ function DischargeForm() {
       const followUp = (rounds.data ?? []).map((r: any) => r.follow_up_orders).filter(Boolean).join("\n");
       if (followUp && !followUpInstr) setFollowUpInstr(followUp);
 
-      // Build take-home medicines from latest prescription items + active MAR
       const { data: mar } = await supabase.from("medication_administration").select("medicine_name, dosage, route").eq("admission_id", id).eq("status", "administered");
       const seen = new Set<string>();
       const medRows: Med[] = [];
@@ -89,35 +116,55 @@ function DischargeForm() {
       });
       if (medRows.length && meds.length === 0) setMeds(medRows);
     },
-    onSuccess: () => toast.success("Discharge summary populated"),
+    onSuccess: () => toast.success("Discharge summary populated from records"),
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Auto-fill once on mount when no existing summary
+  const autoTriedRef = useRef(false);
+  useEffect(() => {
+    if (autoTriedRef.current) return;
+    if (!adm || !existingFetched) return;
+    if (existing) return; // don't overwrite edit-mode
+    autoTriedRef.current = true;
+    autofill.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adm, existingFetched, existing]);
+
   const save = useMutation({
     mutationFn: async () => {
-      // Create discharge summary
-      const { data: ds, error } = await supabase.from("discharge_summaries").insert({
+      const payload = {
         admission_id: id,
         final_diagnosis: finalDx || null, procedures_performed: procedures || null,
         hospital_course: course || null, condition_at_discharge: condition || null,
         follow_up_instructions: followUpInstr || null, follow_up_date: followUpDate || null,
         advice: advice || null, created_by: user?.id ?? null,
-      }).select("id").single();
-      if (error) throw error;
+      };
+      let dsId: string;
+      if (existing?.ds?.id) {
+        const { error } = await supabase.from("discharge_summaries").update(payload).eq("id", existing.ds.id);
+        if (error) throw error;
+        dsId = existing.ds.id;
+        await supabase.from("discharge_medications").delete().eq("discharge_id", dsId);
+      } else {
+        const { data: ds, error } = await supabase.from("discharge_summaries").insert(payload).select("id").single();
+        if (error) throw error;
+        dsId = ds.id;
+      }
       if (meds.length > 0) {
         const { error: e2 } = await supabase.from("discharge_medications").insert(meds.map((m, idx) => ({
-          discharge_id: ds.id, medicine_name: m.medicine_name, dosage: m.dosage || null,
+          discharge_id: dsId, medicine_name: m.medicine_name, dosage: m.dosage || null,
           duration: m.duration || null, instructions: m.instructions || null, position: idx,
         })));
         if (e2) throw e2;
       }
-      // Update admission
-      await supabase.from("admissions").update({ status: "discharged", discharged_at: new Date().toISOString() }).eq("id", id);
-      // Free the bed
-      if (adm?.bed_id) await supabase.from("beds").update({ status: "cleaning" }).eq("id", adm.bed_id);
-      return ds;
+      if (!existing?.ds?.id) {
+        await supabase.from("admissions").update({ status: "discharged", discharged_at: new Date().toISOString() }).eq("id", id);
+        if (adm?.bed_id) await supabase.from("beds").update({ status: "cleaning" }).eq("id", adm.bed_id);
+      }
+      return { id: dsId };
     },
-    onSuccess: (ds) => { toast.success("Patient discharged"); navigate({ to: "/discharge/$id/print", params: { id: ds.id } }); },
+    onSuccess: (ds) => { toast.success(existing?.ds?.id ? "Discharge summary updated" : "Patient discharged"); navigate({ to: "/discharge/$id/print", params: { id: ds.id } }); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -137,20 +184,22 @@ function DischargeForm() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(lines)}`, "_blank");
   };
 
+  const isEdit = !!existing?.ds?.id;
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center gap-3 flex-wrap">
         <Button asChild variant="ghost" size="icon"><Link to="/ipd/$id" params={{ id }}><ArrowLeft className="size-4" /></Link></Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">Discharge {adm.patients?.full_name}</h1>
-          <p className="text-sm text-muted-foreground">{adm.admission_no} · Treating: Dr. {adm.doctors?.name}</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{isEdit ? "Edit discharge summary" : "Discharge"} — {adm.patients?.full_name}</h1>
+          <p className="text-sm text-muted-foreground">{adm.admission_no} · Treating: Dr. {adm.doctors?.name}{isEdit ? " · Editing existing summary" : " · Auto-filled from records"}</p>
         </div>
         <Button variant="outline" onClick={() => autofill.mutate()} disabled={autofill.isPending}>
-          <Sparkles className="size-4 mr-2" />{autofill.isPending ? "Pulling…" : "Auto-fill from records"}
+          <Sparkles className="size-4 mr-2" />{autofill.isPending ? "Pulling…" : "Re-run auto-fill"}
         </Button>
       </div>
 
-      {(billingSummary?.totals.pending ?? pendingTotal) > 0 && (
+      {!isEdit && (billingSummary?.totals.pending ?? pendingTotal) > 0 && (
         <Card className="p-4 bg-destructive/10 border-destructive/40">
           <div className="flex items-start gap-3">
             <AlertTriangle className="size-5 text-destructive shrink-0 mt-0.5" />
@@ -204,8 +253,8 @@ function DischargeForm() {
       <div className="flex justify-end gap-3 flex-wrap">
         <Button variant="outline" asChild><Link to="/ipd/$id" params={{ id }}>Cancel</Link></Button>
         <Button variant="outline" onClick={shareWhatsApp}><Share2 className="size-4 mr-2" />WhatsApp share</Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending || (billingSummary?.totals.pending ?? pendingTotal) > 0}>
-          <Download className="size-4 mr-2" />{save.isPending ? "Saving…" : "Save & download PDF"}
+        <Button onClick={() => save.mutate()} disabled={save.isPending || (!isEdit && (billingSummary?.totals.pending ?? pendingTotal) > 0)}>
+          <Download className="size-4 mr-2" />{save.isPending ? "Saving…" : isEdit ? "Update & print" : "Save & print"}
         </Button>
       </div>
     </div>
