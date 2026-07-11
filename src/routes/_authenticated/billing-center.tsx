@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,7 @@ import { inr } from "@/lib/format";
 import { format } from "date-fns";
 import { exportXlsx } from "@/lib/export";
 import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
-import { Search, Receipt, Users, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Search, Receipt, Users, AlertTriangle, CheckCircle2, LogOut } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/billing-center")({
   component: BillingCenter,
@@ -109,6 +109,7 @@ function BillingCenter() {
 }
 
 function PatientBillingPanel({ patientId }: { patientId: string }) {
+  const navigate = useNavigate();
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["billing-summary", patientId],
     queryFn: () => getPatientBillingSummary(patientId),
@@ -186,6 +187,33 @@ function PatientBillingPanel({ patientId }: { patientId: string }) {
       </Card>
 
       <ModuleActionBar onExport={onExport} onPrint={() => window.print()} onWhatsAppShare={onWhatsApp} />
+
+      {(() => {
+        const activeAdm = admissions.find((a) => a.status === "active") ?? admissions[0];
+        if (!activeAdm) return null;
+        const cleared = totals.pending <= 0.01;
+        return (
+          <Card className={cleared ? "border-emerald-300 bg-emerald-50/50" : "border-amber-300 bg-amber-50/40"}>
+            <CardContent className="pt-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-sm">
+                <div className="font-medium">Discharge readiness — {activeAdm.admission_no}</div>
+                <div className="text-xs text-muted-foreground">
+                  {cleared
+                    ? "All bills cleared. Patient is ready for discharge."
+                    : `Balance ${inr(totals.pending)} pending — must be cleared before discharge.`}
+                </div>
+              </div>
+              <Button
+                disabled={!cleared}
+                onClick={() => navigate({ to: "/ipd/$id/discharge", params: { id: activeAdm.id } })}
+              >
+                <LogOut className="size-4 mr-2" />
+                Generate Discharge Summary
+              </Button>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard label="Total" value={inr(totals.total)} />
