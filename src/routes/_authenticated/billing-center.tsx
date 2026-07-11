@@ -188,39 +188,59 @@ function PatientBillingPanel({ patientId }: { patientId: string }) {
 
       <ModuleActionBar onExport={onExport} onPrint={() => window.print()} onWhatsAppShare={onWhatsApp} />
 
-      {(() => {
-        const activeAdm = admissions.find((a) => a.status === "active") ?? admissions[0];
-        if (!activeAdm) return null;
-        const cleared = totals.pending <= 0.01;
-        return (
-          <Card className={cleared ? "border-emerald-300 bg-emerald-50/50" : "border-amber-300 bg-amber-50/40"}>
-            <CardContent className="pt-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-sm">
-                <div className="font-medium">Discharge readiness — {activeAdm.admission_no}</div>
-                <div className="text-xs text-muted-foreground">
-                  {cleared
-                    ? "All bills cleared. Patient is ready for discharge."
-                    : `Balance ${inr(totals.pending)} pending — must be cleared before discharge.`}
-                </div>
-              </div>
-              <Button
-                disabled={!cleared}
-                onClick={() => navigate({ to: "/ipd/$id/discharge", params: { id: activeAdm.id } })}
-              >
-                <LogOut className="size-4 mr-2" />
-                Generate Discharge Summary
-              </Button>
-            </CardContent>
-          </Card>
-        );
-      })()}
-
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard label="Total" value={inr(totals.total)} />
         <KpiCard label="Discount" value={inr(totals.discount)} />
         <KpiCard label="Paid" value={inr(totals.paid)} tone="ok" />
         <KpiCard label="Pending" value={inr(totals.pending)} tone={totals.pending > 0 ? "warn" : undefined} />
       </div>
+
+      {(() => {
+        const activeAdm = admissions.find((a) => a.status === "active") ?? admissions.find((a) => !a.discharged_at) ?? admissions[0];
+        const cleared = totals.pending <= 0.01;
+        const canDischarge = !!activeAdm && cleared && bills.length > 0;
+        const toneClass = canDischarge
+          ? "border-emerald-300 bg-emerald-50/60"
+          : "border-amber-300 bg-amber-50/50";
+        const title = !activeAdm
+          ? "No IPD admission on record"
+          : !cleared
+            ? "Pending bills exist — Cannot discharge yet"
+            : "All bills cleared — Patient is ready for discharge";
+        const subtitle = !activeAdm
+          ? "Discharge summary can only be generated for an admitted patient."
+          : !cleared
+            ? `Outstanding: ${inr(totals.pending)}`
+            : `Admission ${activeAdm.admission_no} · Admitted ${format(new Date(activeAdm.admitted_at), "dd MMM yyyy")}`;
+        const btn = (
+          <Button
+            disabled={!canDischarge}
+            onClick={() => activeAdm && navigate({ to: "/ipd/$id/discharge", params: { id: activeAdm.id } })}
+            className={canDischarge ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}
+          >
+            <LogOut className="size-4 mr-2" />
+            Generate Discharge Summary
+          </Button>
+        );
+        return (
+          <Card className={toneClass}>
+            <CardContent className="pt-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-sm flex items-start gap-2">
+                {canDischarge
+                  ? <CheckCircle2 className="size-5 text-emerald-600 mt-0.5" />
+                  : <AlertTriangle className="size-5 text-amber-600 mt-0.5" />}
+                <div>
+                  <div className="font-medium">{title}</div>
+                  <div className="text-xs text-muted-foreground">{subtitle}</div>
+                </div>
+              </div>
+              {canDischarge ? btn : (
+                <span title="Clear all pending bills to enable discharge">{btn}</span>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Department-wise charges</CardTitle></CardHeader>
