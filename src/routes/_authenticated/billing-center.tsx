@@ -109,6 +109,7 @@ function BillingCenter() {
 }
 
 function PatientBillingPanel({ patientId }: { patientId: string }) {
+  const navigate = useNavigate();
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["billing-summary", patientId],
     queryFn: () => getPatientBillingSummary(patientId),
