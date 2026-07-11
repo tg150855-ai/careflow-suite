@@ -162,18 +162,43 @@ function IPDDashboard() {
                       <tr key={a.id} className="hover:bg-surface-muted/60">
                         <td className="px-6 py-3 font-mono text-xs">{a.admission_no}</td>
                         <td className="py-3">
-                          <div className="font-medium">{a.patients?.full_name}</div>
-                          <div className="text-xs text-muted-foreground">{a.patients?.uhid}</div>
+                          <div className="font-medium">{a.patients?.full_name ?? "—"}</div>
+                          <div className="text-xs text-muted-foreground">{a.patients?.uhid ?? "—"}</div>
                         </td>
                         <td className="py-3">
                           <div className="font-medium">{a.beds?.bed_number ?? "—"}</div>
-                          <div className="text-xs text-muted-foreground">{a.wards?.name}</div>
+                          <div className="text-xs text-muted-foreground">{a.wards?.name ?? "—"}</div>
                         </td>
-                        <td className="py-3">{a.doctors?.name}</td>
+                        <td className="py-3">{a.doctors?.name ?? "—"}</td>
                         <td className="py-3"><Badge variant="secondary">{days}d</Badge></td>
                         <td className="py-3 max-w-xs truncate text-muted-foreground">{a.reason ?? a.initial_diagnosis ?? "—"}</td>
                         <td className="px-6 py-3 text-right">
-                          <Button asChild size="sm" variant="ghost"><Link to="/ipd/$id" params={{ id: a.id }}>Open</Link></Button>
+                          <div className="inline-flex items-center gap-1">
+                            <Button asChild size="sm" variant="ghost"><Link to="/ipd/$id" params={{ id: a.id }}>Open</Link></Button>
+                            <RecordActions
+                              size="icon"
+                              onEdit={() => navigate({ to: "/ipd/$id", params: { id: a.id } })}
+                              onPrint={() => window.open(`/ipd/${a.id}`, "_blank")}
+                              onWhatsApp={() => {
+                                const msg = [
+                                  `*IPD Admission* — ${a.patients?.full_name ?? "—"} (${a.patients?.uhid ?? "—"})`,
+                                  `Admission: ${a.admission_no}`,
+                                  `Admitted: ${format(new Date(a.admitted_at), "dd MMM yyyy")}`,
+                                  `Bed: ${a.beds?.bed_number ?? "—"} · Ward: ${a.wards?.name ?? "—"}`,
+                                  `Doctor: ${a.doctors?.name ?? "—"}`,
+                                  a.reason && `Reason: ${a.reason}`,
+                                ].filter(Boolean).join("\n");
+                                shareOnWhatsApp(msg, undefined, a.patients?.mobile ?? undefined);
+                              }}
+                              deleteLabel={`admission ${a.admission_no}`}
+                              onDelete={async () => {
+                                const { error } = await supabase.from("admissions").delete().eq("id", a.id);
+                                if (error) { toast.error(error.message); return; }
+                                toast.success("Admission deleted");
+                                qc.invalidateQueries({ queryKey: ["ipd-dashboard"] });
+                              }}
+                            />
+                          </div>
                         </td>
                       </tr>
                     );
