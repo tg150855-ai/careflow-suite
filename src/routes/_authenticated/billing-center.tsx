@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,7 @@ import { inr } from "@/lib/format";
 import { format } from "date-fns";
 import { exportXlsx } from "@/lib/export";
 import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
-import { Search, Receipt, Users, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Search, Receipt, Users, AlertTriangle, CheckCircle2, LogOut } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/billing-center")({
   component: BillingCenter,
