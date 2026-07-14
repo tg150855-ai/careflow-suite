@@ -268,6 +268,23 @@ function PatientsPage() {
       <PatientsDashboardCards />
 
       <Card className="p-2">
+        <div className="p-3 flex flex-wrap items-end gap-2 border-b">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">From date</label>
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 w-40" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">To date</label>
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-40" />
+          </div>
+          <Button size="sm" onClick={applyFilter} className="h-9">Apply</Button>
+          <Button size="sm" variant="outline" onClick={resetFilter} className="h-9">Reset</Button>
+          {(appliedFrom || appliedTo) && (
+            <Badge variant="secondary" className="ml-1">
+              Filter: {appliedFrom || "—"} → {appliedTo || "—"}
+            </Badge>
+          )}
+        </div>
         <div className="p-3 grid grid-cols-1 md:grid-cols-[1fr_180px] gap-3">
           <div className="relative">
             <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -299,6 +316,7 @@ function PatientsPage() {
             </SelectContent>
           </Select>
         </div>
+
 
         <div className="divide-y">
           {isLoading && (
