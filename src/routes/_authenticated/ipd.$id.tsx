@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Activity, Stethoscope, Pill, ClipboardList, LogOut, AlertCircle, ArrowLeftRight, FlaskConical, Scan, Syringe, Receipt, Printer, Trash2, Plus, Skull, FileSpreadsheet, Package as PackageIcon } from "lucide-react";
+import { ArrowLeft, Activity, Stethoscope, Pill, ClipboardList, AlertCircle, ArrowLeftRight, FlaskConical, Scan, Syringe, Receipt, Printer, Trash2, Plus, Skull, FileSpreadsheet, Package as PackageIcon } from "lucide-react";
 import { exportXlsx } from "@/lib/export";
 import { format, differenceInDays } from "date-fns";
 import { useState, useMemo } from "react";
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { VoiceDictate } from "@/components/voice-dictate";
 import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
+import { DischargeDialog } from "@/components/ipd/discharge-dialog";
 
 export const Route = createFileRoute("/_authenticated/ipd/$id")({ component: AdmissionDetail });
 
@@ -57,7 +58,7 @@ function AdmissionDetail() {
         {adm.status === "active" && (
           <div className="flex gap-2">
             <TransferDialog admission={adm} />
-            <Button asChild variant="default"><Link to="/ipd/$id/discharge" params={{ id }}><LogOut className="size-4 mr-2" />Discharge</Link></Button>
+            <DischargeDialog admission={adm} />
           </div>
         )}
       </div>
