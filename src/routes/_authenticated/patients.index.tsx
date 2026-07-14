@@ -132,30 +132,38 @@ function PatientsDashboardCards() {
 function PatientsPage() {
   const [q, setQ] = useState("");
   const [gender, setGender] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [appliedFrom, setAppliedFrom] = useState("");
+  const [appliedTo, setAppliedTo] = useState("");
   const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const pageSize = 20;
 
+  const applyFilter = () => { setAppliedFrom(fromDate); setAppliedTo(toDate); setPage(1); };
+  const resetFilter = () => { setFromDate(""); setToDate(""); setAppliedFrom(""); setAppliedTo(""); setPage(1); };
+
+  const buildBaseQuery = () => {
+    let query = supabase.from("patients").select("id, uhid, full_name, mobile, email, gender, dob, blood_group, photo_url, city, state, created_at", { count: "exact" });
+    const safeTerm = q.trim().replace(/[%,()]/g, " ").replace(/\s+/g, " ");
+    if (safeTerm.length >= 1)
+      query = query.or(`full_name.ilike.%${safeTerm}%,mobile.ilike.%${safeTerm}%,uhid.ilike.%${safeTerm}%`);
+    if (gender !== "all") query = query.eq("gender", gender as any);
+    if (appliedFrom) query = query.gte("created_at", new Date(appliedFrom).toISOString());
+    if (appliedTo) {
+      const end = new Date(appliedTo); end.setHours(23, 59, 59, 999);
+      query = query.lte("created_at", end.toISOString());
+    }
+    return query;
+  };
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["patients", q, gender, page],
+    queryKey: ["patients", q, gender, appliedFrom, appliedTo, page],
     queryFn: async () => {
-      const safeTerm = q
-        .trim()
-        .replace(/[%,()]/g, " ")
-        .replace(/\s+/g, " ");
-      let query = supabase
-        .from("patients")
-        .select("id, uhid, full_name, mobile, gender, dob, blood_group, photo_url, created_at", {
-          count: "exact",
-        })
+      const query = buildBaseQuery()
         .order("created_at", { ascending: false })
         .range((page - 1) * pageSize, page * pageSize - 1);
-      if (safeTerm.length >= 2)
-        query = query.or(
-          `full_name.ilike.%${safeTerm}%,mobile.ilike.%${safeTerm}%,uhid.ilike.%${safeTerm}%`,
-        );
-      if (gender !== "all") query = query.eq("gender", gender as any);
       const { data, error, count } = await query;
       if (error) throw error;
       return { rows: data ?? [], count: count ?? 0 };
@@ -181,55 +189,50 @@ function PatientsPage() {
     queryClient.invalidateQueries({ queryKey: ["patients"] });
   }
 
+  async function fetchExportRows() {
+    const query = buildBaseQuery().order("created_at", { ascending: false }).limit(10000);
+    const { data, error } = await query;
+    if (error) { toast.error(error.message); return null; }
+    return data ?? [];
+  }
+
   async function downloadCsv() {
-    const { data, error } = await supabase
-      .from("patients")
-      .select("uhid, full_name, mobile, email, gender, dob, blood_group, city, state, created_at")
-      .order("created_at", { ascending: false })
-      .limit(5000);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    const rows = data ?? [];
-    const headers = ["UHID", "Name", "Mobile", "Email", "Gender", "DOB", "Blood Group", "City", "State", "Registered"];
+    const rows = await fetchExportRows(); if (!rows) return;
+    const headers = ["UHID", "Name", "Mobile", "Gender", "Age", "Blood Group", "Registration Date"];
     const csv = [
       headers.join(","),
-      ...rows.map((r: any) =>
-        [r.uhid, r.full_name, r.mobile, r.email ?? "", r.gender, r.dob ?? "", r.blood_group ?? "", r.city ?? "", r.state ?? "", r.created_at]
-          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-          .join(","),
-      ),
+      ...rows.map((r: any) => [
+        r.uhid ?? "—", r.full_name ?? "—", r.mobile ?? "—", r.gender ?? "—",
+        r.dob ? differenceInYears(new Date(), new Date(r.dob)) : "—",
+        r.blood_group ?? "—",
+        r.created_at ? format(new Date(r.created_at), "dd-MM-yyyy") : "—",
+      ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")),
     ].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `patients-${format(new Date(), "yyyyMMdd-HHmm")}.csv`;
+    a.download = `Patients_Export_${format(new Date(), "dd-MM-yyyy")}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success(`Exported ${rows.length} patients`);
   }
 
   async function downloadXlsx() {
-    const { data, error } = await supabase
-      .from("patients")
-      .select("uhid, full_name, mobile, gender, dob, blood_group, created_at")
-      .order("created_at", { ascending: false })
-      .limit(5000);
-    if (error) { toast.error(error.message); return; }
-    const rows = (data ?? []).map((r: any) => ({
+    const rows = await fetchExportRows(); if (!rows) return;
+    const mapped = rows.map((r: any) => ({
       UHID: r.uhid ?? "—",
       Name: r.full_name ?? "—",
       Mobile: r.mobile ?? "—",
       Gender: r.gender ?? "—",
       Age: r.dob ? differenceInYears(new Date(), new Date(r.dob)) : "—",
       "Blood Group": r.blood_group ?? "—",
-      "Registered": r.created_at ? format(new Date(r.created_at), "dd MMM yyyy") : "—",
+      "Registration Date": r.created_at ? format(new Date(r.created_at), "dd-MM-yyyy") : "—",
     }));
-    await exportXlsx(rows, `patients-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`);
-    toast.success(`Exported ${rows.length} patients`);
+    await exportXlsx(mapped, `Patients_Export_${format(new Date(), "dd-MM-yyyy")}.xlsx`);
+    toast.success(`Exported ${mapped.length} patients`);
   }
+
 
   return (
     <div className="space-y-6">
