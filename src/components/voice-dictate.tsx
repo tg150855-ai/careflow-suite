@@ -1,61 +1,111 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Square, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Mic, Square } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 type Props = { onTranscript: (text: string) => void; disabled?: boolean; label?: string };
 
-export function VoiceDictate({ onTranscript, disabled, label = "Dictate" }: Props) {
-  const [state, setState] = useState<"idle" | "recording" | "uploading">("idle");
-  const recRef = useRef<MediaRecorder | null>(null);
-  const chunks = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
+type LangKey = "auto" | "en-IN" | "hi-IN";
+const LANG_STORAGE_KEY = "medicore.voice.lang";
 
-  const start = async () => {
+function getSR(): any {
+  if (typeof window === "undefined") return null;
+  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
+}
+
+function resolveLang(pref: LangKey): string {
+  if (pref !== "auto") return pref;
+  const nav = typeof navigator !== "undefined" ? navigator.language : "";
+  if (/^hi/i.test(nav)) return "hi-IN";
+  if (/^en/i.test(nav)) return nav || "en-IN";
+  return "en-IN";
+}
+
+export function VoiceDictate({ onTranscript, disabled, label = "Dictate" }: Props) {
+  const [recording, setRecording] = useState(false);
+  const [lang, setLang] = useState<LangKey>(() => {
+    if (typeof window === "undefined") return "auto";
+    return (localStorage.getItem(LANG_STORAGE_KEY) as LangKey) || "auto";
+  });
+  const recRef = useRef<any>(null);
+  const finalRef = useRef("");
+  const supported = !!getSR();
+
+  useEffect(() => {
+    try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch {}
+  }, [lang]);
+
+  useEffect(() => () => { try { recRef.current?.stop(); } catch {} }, []);
+
+  const start = () => {
+    const SR = getSR();
+    if (!SR) { toast.error("Voice input not supported. Use Chrome for best results."); return; }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      const mimeType = ["audio/webm", "audio/mp4"].find((t) => MediaRecorder.isTypeSupported(t));
-      if (!mimeType) { stream.getTracks().forEach((t) => t.stop()); return toast.error("Browser cannot record a supported audio format."); }
-      chunks.current = [];
-      const rec = new MediaRecorder(stream, { mimeType });
-      rec.ondataavailable = (e) => e.data.size > 0 && chunks.current.push(e.data);
-      rec.onstop = async () => {
-        streamRef.current?.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunks.current, { type: rec.mimeType });
-        if (blob.size < 1024) { setState("idle"); return toast.error("Recording too short, please try again."); }
-        setState("uploading");
-        try {
-          const fd = new FormData();
-          fd.append("file", blob, `recording.${mimeType === "audio/mp4" ? "mp4" : "webm"}`);
-          const { data, error } = await supabase.functions.invoke("transcribe-audio", { body: fd });
-          if (error) throw error;
-          if (data?.text) onTranscript(String(data.text));
-          else toast.error("No transcript returned.");
-        } catch (e: any) {
-          toast.error(e.message ?? "Transcription failed");
-        } finally { setState("idle"); }
+      const rec = new SR();
+      rec.lang = resolveLang(lang);
+      rec.continuous = true;
+      rec.interimResults = true;
+      finalRef.current = "";
+      rec.onresult = (e: any) => {
+        let interim = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) finalRef.current += (finalRef.current ? " " : "") + t.trim();
+          else interim += t;
+        }
+        const text = (finalRef.current + " " + interim).trim();
+        if (text) onTranscript(text);
       };
+      rec.onerror = (e: any) => {
+        if (e.error === "not-allowed") toast.error("Microphone permission denied.");
+        else if (e.error !== "aborted" && e.error !== "no-speech") toast.error(`Voice error: ${e.error}`);
+        setRecording(false);
+      };
+      rec.onend = () => setRecording(false);
       recRef.current = rec;
       rec.start();
-      setState("recording");
-    } catch {
-      toast.error("Microphone access denied.");
+      setRecording(true);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Could not start voice input.");
     }
   };
+  const stop = () => { try { recRef.current?.stop(); } catch {} setRecording(false); };
 
-  const stop = () => recRef.current?.state === "recording" && recRef.current.stop();
+  if (!supported) return null;
 
-  if (state === "uploading") {
-    return <Button type="button" size="sm" variant="outline" disabled><Loader2 className="size-3.5 mr-1.5 animate-spin" />Transcribing…</Button>;
-  }
-  if (state === "recording") {
-    return <Button type="button" size="sm" variant="destructive" onClick={stop}><Square className="size-3.5 mr-1.5" />Stop</Button>;
-  }
   return (
-    <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={start}>
-      <Mic className="size-3.5 mr-1.5" />{label}
-    </Button>
+    <div className="inline-flex items-center gap-1">
+      {recording ? (
+        <Button type="button" size="sm" variant="destructive" onClick={stop}>
+          <Square className="size-3.5 mr-1.5" />Stop
+        </Button>
+      ) : (
+        <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={start}>
+          <Mic className="size-3.5 mr-1.5" />{label}
+        </Button>
+      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button type="button" size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+            {lang === "auto" ? "Auto" : lang === "hi-IN" ? "हिं" : "EN"}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="text-xs">
+          <DropdownMenuLabel className="text-[10px] uppercase">Language</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setLang("auto")}>Auto-detect</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setLang("en-IN")}>English (en-IN)</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setLang("hi-IN")}>Hindi (हिंदी)</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }

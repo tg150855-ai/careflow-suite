@@ -25,7 +25,8 @@ import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { RecordActions } from "@/components/common/record-actions";
 import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
-import { exportXlsx } from "@/lib/export";
+import ExcelJS from "exceljs";
+import { BRAND } from "@/components/brand";
 
 export const Route = createFileRoute("/_authenticated/patients/")({ component: PatientsPage });
 
@@ -196,40 +197,73 @@ function PatientsPage() {
     return data ?? [];
   }
 
-  async function downloadCsv() {
-    const rows = await fetchExportRows(); if (!rows) return;
-    const headers = ["UHID", "Name", "Mobile", "Gender", "Age", "Blood Group", "Registration Date"];
-    const csv = [
-      headers.join(","),
-      ...rows.map((r: any) => [
-        r.uhid ?? "—", r.full_name ?? "—", r.mobile ?? "—", r.gender ?? "—",
-        r.dob ? differenceInYears(new Date(), new Date(r.dob)) : "—",
-        r.blood_group ?? "—",
-        r.created_at ? format(new Date(r.created_at), "dd-MM-yyyy") : "—",
-      ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")),
-    ].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Patients_Export_${format(new Date(), "dd-MM-yyyy")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Exported ${rows.length} patients`);
+  async function getHospitalName(): Promise<string> {
+    try {
+      const { data } = await (supabase as any)
+        .from("hospital_settings")
+        .select("hospital_name")
+        .eq("id", "00000000-0000-0000-0000-000000000001")
+        .maybeSingle();
+      return data?.hospital_name || BRAND.name;
+    } catch { return BRAND.name; }
   }
 
-  async function downloadXlsx() {
-    const rows = await fetchExportRows(); if (!rows) return;
-    const mapped = rows.map((r: any) => ({
+  function mapRow(r: any) {
+    return {
       UHID: r.uhid ?? "—",
       Name: r.full_name ?? "—",
       Mobile: r.mobile ?? "—",
       Gender: r.gender ?? "—",
       Age: r.dob ? differenceInYears(new Date(), new Date(r.dob)) : "—",
       "Blood Group": r.blood_group ?? "—",
+      Address: [r.city, r.state].filter(Boolean).join(", ") || "—",
       "Registration Date": r.created_at ? format(new Date(r.created_at), "dd-MM-yyyy") : "—",
-    }));
-    await exportXlsx(mapped, `Patients_Export_${format(new Date(), "dd-MM-yyyy")}.xlsx`);
+    };
+  }
+
+  function triggerDownload(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function downloadCsv() {
+    const rows = await fetchExportRows(); if (!rows) return;
+    const hospital = await getHospitalName();
+    const mapped = rows.map(mapRow);
+    const headers = Object.keys(mapped[0] ?? { UHID: "", Name: "", Mobile: "", Gender: "", Age: "", "Blood Group": "", Address: "", "Registration Date": "" });
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = [
+      esc(hospital),
+      headers.join(","),
+      ...mapped.map((r: any) => headers.map((h) => esc(r[h])).join(",")),
+    ];
+    triggerDownload(new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" }), `Patients_Export_${format(new Date(), "dd-MM-yyyy")}.csv`);
+    toast.success(`Exported ${mapped.length} patients`);
+  }
+
+  async function downloadXlsx() {
+    const rows = await fetchExportRows(); if (!rows) return;
+    const hospital = await getHospitalName();
+    const mapped = rows.map(mapRow);
+    const headers = Object.keys(mapped[0] ?? { UHID: "", Name: "", Mobile: "", Gender: "", Age: "", "Blood Group": "", Address: "", "Registration Date": "" });
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Patients");
+    ws.mergeCells(1, 1, 1, headers.length);
+    const titleCell = ws.getCell(1, 1);
+    titleCell.value = hospital;
+    titleCell.font = { bold: true, size: 14 };
+    titleCell.alignment = { horizontal: "center" };
+    ws.addRow(headers).font = { bold: true };
+    for (const r of mapped) ws.addRow(headers.map((h) => (r as any)[h]));
+    ws.columns.forEach((c, i) => { c.width = Math.max(12, (headers[i]?.length ?? 10) + 4); });
+    const buf = await wb.xlsx.writeBuffer();
+    triggerDownload(
+      new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+      `Patients_Export_${format(new Date(), "dd-MM-yyyy")}.xlsx`,
+    );
     toast.success(`Exported ${mapped.length} patients`);
   }
 
