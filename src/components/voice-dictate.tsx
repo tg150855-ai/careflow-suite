@@ -36,7 +36,6 @@ export function VoiceDictate({ onTranscript, disabled, label = "Dictate" }: Prop
     return (localStorage.getItem(LANG_STORAGE_KEY) as LangKey) || "auto";
   });
   const recRef = useRef<any>(null);
-  const finalRef = useRef("");
   const supported = !!getSR();
 
   useEffect(() => {
@@ -53,16 +52,18 @@ export function VoiceDictate({ onTranscript, disabled, label = "Dictate" }: Prop
       rec.lang = resolveLang(lang);
       rec.continuous = true;
       rec.interimResults = true;
-      finalRef.current = "";
+      rec.maxAlternatives = 1;
       rec.onresult = (e: any) => {
-        let interim = "";
+        // Emit only NEW finalized segments once. Interim results are ignored
+        // to prevent duplicate/repeated text being appended by the parent.
+        let delta = "";
         for (let i = e.resultIndex; i < e.results.length; i++) {
-          const t = e.results[i][0].transcript;
-          if (e.results[i].isFinal) finalRef.current += (finalRef.current ? " " : "") + t.trim();
-          else interim += t;
+          if (e.results[i].isFinal) {
+            const t = (e.results[i][0].transcript || "").trim();
+            if (t) delta += (delta ? " " : "") + t;
+          }
         }
-        const text = (finalRef.current + " " + interim).trim();
-        if (text) onTranscript(text);
+        if (delta) onTranscript(delta);
       };
       rec.onerror = (e: any) => {
         if (e.error === "not-allowed") toast.error("Microphone permission denied.");
