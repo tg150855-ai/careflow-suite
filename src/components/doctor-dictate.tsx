@@ -76,19 +76,24 @@ export function DoctorDictate({
       rec.lang = resolveLang(lang);
       rec.continuous = true;
       rec.interimResults = true;
+      rec.maxAlternatives = 1;
       finalRef.current = "";
       lastEmittedRef.current = "";
       rec.onresult = (e: any) => {
-        let interim = "";
+        // Only act on newly FINALIZED segments to prevent repetition.
+        let delta = "";
         for (let i = e.resultIndex; i < e.results.length; i++) {
-          const t = e.results[i][0].transcript;
-          if (e.results[i].isFinal) finalRef.current += (finalRef.current ? " " : "") + t.trim();
-          else interim += t;
+          if (e.results[i].isFinal) {
+            const t = (e.results[i][0].transcript || "").trim();
+            if (t) delta += (delta ? " " : "") + t;
+          }
         }
-        const text = (finalRef.current + " " + interim).trim();
-        if (text && text !== lastEmittedRef.current) {
-          lastEmittedRef.current = text;
-          onTranscript(text, mode);
+        if (!delta) return;
+        finalRef.current = (finalRef.current ? finalRef.current + " " : "") + delta;
+        if (mode === "replace") {
+          onTranscript(finalRef.current, "replace");
+        } else {
+          onTranscript(delta, "append");
         }
       };
       rec.onerror = (e: any) => {
