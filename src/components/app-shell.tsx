@@ -34,7 +34,6 @@ const GROUPS: NavGroup[] = [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { to: "/emergency", label: "Emergency", icon: Siren },
       { to: "/patients", label: "Patients", icon: Users },
-      { to: "/documents", label: "Documents", icon: Files },
       { to: "/opd", label: "OPD", icon: Stethoscope },
       { to: "/ipd", label: "IPD", icon: BedDouble },
       { to: "/billing-center", label: "Billing", icon: FileBarChart },
