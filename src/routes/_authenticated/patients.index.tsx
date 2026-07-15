@@ -25,7 +25,8 @@ import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
 import { RecordActions } from "@/components/common/record-actions";
 import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
-import { exportXlsx } from "@/lib/export";
+import ExcelJS from "exceljs";
+import { BRAND } from "@/components/brand";
 
 export const Route = createFileRoute("/_authenticated/patients/")({ component: PatientsPage });
 
