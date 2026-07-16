@@ -13,7 +13,7 @@ import {
 
 type Props = { onTranscript: (text: string) => void; disabled?: boolean; label?: string };
 
-type LangKey = "auto" | "en-IN" | "hi-IN";
+type LangKey = "auto" | "en-IN" | "hi-IN" | "mr-IN";
 const LANG_STORAGE_KEY = "medicore.voice.lang";
 
 function getSR(): any {
