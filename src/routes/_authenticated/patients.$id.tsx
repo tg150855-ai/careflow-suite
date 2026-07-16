@@ -591,7 +591,15 @@ function PatientWorkspace() {
               />
             </TabsContent>
             <TabsContent value="docs" className="mt-4">
-              <DocsTab docs={bundle?.docs ?? []} patientId={id} />
+              <div className="space-y-6">
+                <PatientAttachments patientId={id} patient={patient} defaultDepartment="General" />
+                {(bundle?.docs?.length ?? 0) > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Legacy documents</div>
+                    <DocsTab docs={bundle?.docs ?? []} patientId={id} />
+                  </div>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
