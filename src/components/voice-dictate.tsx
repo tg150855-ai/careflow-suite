@@ -24,6 +24,7 @@ function getSR(): any {
 function resolveLang(pref: LangKey): string {
   if (pref !== "auto") return pref;
   const nav = typeof navigator !== "undefined" ? navigator.language : "";
+  if (/^mr/i.test(nav)) return "mr-IN";
   if (/^hi/i.test(nav)) return "hi-IN";
   if (/^en/i.test(nav)) return nav || "en-IN";
   return "en-IN";
