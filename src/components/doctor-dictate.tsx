@@ -133,7 +133,7 @@ export function DoctorDictate({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button type="button" size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-              {mode}·{lang === "auto" ? "Auto" : lang === "hi-IN" ? "हिं" : "EN"}
+              {mode}·{lang === "auto" ? "Auto" : lang === "hi-IN" ? "हिं" : lang === "mr-IN" ? "मरा" : "EN"}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="text-xs">
@@ -144,7 +144,8 @@ export function DoctorDictate({
             <DropdownMenuLabel className="text-[10px] uppercase">Language</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => setLang("auto")}>Auto-detect</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setLang("en-IN")}>English (en-IN)</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLang("hi-IN")}>Hindi (हिंदी)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLang("hi-IN")}>Hindi (हिंदी) — supports Hinglish</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLang("mr-IN")}>Marathi (मराठी)</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )}
