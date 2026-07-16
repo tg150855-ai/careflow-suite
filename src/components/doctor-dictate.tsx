@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 type Mode = "append" | "replace";
-type LangKey = "auto" | "en-IN" | "hi-IN";
+type LangKey = "auto" | "en-IN" | "hi-IN" | "mr-IN";
 
 type Props = {
   onTranscript: (text: string, mode: Mode) => void;
