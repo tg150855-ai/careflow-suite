@@ -13,7 +13,7 @@ import {
 
 type Props = { onTranscript: (text: string) => void; disabled?: boolean; label?: string };
 
-type LangKey = "auto" | "en-IN" | "hi-IN";
+type LangKey = "auto" | "en-IN" | "hi-IN" | "mr-IN";
 const LANG_STORAGE_KEY = "medicore.voice.lang";
 
 function getSR(): any {
@@ -24,6 +24,7 @@ function getSR(): any {
 function resolveLang(pref: LangKey): string {
   if (pref !== "auto") return pref;
   const nav = typeof navigator !== "undefined" ? navigator.language : "";
+  if (/^mr/i.test(nav)) return "mr-IN";
   if (/^hi/i.test(nav)) return "hi-IN";
   if (/^en/i.test(nav)) return nav || "en-IN";
   return "en-IN";
@@ -96,7 +97,7 @@ export function VoiceDictate({ onTranscript, disabled, label = "Dictate" }: Prop
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button type="button" size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-            {lang === "auto" ? "Auto" : lang === "hi-IN" ? "हिं" : "EN"}
+            {lang === "auto" ? "Auto" : lang === "hi-IN" ? "हिं" : lang === "mr-IN" ? "मरा" : "EN"}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="text-xs">
@@ -104,7 +105,8 @@ export function VoiceDictate({ onTranscript, disabled, label = "Dictate" }: Prop
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setLang("auto")}>Auto-detect</DropdownMenuItem>
           <DropdownMenuItem onClick={() => setLang("en-IN")}>English (en-IN)</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setLang("hi-IN")}>Hindi (हिंदी)</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setLang("hi-IN")}>Hindi (हिंदी) — supports Hinglish</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setLang("mr-IN")}>Marathi (मराठी)</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

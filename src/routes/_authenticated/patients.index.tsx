@@ -267,6 +267,26 @@ function PatientsPage() {
     toast.success(`Exported ${mapped.length} patients`);
   }
 
+  async function downloadPdf() {
+    const rows = await fetchExportRows(); if (!rows) return;
+    const hospital = await getHospitalName();
+    const mapped = rows.map(mapRow);
+    if (!mapped.length) return toast.error("No records to export");
+    const headers = Object.keys(mapped[0]);
+    const w = window.open("", "_blank"); if (!w) return;
+    const style = `body{font-family:system-ui,sans-serif;padding:20px}h1{font-size:18px;margin:0 0 4px}h2{font-size:12px;color:#555;margin:0 0 16px}table{border-collapse:collapse;width:100%;font-size:11px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5}`;
+    w.document.write(`<html><head><title>Patients Report — ${format(new Date(), "dd-MM-yyyy")}</title><style>${style}</style></head><body>
+      <h1>${hospital}</h1>
+      <h2>Patients Report · Generated ${format(new Date(), "dd MMM yyyy HH:mm")} · ${mapped.length} records</h2>
+      <table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${mapped.map((r: any) => `<tr>${headers.map((h) => `<td>${String((r as any)[h] ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody></table>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 300);
+    toast.success(`PDF preview for ${mapped.length} patients`);
+  }
+
+
 
   return (
     <div className="space-y-6">
@@ -286,9 +306,9 @@ function PatientsPage() {
             <FileSpreadsheet className="size-4 mr-2" />
             Excel
           </Button>
-          <Button variant="outline" size="lg" onClick={() => window.print()}>
+          <Button variant="outline" size="lg" onClick={downloadPdf}>
             <Printer className="size-4 mr-2" />
-            Print / PDF
+            PDF
           </Button>
           <Button asChild size="lg">
             <Link to="/patients/new">
