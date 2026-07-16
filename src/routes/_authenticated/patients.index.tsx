@@ -306,9 +306,9 @@ function PatientsPage() {
             <FileSpreadsheet className="size-4 mr-2" />
             Excel
           </Button>
-          <Button variant="outline" size="lg" onClick={() => window.print()}>
+          <Button variant="outline" size="lg" onClick={downloadPdf}>
             <Printer className="size-4 mr-2" />
-            Print / PDF
+            PDF
           </Button>
           <Button asChild size="lg">
             <Link to="/patients/new">
