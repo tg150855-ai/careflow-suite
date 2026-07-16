@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,12 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Siren, Plus, Activity, AlertOctagon, Clock, Pencil, User } from "lucide-react";
+import {
+  Siren, Plus, Activity, AlertOctagon, Clock, Pencil, User,
+  Download, FileSpreadsheet, Printer, RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { RecordActions } from "@/components/common/record-actions";
 import { SearchBox } from "@/components/common/search-box";
 import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
+import { logAudit } from "@/lib/audit";
+import { BRAND } from "@/components/brand";
+import ExcelJS from "exceljs";
 
 export const Route = createFileRoute("/_authenticated/emergency")({ component: EmergencyPage });
 
@@ -34,38 +41,91 @@ const triageColor: Record<string, string> = {
   green: "bg-success/20 text-success",
 };
 
+const STATUS_OPTIONS = ["waiting", "in_treatment", "admitted", "discharged"] as const;
+
 function EmergencyPage() {
-  const [cases, setCases] = useState<ER[]>([]);
+  const qc = useQueryClient();
   const [doctors, setDoctors] = useState<{ id: string; name: string }[]>([]);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<string>("all");
+  const [triageF, setTriageF] = useState<string>("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [appliedFrom, setAppliedFrom] = useState("");
+  const [appliedTo, setAppliedTo] = useState("");
   const [editing, setEditing] = useState<ER | null>(null);
   const [form, setForm] = useState({ full_name: "", mobile: "", gender: "male", approx_age: 30, emergency_type: "trauma", chief_complaint: "", triage: "yellow" });
 
-  async function load() {
-    const { data } = await (supabase as any)
-      .from("emergency_cases")
-      .select("*, patients(id, uhid)")
-      .order("arrival_time", { ascending: false })
-      .limit(200);
-    setCases((data as ER[]) ?? []);
-  }
-  useEffect(() => {
-    load();
+  const applyDates = () => { setAppliedFrom(fromDate); setAppliedTo(toDate); };
+  const resetDates = () => { setFromDate(""); setToDate(""); setAppliedFrom(""); setAppliedTo(""); };
+
+  // Load doctors once
+  useMemo(() => {
     (async () => {
       const { data } = await supabase.from("doctors").select("id, name").order("name");
       setDoctors(data ?? []);
     })();
   }, []);
 
-  /** Find patient by mobile/UHID or create a new one, return patient id. */
+  const buildBaseQuery = () => {
+    let query = (supabase as any)
+      .from("emergency_cases")
+      .select("*, patients(id, uhid)");
+    if (status !== "all") query = query.eq("status", status);
+    if (triageF !== "all") query = query.eq("triage", triageF);
+    if (appliedFrom) query = query.gte("arrival_time", new Date(appliedFrom).toISOString());
+    if (appliedTo) {
+      const end = new Date(appliedTo); end.setHours(23, 59, 59, 999);
+      query = query.lte("arrival_time", end.toISOString());
+    }
+    return query;
+  };
+
+  const { data: cases = [], isFetching, refetch, error } = useQuery({
+    queryKey: ["emergency_cases", status, triageF, appliedFrom, appliedTo],
+    queryFn: async () => {
+      const { data, error } = await buildBaseQuery()
+        .order("arrival_time", { ascending: false })
+        .limit(500);
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error("[emergency] load failed", error);
+        throw error;
+      }
+      return (data as ER[]) ?? [];
+    },
+  });
+
+  if (error) {
+    // surface once
+    // toast.error handles dedupe internally
+    toast.error((error as any)?.message ?? "Failed to load emergency cases");
+  }
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return cases;
+    return cases.filter((c) =>
+      [c.full_name, c.emergency_no, c.mobile, c.patients?.uhid, c.emergency_type, c.chief_complaint]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q)),
+    );
+  }, [cases, search]);
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["emergency_cases"] });
+    qc.invalidateQueries({ queryKey: ["patients-dash"] });
+    qc.invalidateQueries({ queryKey: ["patients"] });
+  };
+
+  /** Find patient by mobile or create a new one, return patient id. */
   async function linkOrCreatePatient(payload: { full_name: string; mobile: string; gender: string; approx_age: number }) {
     const mobile = payload.mobile?.trim();
     if (mobile) {
       const { data } = await supabase.from("patients").select("id").eq("mobile", mobile).limit(1).maybeSingle();
       if (data?.id) return data.id as string;
     }
-    // Create minimal patient record
     const dob = payload.approx_age
       ? new Date(new Date().getFullYear() - payload.approx_age, 0, 1).toISOString().slice(0, 10)
       : null;
@@ -82,6 +142,7 @@ function EmergencyPage() {
       .select("id")
       .single();
     if (error) {
+      // eslint-disable-next-line no-console
       console.warn("Auto-create patient failed:", error.message);
       return null;
     }
@@ -89,23 +150,30 @@ function EmergencyPage() {
   }
 
   async function submit() {
-    if (!form.full_name) return toast.error("Name required");
+    if (!form.full_name.trim()) return toast.error("Name required");
     const user = (await supabase.auth.getUser()).data.user;
     const patient_id = await linkOrCreatePatient(form);
-    const { error } = await (supabase as any).from("emergency_cases").insert({ ...form, patient_id, created_by: user?.id } as any);
+    const { data: inserted, error } = await (supabase as any)
+      .from("emergency_cases")
+      .insert({ ...form, patient_id, created_by: user?.id } as any)
+      .select("id, emergency_no")
+      .single();
     if (error) return toast.error(error.message);
-    toast.success(patient_id ? "Emergency registered & linked to patient" : "Emergency case registered");
+    await logAudit({ action: "create", entity: "emergency_cases", entityId: inserted?.id, after: { ...form, patient_id } });
+    toast.success(`Emergency registered · ${inserted?.emergency_no ?? ""}`);
     setOpen(false);
     setForm({ full_name: "", mobile: "", gender: "male", approx_age: 30, emergency_type: "trauma", chief_complaint: "", triage: "yellow" });
-    load();
+    invalidate();
   }
 
-  async function updateStatus(id: string, status: string) {
-    const patch: Record<string, unknown> = { status };
-    if (status === "in_treatment") patch.treatment_start = new Date().toISOString();
-    if (status === "discharged" || status === "admitted") patch.treatment_end = new Date().toISOString();
-    await (supabase as any).from("emergency_cases").update(patch as any).eq("id", id);
-    load();
+  async function updateStatus(id: string, newStatus: string) {
+    const patch: Record<string, unknown> = { status: newStatus };
+    if (newStatus === "in_treatment") patch.treatment_start = new Date().toISOString();
+    if (newStatus === "discharged" || newStatus === "admitted") patch.treatment_end = new Date().toISOString();
+    const { error } = await (supabase as any).from("emergency_cases").update(patch as any).eq("id", id);
+    if (error) return toast.error(error.message);
+    await logAudit({ action: "update", entity: "emergency_cases", entityId: id, after: patch });
+    invalidate();
   }
 
   async function saveEdit() {
@@ -120,15 +188,107 @@ function EmergencyPage() {
     };
     const { error } = await (supabase as any).from("emergency_cases").update(patch).eq("id", editing.id);
     if (error) return toast.error(error.message);
+    await logAudit({ action: "update", entity: "emergency_cases", entityId: editing.id, after: patch });
     toast.success("Emergency updated");
     setEditing(null);
-    load();
+    invalidate();
   }
 
-  async function removeCase(id: string) {
-    const { error } = await (supabase as any).from("emergency_cases").delete().eq("id", id);
+  async function removeCase(c: ER) {
+    const { error } = await (supabase as any).from("emergency_cases").delete().eq("id", c.id);
     if (error) return toast.error(error.message);
-    toast.success("Deleted"); load();
+    await logAudit({ action: "delete", entity: "emergency_cases", entityId: c.id, before: c });
+    toast.success("Deleted");
+    invalidate();
+  }
+
+  async function getHospitalName(): Promise<string> {
+    try {
+      const { data } = await (supabase as any)
+        .from("hospital_settings")
+        .select("hospital_name")
+        .eq("id", "00000000-0000-0000-0000-000000000001")
+        .maybeSingle();
+      return data?.hospital_name || BRAND.name;
+    } catch { return BRAND.name; }
+  }
+
+  function mapRow(c: ER) {
+    return {
+      "Emergency ID": c.emergency_no ?? "—",
+      UHID: c.patients?.uhid ?? "—",
+      "Patient Name": c.full_name ?? "—",
+      Mobile: c.mobile ?? "—",
+      Gender: c.gender ?? "—",
+      Age: c.approx_age ?? "—",
+      Triage: (c.triage ?? "—").toUpperCase(),
+      Type: c.emergency_type ?? "—",
+      "Chief Complaint": c.chief_complaint ?? "—",
+      "Arrival Time": c.arrival_time ? format(new Date(c.arrival_time), "dd-MM-yyyy HH:mm") : "—",
+      Status: c.status ?? "—",
+    };
+  }
+
+  function triggerDownload(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function downloadCsv() {
+    const hospital = await getHospitalName();
+    const rows = filtered.map(mapRow);
+    if (!rows.length) return toast.error("No records to export");
+    const headers = Object.keys(rows[0]);
+    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = [esc(hospital), headers.join(","), ...rows.map((r) => headers.map((h) => esc((r as any)[h])).join(","))];
+    triggerDownload(new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" }), `Emergency_Export_${format(new Date(), "dd-MM-yyyy")}.csv`);
+    logAudit({ action: "export", entity: "emergency_cases", after: { format: "csv", count: rows.length } });
+    toast.success(`Exported ${rows.length} cases`);
+  }
+
+  async function downloadXlsx() {
+    const hospital = await getHospitalName();
+    const rows = filtered.map(mapRow);
+    if (!rows.length) return toast.error("No records to export");
+    const headers = Object.keys(rows[0]);
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Emergency");
+    ws.mergeCells(1, 1, 1, headers.length);
+    const titleCell = ws.getCell(1, 1);
+    titleCell.value = hospital;
+    titleCell.font = { bold: true, size: 14 };
+    titleCell.alignment = { horizontal: "center" };
+    ws.addRow(headers).font = { bold: true };
+    for (const r of rows) ws.addRow(headers.map((h) => (r as any)[h]));
+    ws.columns.forEach((c, i) => { c.width = Math.max(12, (headers[i]?.length ?? 10) + 4); });
+    const buf = await wb.xlsx.writeBuffer();
+    triggerDownload(
+      new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+      `Emergency_Export_${format(new Date(), "dd-MM-yyyy")}.xlsx`,
+    );
+    logAudit({ action: "export", entity: "emergency_cases", after: { format: "xlsx", count: rows.length } });
+    toast.success(`Exported ${rows.length} cases`);
+  }
+
+  async function downloadPdf() {
+    const hospital = await getHospitalName();
+    const rows = filtered.map(mapRow);
+    if (!rows.length) return toast.error("No records to export");
+    const headers = Object.keys(rows[0]);
+    const w = window.open("", "_blank"); if (!w) return;
+    const style = `body{font-family:system-ui,sans-serif;padding:20px}h1{font-size:18px;margin:0 0 4px}h2{font-size:12px;color:#555;margin:0 0 16px}table{border-collapse:collapse;width:100%;font-size:11px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#f5f5f5}`;
+    w.document.write(`<html><head><title>Emergency Report — ${format(new Date(), "dd-MM-yyyy")}</title><style>${style}</style></head><body>
+      <h1>${hospital}</h1>
+      <h2>Emergency Cases Report · Generated ${format(new Date(), "dd MMM yyyy HH:mm")} · ${rows.length} records</h2>
+      <table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map((r) => `<tr>${headers.map((h) => `<td>${String((r as any)[h] ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody></table>
+    </body></html>`);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 300);
+    logAudit({ action: "export", entity: "emergency_cases", after: { format: "pdf", count: rows.length } });
   }
 
   function printCase(c: ER) {
@@ -136,97 +296,127 @@ function EmergencyPage() {
     w.document.write(`<pre style="font-family:sans-serif;padding:24px;white-space:pre-wrap">Emergency Case Slip
 ER No: ${c.emergency_no}
 Patient: ${c.full_name}
+UHID: ${c.patients?.uhid ?? "—"}
 Gender/Age: ${c.gender ?? "—"}, ${c.approx_age ?? "—"}y
 Mobile: ${c.mobile ?? "—"}
 Triage: ${(c.triage ?? "").toUpperCase()}
 Type: ${c.emergency_type ?? "—"}
+Chief Complaint: ${c.chief_complaint ?? "—"}
 Arrival: ${format(new Date(c.arrival_time), "dd MMM yyyy HH:mm")}
 Status: ${c.status}</pre>`);
     w.document.close(); w.focus(); w.print();
   }
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return cases;
-    return cases.filter((c) =>
-      [c.full_name, c.emergency_no, c.mobile, c.patients?.uhid]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(q)),
-    );
-  }, [cases, search]);
-
   const waiting = cases.filter((c) => c.status === "waiting").length;
   const critical = cases.filter((c) => c.triage === "red" && c.status !== "discharged").length;
   const active = cases.filter((c) => ["waiting", "in_treatment"].includes(c.status)).length;
+  const todayCount = cases.filter((c) => new Date(c.arrival_time).toDateString() === new Date().toDateString()).length;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2"><Siren className="size-6 text-destructive" /> Emergency & Casualty</h1>
-          <p className="text-sm text-muted-foreground">Fast-track registration and triage.</p>
+          <p className="text-sm text-muted-foreground">Fast-track registration and triage. {filtered.length} of {cases.length} shown.</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button className="bg-destructive hover:bg-destructive/90"><Plus className="size-4" /> Quick Register</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Emergency Registration</DialogTitle></DialogHeader>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2"><Label>Full Name *</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
-              <div><Label>Mobile</Label><Input value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} /></div>
-              <div><Label>Age</Label><Input type="number" value={form.approx_age} onChange={(e) => setForm({ ...form, approx_age: Number(e.target.value) })} /></div>
-              <div><Label>Gender</Label>
-                <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
-                </Select>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`size-4 mr-1.5 ${isFetching ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={downloadCsv}><Download className="size-4 mr-1.5" />CSV</Button>
+          <Button variant="outline" size="sm" onClick={downloadXlsx}><FileSpreadsheet className="size-4 mr-1.5" />Excel</Button>
+          <Button variant="outline" size="sm" onClick={downloadPdf}><Printer className="size-4 mr-1.5" />PDF</Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button className="bg-destructive hover:bg-destructive/90"><Plus className="size-4" /> Quick Register</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Emergency Registration</DialogTitle></DialogHeader>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2"><Label>Full Name *</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+                <div><Label>Mobile</Label><Input value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} /></div>
+                <div><Label>Age</Label><Input type="number" value={form.approx_age} onChange={(e) => setForm({ ...form, approx_age: Number(e.target.value) })} /></div>
+                <div><Label>Gender</Label>
+                  <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Triage</Label>
+                  <Select value={form.triage} onValueChange={(v) => setForm({ ...form, triage: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="red">Red — Critical</SelectItem>
+                      <SelectItem value="orange">Orange — Urgent</SelectItem>
+                      <SelectItem value="yellow">Yellow — Semi-Urgent</SelectItem>
+                      <SelectItem value="green">Green — Stable</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2"><Label>Emergency Type</Label><Input value={form.emergency_type} onChange={(e) => setForm({ ...form, emergency_type: e.target.value })} placeholder="trauma / cardiac / poisoning ..." /></div>
+                <div className="col-span-2"><Label>Chief Complaint</Label><Input value={form.chief_complaint} onChange={(e) => setForm({ ...form, chief_complaint: e.target.value })} /></div>
               </div>
-              <div><Label>Triage</Label>
-                <Select value={form.triage} onValueChange={(v) => setForm({ ...form, triage: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="red">Red — Critical</SelectItem>
-                    <SelectItem value="orange">Orange — Urgent</SelectItem>
-                    <SelectItem value="yellow">Yellow — Semi-Urgent</SelectItem>
-                    <SelectItem value="green">Green — Stable</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-2"><Label>Emergency Type</Label><Input value={form.emergency_type} onChange={(e) => setForm({ ...form, emergency_type: e.target.value })} placeholder="trauma / cardiac / poisoning ..." /></div>
-              <div className="col-span-2"><Label>Chief Complaint</Label><Input value={form.chief_complaint} onChange={(e) => setForm({ ...form, chief_complaint: e.target.value })} /></div>
-            </div>
-            <DialogFooter><Button onClick={submit}>Register</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter><Button onClick={submit}>Register</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat icon={<Clock />} label="Waiting" value={waiting} />
         <Stat icon={<AlertOctagon />} label="Critical (Red)" value={critical} />
         <Stat icon={<Activity />} label="Active Cases" value={active} />
-        <Stat icon={<Siren />} label="Today Total" value={cases.filter((c) => new Date(c.arrival_time).toDateString() === new Date().toDateString()).length} />
+        <Stat icon={<Siren />} label="Today Total" value={todayCount} />
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle>Active Casualty Board</CardTitle>
-          <SearchBox
-            value={search}
-            onChange={setSearch}
-            placeholder="Search by patient name, ER no, or UHID..."
-            className="w-full max-w-sm"
-          />
+        <CardHeader className="flex flex-col md:flex-row md:items-center gap-3">
+          <CardTitle className="text-base">Active Casualty Board</CardTitle>
+          <div className="flex flex-wrap gap-2 md:ml-auto items-end">
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">From</label>
+              <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-8 w-36" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">To</label>
+              <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-8 w-36" />
+            </div>
+            <Button size="sm" variant="outline" className="h-8" onClick={applyDates}>Apply</Button>
+            <Button size="sm" variant="ghost" className="h-8" onClick={resetDates}>Reset</Button>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="h-8 w-36"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {STATUS_OPTIONS.map((s) => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={triageF} onValueChange={setTriageF}>
+              <SelectTrigger className="h-8 w-32"><SelectValue placeholder="Triage" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All triage</SelectItem>
+                <SelectItem value="red">Red</SelectItem>
+                <SelectItem value="orange">Orange</SelectItem>
+                <SelectItem value="yellow">Yellow</SelectItem>
+                <SelectItem value="green">Green</SelectItem>
+              </SelectContent>
+            </Select>
+            <SearchBox
+              value={search}
+              onChange={setSearch}
+              placeholder="Search name, ER no, UHID, complaint..."
+              className="w-full md:w-64"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader><TableRow><TableHead>ER No</TableHead><TableHead>Patient</TableHead><TableHead>Triage</TableHead><TableHead>Type</TableHead><TableHead>Arrival</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
             <TableBody>
-              {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{cases.length === 0 ? "No emergency cases" : "No matches"}</TableCell></TableRow>}
+              {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{isFetching ? "Loading…" : cases.length === 0 ? "No emergency cases" : "No matches for current filters"}</TableCell></TableRow>}
               {filtered.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-mono text-xs">{c.emergency_no}</TableCell>
                   <TableCell>
                     <div className="font-medium flex items-center gap-1.5">
-                      {c.full_name}
+                      {c.full_name || "—"}
                       {c.patients?.id && (
                         <Link
                           to="/patients/$id"
@@ -264,12 +454,13 @@ Status: ${c.status}</pre>`);
                         onWhatsApp={() => shareOnWhatsApp(summarizeRecord("Emergency Case", {
                           ER: c.emergency_no,
                           Patient: c.full_name,
+                          UHID: c.patients?.uhid,
                           Triage: (c.triage ?? "").toUpperCase(),
                           Type: c.emergency_type ?? "—",
                           Status: c.status,
                           Arrival: format(new Date(c.arrival_time), "dd MMM HH:mm"),
                         }), undefined, c.mobile ?? undefined)}
-                        onDelete={() => removeCase(c.id)}
+                        onDelete={() => removeCase(c)}
                       />
                     </div>
                   </TableCell>
@@ -351,8 +542,11 @@ Status: ${c.status}</pre>`);
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
     <Card><CardContent className="p-5 flex items-center gap-3">
-      <div className="size-10 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center">{icon}</div>
-      <div><div className="text-xs text-muted-foreground">{label}</div><div className="text-xl font-semibold">{value}</div></div>
+      <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">{icon}</div>
+      <div>
+        <div className="text-2xl font-semibold tabular-nums">{value}</div>
+        <div className="text-xs text-muted-foreground">{label}</div>
+      </div>
     </CardContent></Card>
   );
 }
