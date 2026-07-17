@@ -338,6 +338,7 @@ Status: ${c.status}</pre>`);
           <Button variant="outline" size="sm" onClick={downloadCsv}><Download className="size-4 mr-1.5" />CSV</Button>
           <Button variant="outline" size="sm" onClick={downloadXlsx}><FileSpreadsheet className="size-4 mr-1.5" />Excel</Button>
           <Button variant="outline" size="sm" onClick={downloadPdf}><Printer className="size-4 mr-1.5" />PDF</Button>
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}><Upload className="size-4 mr-1.5" />Import</Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button className="bg-destructive hover:bg-destructive/90"><Plus className="size-4" /> Quick Register</Button></DialogTrigger>
             <DialogContent>
