@@ -48,6 +48,7 @@ function EmergencyPage() {
   const qc = useQueryClient();
   const [doctors, setDoctors] = useState<{ id: string; name: string }[]>([]);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [triageF, setTriageF] = useState<string>("all");
