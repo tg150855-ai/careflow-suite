@@ -139,6 +139,7 @@ function PatientsPage() {
   const [appliedFrom, setAppliedFrom] = useState("");
   const [appliedTo, setAppliedTo] = useState("");
   const [page, setPage] = useState(1);
+  const [importOpen, setImportOpen] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const pageSize = 20;
