@@ -13,8 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import {
   Siren, Plus, Activity, AlertOctagon, Clock, Pencil, User,
-  Download, FileSpreadsheet, Printer, RefreshCw,
+  Download, FileSpreadsheet, Printer, RefreshCw, Upload,
 } from "lucide-react";
+import { DataImportDialog } from "@/components/data-import-dialog";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { RecordActions } from "@/components/common/record-actions";
