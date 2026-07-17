@@ -548,6 +548,61 @@ Status: ${c.status}</pre>`);
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DataImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="Import Emergency Cases"
+        templateName="Emergency_Import_Template"
+        helperText="Duplicates checked by mobile — matching patients are reused; new mobiles create a patient record with auto UHID."
+        columns={[
+          { key: "Patient Name", required: true, example: "Ramesh Kumar" },
+          { key: "Mobile", example: "9876543210" },
+          { key: "Gender", example: "male" },
+          { key: "Age", aliases: ["Approx Age"], example: "42" },
+          { key: "Triage", example: "yellow" },
+          { key: "Type", aliases: ["Emergency Type"], example: "trauma" },
+          { key: "Arrival Date", aliases: ["Arrival Time"], example: "2025-01-15 10:30" },
+          { key: "Complaint", aliases: ["Chief Complaint"], example: "chest pain" },
+          { key: "Status", example: "waiting" },
+        ]}
+        onImport={async (rows) => {
+          const user = (await supabase.auth.getUser()).data.user;
+          let inserted = 0, skipped = 0, failed = 0;
+          for (const r of rows) {
+            try {
+              const pid = await linkOrCreatePatient({
+                full_name: r["Patient Name"],
+                mobile: r["Mobile"] ?? "",
+                gender: (r["Gender"] || "other").toLowerCase(),
+                approx_age: Number(r["Age"]) || 0,
+              });
+              const arrival = r["Arrival Date"] ? new Date(r["Arrival Date"]) : new Date();
+              const triage = (r["Triage"] || "yellow").toLowerCase();
+              const validTriage = ["red", "orange", "yellow", "green"].includes(triage) ? triage : "yellow";
+              const statusVal = (r["Status"] || "waiting").toLowerCase().replace(/\s+/g, "_");
+              const validStatus = ["waiting", "in_treatment", "admitted", "discharged"].includes(statusVal) ? statusVal : "waiting";
+              const { error } = await (supabase as any).from("emergency_cases").insert({
+                full_name: r["Patient Name"],
+                mobile: r["Mobile"] || null,
+                gender: (r["Gender"] || "other").toLowerCase(),
+                approx_age: Number(r["Age"]) || null,
+                emergency_type: r["Type"] || null,
+                chief_complaint: r["Complaint"] || null,
+                triage: validTriage,
+                status: validStatus,
+                arrival_time: isNaN(arrival.getTime()) ? new Date().toISOString() : arrival.toISOString(),
+                patient_id: pid,
+                created_by: user?.id,
+              });
+              if (error) { failed++; console.warn("[er-import]", error.message); } else inserted++;
+            } catch (e) { failed++; console.warn("[er-import]", e); }
+          }
+          await logAudit({ action: "import", entity: "emergency_cases", after: { inserted, skipped, failed } });
+          invalidate();
+          return { inserted, skipped, failed };
+        }}
+      />
     </div>
   );
 }
