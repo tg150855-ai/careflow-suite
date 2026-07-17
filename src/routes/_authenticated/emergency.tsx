@@ -71,9 +71,12 @@ function EmergencyPage() {
   }, []);
 
   const buildBaseQuery = () => {
+    // NOTE: no schema FK exists between emergency_cases.patient_id and patients,
+    // so we intentionally avoid PostgREST relational embedding and hydrate
+    // patient UHIDs in a second call below.
     let query = (supabase as any)
       .from("emergency_cases")
-      .select("*, patients(id, uhid)");
+      .select("*");
     if (status !== "all") query = query.eq("status", status);
     if (triageF !== "all") query = query.eq("triage", triageF);
     if (appliedFrom) query = query.gte("arrival_time", new Date(appliedFrom).toISOString());
@@ -95,7 +98,14 @@ function EmergencyPage() {
         console.error("[emergency] load failed", error);
         throw error;
       }
-      return (data as ER[]) ?? [];
+      const rows = (data ?? []) as ER[];
+      const ids = Array.from(new Set(rows.map(r => r.patient_id).filter(Boolean))) as string[];
+      if (ids.length) {
+        const { data: pats } = await supabase.from("patients").select("id, uhid").in("id", ids);
+        const map = new Map((pats ?? []).map((p: any) => [p.id, p]));
+        rows.forEach(r => { if (r.patient_id && map.has(r.patient_id)) r.patients = map.get(r.patient_id) as any; });
+      }
+      return rows;
     },
   });
 
