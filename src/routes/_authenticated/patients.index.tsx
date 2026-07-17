@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import {
-  ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search,
+  ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search, Upload,
   Users, UserPlus, CalendarDays, Activity, BedDouble, Siren, FileSpreadsheet,
 } from "lucide-react";
+import { DataImportDialog } from "@/components/data-import-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 import { differenceInYears, format, startOfDay, startOfMonth } from "date-fns";
@@ -138,6 +139,7 @@ function PatientsPage() {
   const [appliedFrom, setAppliedFrom] = useState("");
   const [appliedTo, setAppliedTo] = useState("");
   const [page, setPage] = useState(1);
+  const [importOpen, setImportOpen] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const pageSize = 20;
@@ -310,6 +312,10 @@ function PatientsPage() {
             <Printer className="size-4 mr-2" />
             PDF
           </Button>
+          <Button variant="outline" size="lg" onClick={() => setImportOpen(true)}>
+            <Upload className="size-4 mr-2" />
+            Import
+          </Button>
           <Button asChild size="lg">
             <Link to="/patients/new">
               <Plus className="size-4 mr-2" />
@@ -481,6 +487,60 @@ function PatientsPage() {
           </div>
         </div>
       </Card>
+
+      <DataImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="Import Patients"
+        templateName="Patients_Import_Template"
+        helperText="Duplicates detected by mobile number are skipped. UHIDs are auto-generated."
+        columns={[
+          { key: "Name", aliases: ["Full Name"], required: true, example: "Ramesh Kumar" },
+          { key: "Mobile", required: true, example: "9876543210" },
+          { key: "Gender", example: "male" },
+          { key: "Age", aliases: ["DOB"], example: "42" },
+          { key: "Blood Group", example: "O+" },
+          { key: "Address", aliases: ["City"], example: "Pune, Maharashtra" },
+          { key: "Email", example: "patient@example.com" },
+        ]}
+        onImport={async (rows) => {
+          const user = (await supabase.auth.getUser()).data.user;
+          let inserted = 0, skipped = 0, failed = 0;
+          for (const r of rows) {
+            try {
+              const mobile = (r["Mobile"] ?? "").trim();
+              if (mobile) {
+                const { data: existing } = await supabase.from("patients").select("id").eq("mobile", mobile).limit(1).maybeSingle();
+                if (existing?.id) { skipped++; continue; }
+              }
+              const ageVal = (r["Age"] ?? "").trim();
+              let dob: string | null = null;
+              if (ageVal) {
+                if (/^\d{4}-\d{2}-\d{2}/.test(ageVal)) dob = ageVal.slice(0, 10);
+                else {
+                  const n = Number(ageVal);
+                  if (!isNaN(n) && n > 0) dob = new Date(new Date().getFullYear() - n, 0, 1).toISOString().slice(0, 10);
+                }
+              }
+              const { error } = await (supabase as any).from("patients").insert({
+                full_name: r["Name"],
+                mobile: mobile || null,
+                gender: (r["Gender"] || "other").toLowerCase(),
+                dob,
+                blood_group: r["Blood Group"] || null,
+                city: r["Address"] || null,
+                email: r["Email"] || null,
+                created_by: user?.id,
+              });
+              if (error) { failed++; console.warn("[patient-import]", error.message); } else inserted++;
+            } catch (e) { failed++; console.warn("[patient-import]", e); }
+          }
+          await logAudit({ action: "import", entity: "patients", after: { inserted, skipped, failed } });
+          queryClient.invalidateQueries({ queryKey: ["patients"] });
+          queryClient.invalidateQueries({ queryKey: ["patients-dash"] });
+          return { inserted, skipped, failed };
+        }}
+      />
     </div>
   );
 }

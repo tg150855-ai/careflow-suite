@@ -13,8 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import {
   Siren, Plus, Activity, AlertOctagon, Clock, Pencil, User,
-  Download, FileSpreadsheet, Printer, RefreshCw,
+  Download, FileSpreadsheet, Printer, RefreshCw, Upload,
 } from "lucide-react";
+import { DataImportDialog } from "@/components/data-import-dialog";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { RecordActions } from "@/components/common/record-actions";
@@ -47,6 +48,7 @@ function EmergencyPage() {
   const qc = useQueryClient();
   const [doctors, setDoctors] = useState<{ id: string; name: string }[]>([]);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [triageF, setTriageF] = useState<string>("all");
@@ -69,9 +71,12 @@ function EmergencyPage() {
   }, []);
 
   const buildBaseQuery = () => {
+    // NOTE: no schema FK exists between emergency_cases.patient_id and patients,
+    // so we intentionally avoid PostgREST relational embedding and hydrate
+    // patient UHIDs in a second call below.
     let query = (supabase as any)
       .from("emergency_cases")
-      .select("*, patients(id, uhid)");
+      .select("*");
     if (status !== "all") query = query.eq("status", status);
     if (triageF !== "all") query = query.eq("triage", triageF);
     if (appliedFrom) query = query.gte("arrival_time", new Date(appliedFrom).toISOString());
@@ -93,7 +98,14 @@ function EmergencyPage() {
         console.error("[emergency] load failed", error);
         throw error;
       }
-      return (data as ER[]) ?? [];
+      const rows = (data ?? []) as ER[];
+      const ids = Array.from(new Set(rows.map(r => r.patient_id).filter(Boolean))) as string[];
+      if (ids.length) {
+        const { data: pats } = await supabase.from("patients").select("id, uhid").in("id", ids);
+        const map = new Map((pats ?? []).map((p: any) => [p.id, p]));
+        rows.forEach(r => { if (r.patient_id && map.has(r.patient_id)) r.patients = map.get(r.patient_id) as any; });
+      }
+      return rows;
     },
   });
 
@@ -326,6 +338,7 @@ Status: ${c.status}</pre>`);
           <Button variant="outline" size="sm" onClick={downloadCsv}><Download className="size-4 mr-1.5" />CSV</Button>
           <Button variant="outline" size="sm" onClick={downloadXlsx}><FileSpreadsheet className="size-4 mr-1.5" />Excel</Button>
           <Button variant="outline" size="sm" onClick={downloadPdf}><Printer className="size-4 mr-1.5" />PDF</Button>
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}><Upload className="size-4 mr-1.5" />Import</Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button className="bg-destructive hover:bg-destructive/90"><Plus className="size-4" /> Quick Register</Button></DialogTrigger>
             <DialogContent>
@@ -535,6 +548,61 @@ Status: ${c.status}</pre>`);
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DataImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="Import Emergency Cases"
+        templateName="Emergency_Import_Template"
+        helperText="Duplicates checked by mobile — matching patients are reused; new mobiles create a patient record with auto UHID."
+        columns={[
+          { key: "Patient Name", required: true, example: "Ramesh Kumar" },
+          { key: "Mobile", example: "9876543210" },
+          { key: "Gender", example: "male" },
+          { key: "Age", aliases: ["Approx Age"], example: "42" },
+          { key: "Triage", example: "yellow" },
+          { key: "Type", aliases: ["Emergency Type"], example: "trauma" },
+          { key: "Arrival Date", aliases: ["Arrival Time"], example: "2025-01-15 10:30" },
+          { key: "Complaint", aliases: ["Chief Complaint"], example: "chest pain" },
+          { key: "Status", example: "waiting" },
+        ]}
+        onImport={async (rows) => {
+          const user = (await supabase.auth.getUser()).data.user;
+          let inserted = 0, skipped = 0, failed = 0;
+          for (const r of rows) {
+            try {
+              const pid = await linkOrCreatePatient({
+                full_name: r["Patient Name"],
+                mobile: r["Mobile"] ?? "",
+                gender: (r["Gender"] || "other").toLowerCase(),
+                approx_age: Number(r["Age"]) || 0,
+              });
+              const arrival = r["Arrival Date"] ? new Date(r["Arrival Date"]) : new Date();
+              const triage = (r["Triage"] || "yellow").toLowerCase();
+              const validTriage = ["red", "orange", "yellow", "green"].includes(triage) ? triage : "yellow";
+              const statusVal = (r["Status"] || "waiting").toLowerCase().replace(/\s+/g, "_");
+              const validStatus = ["waiting", "in_treatment", "admitted", "discharged"].includes(statusVal) ? statusVal : "waiting";
+              const { error } = await (supabase as any).from("emergency_cases").insert({
+                full_name: r["Patient Name"],
+                mobile: r["Mobile"] || null,
+                gender: (r["Gender"] || "other").toLowerCase(),
+                approx_age: Number(r["Age"]) || null,
+                emergency_type: r["Type"] || null,
+                chief_complaint: r["Complaint"] || null,
+                triage: validTriage,
+                status: validStatus,
+                arrival_time: isNaN(arrival.getTime()) ? new Date().toISOString() : arrival.toISOString(),
+                patient_id: pid,
+                created_by: user?.id,
+              });
+              if (error) { failed++; console.warn("[er-import]", error.message); } else inserted++;
+            } catch (e) { failed++; console.warn("[er-import]", e); }
+          }
+          await logAudit({ action: "import", entity: "emergency_cases", after: { inserted, skipped, failed } });
+          invalidate();
+          return { inserted, skipped, failed };
+        }}
+      />
     </div>
   );
 }
