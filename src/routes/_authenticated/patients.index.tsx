@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import {
-  ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search,
+  ChevronLeft, ChevronRight, Download, Eye, Phone, Plus, Printer, Search, Upload,
   Users, UserPlus, CalendarDays, Activity, BedDouble, Siren, FileSpreadsheet,
 } from "lucide-react";
+import { DataImportDialog } from "@/components/data-import-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 import { differenceInYears, format, startOfDay, startOfMonth } from "date-fns";
