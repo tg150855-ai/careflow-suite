@@ -312,6 +312,10 @@ function PatientsPage() {
             <Printer className="size-4 mr-2" />
             PDF
           </Button>
+          <Button variant="outline" size="lg" onClick={() => setImportOpen(true)}>
+            <Upload className="size-4 mr-2" />
+            Import
+          </Button>
           <Button asChild size="lg">
             <Link to="/patients/new">
               <Plus className="size-4 mr-2" />
