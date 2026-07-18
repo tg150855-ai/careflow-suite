@@ -24,78 +24,79 @@ import { format } from "date-fns";
 import { GlobalSearch } from "@/components/global-search";
 import { NotificationBell } from "@/components/notification-bell";
 import { BRAND, BrandLogo, BrandMark } from "@/components/brand";
+import { useTranslation } from "react-i18next";
 
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
-type NavGroup = { key: string; label: string; icon: typeof LayoutDashboard; roles?: AppRole[]; items: NavItem[] };
+type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
+type NavGroup = { key: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[]; items: NavItem[] };
 
 const GROUPS: NavGroup[] = [
   {
-    key: "clinical", label: "Clinical", icon: Stethoscope, items: [
-      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/emergency", label: "Emergency", icon: Siren },
-      { to: "/patients", label: "Patients", icon: Users },
-      { to: "/opd", label: "OPD", icon: Stethoscope },
-      { to: "/ipd", label: "IPD", icon: BedDouble },
-      { to: "/discharge", label: "Discharge", icon: LogOut },
-      { to: "/billing-center", label: "Billing", icon: FileBarChart },
-      { to: "/ot", label: "OT / Surgery", icon: Scissors },
-      { to: "/nurse-station", label: "Nurse Station", icon: HeartPulse },
-      { to: "/icu", label: "ICU / Critical Care", icon: HeartPulse },
+    key: "clinical", labelKey: "nav.groups.clinical", icon: Stethoscope, items: [
+      { to: "/dashboard", labelKey: "nav.items.dashboard", icon: LayoutDashboard },
+      { to: "/emergency", labelKey: "nav.items.emergency", icon: Siren },
+      { to: "/patients", labelKey: "nav.items.patients", icon: Users },
+      { to: "/opd", labelKey: "nav.items.opd", icon: Stethoscope },
+      { to: "/ipd", labelKey: "nav.items.ipd", icon: BedDouble },
+      { to: "/discharge", labelKey: "nav.items.discharge", icon: LogOut },
+      { to: "/billing-center", labelKey: "nav.items.billing_center", icon: FileBarChart },
+      { to: "/ot", labelKey: "nav.items.ot", icon: Scissors },
+      { to: "/nurse-station", labelKey: "nav.items.nurse_station", icon: HeartPulse },
+      { to: "/icu", labelKey: "nav.items.icu", icon: HeartPulse },
     ],
   },
   {
-    key: "operations", label: "Operations", icon: Activity, items: [
-      { to: "/laboratory", label: "Laboratory", icon: Flask },
-      { to: "/radiology", label: "Radiology", icon: Scan },
-      { to: "/blood-bank", label: "Blood Bank", icon: Droplet },
-      { to: "/dialysis", label: "Dialysis", icon: Activity },
-      { to: "/ipd/beds", label: "Bed Management", icon: BedDouble },
-      { to: "/ipd/death-register", label: "Death Register", icon: BedDouble },
-      { to: "/ipd/birth-register", label: "Birth Register", icon: BedDouble },
-      { to: "/ambulance", label: "Ambulance", icon: Ambulance },
-      { to: "/assets", label: "Assets", icon: Boxes },
-      { to: "/vendors", label: "Vendors", icon: Truck },
-      { to: "/procurement", label: "Procurement", icon: ShoppingCart },
-      { to: "/biomedical", label: "Biomedical", icon: Activity },
+    key: "operations", labelKey: "nav.groups.operations", icon: Activity, items: [
+      { to: "/laboratory", labelKey: "nav.items.laboratory", icon: Flask },
+      { to: "/radiology", labelKey: "nav.items.radiology", icon: Scan },
+      { to: "/blood-bank", labelKey: "nav.items.blood_bank", icon: Droplet },
+      { to: "/dialysis", labelKey: "nav.items.dialysis", icon: Activity },
+      { to: "/ipd/beds", labelKey: "nav.items.bed_management", icon: BedDouble },
+      { to: "/ipd/death-register", labelKey: "nav.items.death_register", icon: BedDouble },
+      { to: "/ipd/birth-register", labelKey: "nav.items.birth_register", icon: BedDouble },
+      { to: "/ambulance", labelKey: "nav.items.ambulance", icon: Ambulance },
+      { to: "/assets", labelKey: "nav.items.assets", icon: Boxes },
+      { to: "/vendors", labelKey: "nav.items.vendors", icon: Truck },
+      { to: "/procurement", labelKey: "nav.items.procurement", icon: ShoppingCart },
+      { to: "/biomedical", labelKey: "nav.items.biomedical", icon: Activity },
     ],
   },
   {
-    key: "documents", label: "Documents", icon: Files, items: [
-      { to: "/documents", label: "Documents", icon: Files },
+    key: "documents", labelKey: "nav.groups.documents", icon: Files, items: [
+      { to: "/documents", labelKey: "nav.items.documents", icon: Files },
     ],
   },
   {
-    key: "finance", label: "Finance", icon: Landmark, items: [
-      { to: "/billing", label: "Billing", icon: FileBarChart },
-      { to: "/pharmacy", label: "Pharmacy", icon: Pill },
-      { to: "/insurance", label: "Insurance", icon: ShieldCheck },
-      { to: "/finance", label: "Accounts", icon: Landmark },
-      { to: "/reports", label: "Revenue Reports", icon: FileBarChart },
-      { to: "/bi", label: "BI Dashboard", icon: BarChart3 },
+    key: "finance", labelKey: "nav.groups.finance", icon: Landmark, items: [
+      { to: "/billing", labelKey: "nav.items.billing", icon: FileBarChart },
+      { to: "/pharmacy", labelKey: "nav.items.pharmacy", icon: Pill },
+      { to: "/insurance", labelKey: "nav.items.insurance", icon: ShieldCheck },
+      { to: "/finance", labelKey: "nav.items.accounts", icon: Landmark },
+      { to: "/reports", labelKey: "nav.items.revenue_reports", icon: FileBarChart },
+      { to: "/bi", labelKey: "nav.items.bi", icon: BarChart3 },
     ],
   },
   {
-    key: "hr", label: "HR", icon: Briefcase, items: [
-      { to: "/hr/employees", label: "Employees", icon: Briefcase },
-      { to: "/hr/attendance", label: "Attendance", icon: Clock },
-      { to: "/hr/leave", label: "Leave Management", icon: CalendarCheck },
-      { to: "/hr/payroll", label: "Payroll", icon: Wallet },
-      { to: "/smart-staffing", label: "Shift / Staffing", icon: Users },
-      { to: "/performance", label: "Performance", icon: BarChart3 },
+    key: "hr", labelKey: "nav.groups.hr", icon: Briefcase, items: [
+      { to: "/hr/employees", labelKey: "nav.items.employees", icon: Briefcase },
+      { to: "/hr/attendance", labelKey: "nav.items.attendance", icon: Clock },
+      { to: "/hr/leave", labelKey: "nav.items.leave", icon: CalendarCheck },
+      { to: "/hr/payroll", labelKey: "nav.items.payroll", icon: Wallet },
+      { to: "/smart-staffing", labelKey: "nav.items.shift_staffing", icon: Users },
+      { to: "/performance", labelKey: "nav.items.performance", icon: BarChart3 },
     ],
   },
   {
-    key: "admin", label: "Admin", icon: ShieldAlert, roles: ["admin","super_admin"], items: [
-      { to: "/staff", label: "User Management", icon: UserCog },
-      { to: "/authority", label: "Roles & Permissions", icon: ShieldCheck },
-      { to: "/branches", label: "Branch Management", icon: Building2 },
-      { to: "/settings", label: "Hospital Settings", icon: Settings },
-      { to: "/backups", label: "Backup & Restore", icon: Database },
-      { to: "/audit", label: "Audit Logs", icon: ShieldAlert },
-      { to: "/audit-trail", label: "Audit Trail", icon: ClipboardCheck },
-      { to: "/security-center", label: "Security Center", icon: ShieldAlert },
-      { to: "/api-gateway", label: "API Gateway", icon: Network },
-      { to: "/mobile-api", label: "Mobile API & Push", icon: Smartphone },
+    key: "admin", labelKey: "nav.groups.admin", icon: ShieldAlert, roles: ["admin","super_admin"], items: [
+      { to: "/staff", labelKey: "nav.items.user_management", icon: UserCog },
+      { to: "/authority", labelKey: "nav.items.roles_permissions", icon: ShieldCheck },
+      { to: "/branches", labelKey: "nav.items.branches", icon: Building2 },
+      { to: "/settings", labelKey: "nav.items.hospital_settings", icon: Settings },
+      { to: "/backups", labelKey: "nav.items.backups", icon: Database },
+      { to: "/audit", labelKey: "nav.items.audit_logs", icon: ShieldAlert },
+      { to: "/audit-trail", labelKey: "nav.items.audit_trail", icon: ClipboardCheck },
+      { to: "/security-center", labelKey: "nav.items.security_center", icon: ShieldAlert },
+      { to: "/api-gateway", labelKey: "nav.items.api_gateway", icon: Network },
+      { to: "/mobile-api", labelKey: "nav.items.mobile_api", icon: Smartphone },
     ],
   },
 ];
@@ -108,6 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [now] = useState(new Date());
   const { hasAnyRole, hasRole, profile, user, signOut, roles } = useAuth();
+  const { t } = useTranslation();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   // Force first-login password change
@@ -180,12 +182,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                       </TooltipTrigger>
                       <TooltipContent side="right" className="p-0">
                         <div className="min-w-[200px] py-1">
-                          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{group.label}</div>
+                          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{t(group.labelKey)}</div>
                           {group.items.map((item) => {
                             const active = path === item.to || path.startsWith(item.to + "/");
                             return (
                               <Link key={item.to} to={item.to} className={`flex items-center gap-2 px-3 h-8 text-xs hover:bg-accent ${active ? "text-primary font-medium" : ""}`}>
-                                <item.icon className="size-3.5" /> {item.label}
+                                <item.icon className="size-3.5" /> {t(item.labelKey)}
                               </Link>
                             );
                           })}
@@ -208,7 +210,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     }`}
                   >
                     <group.icon className={`size-4.5 shrink-0 ${hasActive ? "text-primary" : ""}`} />
-                    <span className="truncate flex-1 text-left">{group.label}</span>
+                    <span className="truncate flex-1 text-left">{t(group.labelKey)}</span>
                     <ChevronDown className={`size-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                   </button>
 
@@ -235,7 +237,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                                 }`}
                               >
                                 <item.icon className={`size-4 shrink-0 ${active ? "text-primary" : ""}`} />
-                                <span className="truncate">{item.label}</span>
+                                <span className="truncate">{t(item.labelKey)}</span>
                               </Link>
                             );
                           })}

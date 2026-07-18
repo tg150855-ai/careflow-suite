@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Building2, Image as ImageIcon, Palette, Receipt, Pill, Shield,
-  MessageSquare, Printer, Loader2, Upload, Trash2,
+  MessageSquare, Printer, Loader2, Upload, Trash2, Languages,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { BrandLogo } from "@/components/brand";
+import { LANGUAGES, applyLanguage, type AppLanguage } from "@/lib/i18n";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
@@ -93,7 +95,12 @@ function SettingsPage() {
           <TabsTrigger value="printers"><Printer className="size-3.5 mr-1" />Printers</TabsTrigger>
           <TabsTrigger value="messaging"><MessageSquare className="size-3.5 mr-1" />WhatsApp/SMS</TabsTrigger>
           <TabsTrigger value="security"><Shield className="size-3.5 mr-1" />Security</TabsTrigger>
+          <TabsTrigger value="language"><Languages className="size-3.5 mr-1" />Language</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="language">
+          <LanguageTab settings={settings} canEdit={canEdit} onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+        </TabsContent>
 
         <TabsContent value="profile">
           <ProfileTab settings={settings} canEdit={canEdit} onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
@@ -453,5 +460,61 @@ function Row({ label, full, children }: { label: string; full?: boolean; childre
       <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</Label>
       {children}
     </div>
+  );
+}
+
+// ---------- Language ----------
+function LanguageTab({ settings, canEdit, onSaved }: { settings: Settings & { default_language?: string }; canEdit: boolean; onSaved: () => void }) {
+  const [lang, setLang] = useState<AppLanguage>(((settings as any).default_language ?? "en") as AppLanguage);
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    const { error } = await (supabase as any)
+      .from("hospital_settings")
+      .update({ default_language: lang })
+      .eq("id", SETTINGS_ID);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    await applyLanguage(lang);
+    logAudit({ action: "update", entity: "hospital_settings", entityId: SETTINGS_ID, after: { default_language: lang } });
+    toast.success("Language updated");
+    onSaved();
+  }
+
+  return (
+    <Card className="p-6 space-y-5 max-w-2xl">
+      <div>
+        <h2 className="text-base font-semibold">System language</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Choose the default language for the entire HMIS interface. Applies to sidebar, buttons,
+          forms, dashboards and reports. Patient names, doctor notes and other user-entered data
+          are never translated.
+        </p>
+      </div>
+      <Separator />
+      <div className="space-y-2 max-w-sm">
+        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Default system language
+        </Label>
+        <Select value={lang} onValueChange={(v) => setLang(v as AppLanguage)} disabled={!canEdit}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {LANGUAGES.map((l) => (
+              <SelectItem key={l.code} value={l.code}>
+                <span className="mr-2">{l.flag}</span>
+                {l.native} <span className="text-muted-foreground ml-1">({l.label})</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex justify-end pt-2">
+        <Button onClick={save} disabled={!canEdit || saving}>
+          {saving ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
+          Save language
+        </Button>
+      </div>
+    </Card>
   );
 }

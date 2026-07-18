@@ -5,11 +5,25 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { HelmetProvider } from "react-helmet-async";
 
 import "./styles.css";
+import "@/lib/i18n";
 import { routeTree } from "./routeTree.gen";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logoAsset from "@/assets/sbg-arogya-plus-logo.png.asset.json";
+import { applyLanguage, type AppLanguage } from "@/lib/i18n";
+
+// Sync UI language from hospital_settings on boot (admin-controlled global default)
+(async () => {
+  try {
+    const { data } = await (supabase as any)
+      .from("hospital_settings")
+      .select("default_language")
+      .maybeSingle();
+    const lang = (data?.default_language ?? "en") as AppLanguage;
+    await applyLanguage(lang);
+  } catch { /* noop — keep locally stored language */ }
+})();
 
 // Set favicon at runtime (avoids depending on a public/ folder)
 const link = document.createElement("link");
