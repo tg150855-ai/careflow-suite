@@ -95,7 +95,12 @@ function SettingsPage() {
           <TabsTrigger value="printers"><Printer className="size-3.5 mr-1" />Printers</TabsTrigger>
           <TabsTrigger value="messaging"><MessageSquare className="size-3.5 mr-1" />WhatsApp/SMS</TabsTrigger>
           <TabsTrigger value="security"><Shield className="size-3.5 mr-1" />Security</TabsTrigger>
+          <TabsTrigger value="language"><Languages className="size-3.5 mr-1" />Language</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="language">
+          <LanguageTab settings={settings} canEdit={canEdit} onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+        </TabsContent>
 
         <TabsContent value="profile">
           <ProfileTab settings={settings} canEdit={canEdit} onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
