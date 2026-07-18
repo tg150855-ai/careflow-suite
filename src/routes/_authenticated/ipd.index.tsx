@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { BedDouble, Plus, UserPlus, Activity, LogOut, Search, FileBarChart, Settings } from "lucide-react";
+import { BedDouble, Plus, UserPlus, Activity, LogOut, Search, FileBarChart, Settings, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, differenceInDays } from "date-fns";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { RecordActions } from "@/components/common/record-actions";
 import { shareOnWhatsApp } from "@/lib/share";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { exportXlsx } from "@/lib/export";
 
 export const Route = createFileRoute("/_authenticated/ipd/")({ component: IPDDashboard });
 
