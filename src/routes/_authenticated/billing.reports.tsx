@@ -35,7 +35,7 @@ function BillingReports() {
         .gte("created_at", range.from.toISOString())
         .lte("created_at", range.to.toISOString())
         .order("created_at", { ascending: false });
-      if (status !== "all") query = query.eq("status", status);
+      if (status !== "all") query = query.eq("status", status as "paid" | "partial" | "draft" | "cancelled");
       const { data } = await query;
       return data ?? [];
     },

@@ -98,6 +98,8 @@ import { Route as AuthenticatedHrPayrollRouteImport } from './routes/_authentica
 import { Route as AuthenticatedHrLeaveRouteImport } from './routes/_authenticated/hr.leave'
 import { Route as AuthenticatedHrEmployeesRouteImport } from './routes/_authenticated/hr.employees'
 import { Route as AuthenticatedHrAttendanceRouteImport } from './routes/_authenticated/hr.attendance'
+import { Route as AuthenticatedBillingReportsRouteImport } from './routes/_authenticated/billing.reports'
+import { Route as AuthenticatedBillingPackagesRouteImport } from './routes/_authenticated/billing.packages'
 import { Route as AuthenticatedBillingNewRouteImport } from './routes/_authenticated/billing.new'
 import { Route as AuthenticatedBillingIdRouteImport } from './routes/_authenticated/billing.$id'
 import { Route as AuthenticatedPharmacySalesNewRouteImport } from './routes/_authenticated/pharmacy.sales.new'
@@ -576,6 +578,18 @@ const AuthenticatedHrAttendanceRoute =
     path: '/hr/attendance',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedBillingReportsRoute =
+  AuthenticatedBillingReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => AuthenticatedBillingRoute,
+  } as any)
+const AuthenticatedBillingPackagesRoute =
+  AuthenticatedBillingPackagesRouteImport.update({
+    id: '/packages',
+    path: '/packages',
+    getParentRoute: () => AuthenticatedBillingRoute,
+  } as any)
 const AuthenticatedBillingNewRoute = AuthenticatedBillingNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -648,6 +662,8 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/billing/$id': typeof AuthenticatedBillingIdRoute
   '/billing/new': typeof AuthenticatedBillingNewRoute
+  '/billing/packages': typeof AuthenticatedBillingPackagesRoute
+  '/billing/reports': typeof AuthenticatedBillingReportsRoute
   '/hr/attendance': typeof AuthenticatedHrAttendanceRoute
   '/hr/employees': typeof AuthenticatedHrEmployeesRoute
   '/hr/leave': typeof AuthenticatedHrLeaveRoute
@@ -735,6 +751,8 @@ export interface FileRoutesByTo {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/billing/$id': typeof AuthenticatedBillingIdRoute
   '/billing/new': typeof AuthenticatedBillingNewRoute
+  '/billing/packages': typeof AuthenticatedBillingPackagesRoute
+  '/billing/reports': typeof AuthenticatedBillingReportsRoute
   '/hr/attendance': typeof AuthenticatedHrAttendanceRoute
   '/hr/employees': typeof AuthenticatedHrEmployeesRoute
   '/hr/leave': typeof AuthenticatedHrLeaveRoute
@@ -831,6 +849,8 @@ export interface FileRoutesById {
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/billing/$id': typeof AuthenticatedBillingIdRoute
   '/_authenticated/billing/new': typeof AuthenticatedBillingNewRoute
+  '/_authenticated/billing/packages': typeof AuthenticatedBillingPackagesRoute
+  '/_authenticated/billing/reports': typeof AuthenticatedBillingReportsRoute
   '/_authenticated/hr/attendance': typeof AuthenticatedHrAttendanceRoute
   '/_authenticated/hr/employees': typeof AuthenticatedHrEmployeesRoute
   '/_authenticated/hr/leave': typeof AuthenticatedHrLeaveRoute
@@ -927,6 +947,8 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/billing/$id'
     | '/billing/new'
+    | '/billing/packages'
+    | '/billing/reports'
     | '/hr/attendance'
     | '/hr/employees'
     | '/hr/leave'
@@ -1014,6 +1036,8 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/billing/$id'
     | '/billing/new'
+    | '/billing/packages'
+    | '/billing/reports'
     | '/hr/attendance'
     | '/hr/employees'
     | '/hr/leave'
@@ -1109,6 +1133,8 @@ export interface FileRouteTypes {
     | '/_authenticated/vendors'
     | '/_authenticated/billing/$id'
     | '/_authenticated/billing/new'
+    | '/_authenticated/billing/packages'
+    | '/_authenticated/billing/reports'
     | '/_authenticated/hr/attendance'
     | '/_authenticated/hr/employees'
     | '/_authenticated/hr/leave'
@@ -1790,6 +1816,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHrAttendanceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/billing/reports': {
+      id: '/_authenticated/billing/reports'
+      path: '/reports'
+      fullPath: '/billing/reports'
+      preLoaderRoute: typeof AuthenticatedBillingReportsRouteImport
+      parentRoute: typeof AuthenticatedBillingRoute
+    }
+    '/_authenticated/billing/packages': {
+      id: '/_authenticated/billing/packages'
+      path: '/packages'
+      fullPath: '/billing/packages'
+      preLoaderRoute: typeof AuthenticatedBillingPackagesRouteImport
+      parentRoute: typeof AuthenticatedBillingRoute
+    }
     '/_authenticated/billing/new': {
       id: '/_authenticated/billing/new'
       path: '/new'
@@ -1824,12 +1864,16 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedBillingRouteChildren {
   AuthenticatedBillingIdRoute: typeof AuthenticatedBillingIdRoute
   AuthenticatedBillingNewRoute: typeof AuthenticatedBillingNewRoute
+  AuthenticatedBillingPackagesRoute: typeof AuthenticatedBillingPackagesRoute
+  AuthenticatedBillingReportsRoute: typeof AuthenticatedBillingReportsRoute
   AuthenticatedBillingIndexRoute: typeof AuthenticatedBillingIndexRoute
 }
 
 const AuthenticatedBillingRouteChildren: AuthenticatedBillingRouteChildren = {
   AuthenticatedBillingIdRoute: AuthenticatedBillingIdRoute,
   AuthenticatedBillingNewRoute: AuthenticatedBillingNewRoute,
+  AuthenticatedBillingPackagesRoute: AuthenticatedBillingPackagesRoute,
+  AuthenticatedBillingReportsRoute: AuthenticatedBillingReportsRoute,
   AuthenticatedBillingIndexRoute: AuthenticatedBillingIndexRoute,
 }
 
