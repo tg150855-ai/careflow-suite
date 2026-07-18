@@ -38,6 +38,7 @@ import { Route as AuthenticatedIcuRouteImport } from './routes/_authenticated/ic
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedEmergencyRouteImport } from './routes/_authenticated/emergency'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedDischargeRouteImport } from './routes/_authenticated/discharge'
 import { Route as AuthenticatedDialysisRouteImport } from './routes/_authenticated/dialysis'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedChangePasswordRouteImport } from './routes/_authenticated/change-password'
@@ -250,6 +251,11 @@ const AuthenticatedEmergencyRoute = AuthenticatedEmergencyRouteImport.update({
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDischargeRoute = AuthenticatedDischargeRouteImport.update({
+  id: '/discharge',
+  path: '/discharge',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDialysisRoute = AuthenticatedDialysisRouteImport.update({
@@ -614,6 +620,7 @@ export interface FileRoutesByFullPath {
   '/change-password': typeof AuthenticatedChangePasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dialysis': typeof AuthenticatedDialysisRoute
+  '/discharge': typeof AuthenticatedDischargeRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/finance': typeof AuthenticatedFinanceRoute
@@ -706,6 +713,7 @@ export interface FileRoutesByTo {
   '/change-password': typeof AuthenticatedChangePasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dialysis': typeof AuthenticatedDialysisRoute
+  '/discharge': typeof AuthenticatedDischargeRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/emergency': typeof AuthenticatedEmergencyRoute
   '/finance': typeof AuthenticatedFinanceRoute
@@ -795,6 +803,7 @@ export interface FileRoutesById {
   '/_authenticated/change-password': typeof AuthenticatedChangePasswordRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dialysis': typeof AuthenticatedDialysisRoute
+  '/_authenticated/discharge': typeof AuthenticatedDischargeRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/emergency': typeof AuthenticatedEmergencyRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRoute
@@ -890,6 +899,7 @@ export interface FileRouteTypes {
     | '/change-password'
     | '/dashboard'
     | '/dialysis'
+    | '/discharge'
     | '/documents'
     | '/emergency'
     | '/finance'
@@ -982,6 +992,7 @@ export interface FileRouteTypes {
     | '/change-password'
     | '/dashboard'
     | '/dialysis'
+    | '/discharge'
     | '/documents'
     | '/emergency'
     | '/finance'
@@ -1070,6 +1081,7 @@ export interface FileRouteTypes {
     | '/_authenticated/change-password'
     | '/_authenticated/dashboard'
     | '/_authenticated/dialysis'
+    | '/_authenticated/discharge'
     | '/_authenticated/documents'
     | '/_authenticated/emergency'
     | '/_authenticated/finance'
@@ -1356,6 +1368,13 @@ declare module '@tanstack/react-router' {
       path: '/documents'
       fullPath: '/documents'
       preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/discharge': {
+      id: '/_authenticated/discharge'
+      path: '/discharge'
+      fullPath: '/discharge'
+      preLoaderRoute: typeof AuthenticatedDischargeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dialysis': {
@@ -1996,6 +2015,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedChangePasswordRoute: typeof AuthenticatedChangePasswordRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDialysisRoute: typeof AuthenticatedDialysisRoute
+  AuthenticatedDischargeRoute: typeof AuthenticatedDischargeRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedEmergencyRoute: typeof AuthenticatedEmergencyRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
@@ -2045,6 +2065,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedChangePasswordRoute: AuthenticatedChangePasswordRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDialysisRoute: AuthenticatedDialysisRoute,
+  AuthenticatedDischargeRoute: AuthenticatedDischargeRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedEmergencyRoute: AuthenticatedEmergencyRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
