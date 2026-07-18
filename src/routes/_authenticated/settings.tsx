@@ -477,7 +477,7 @@ function LanguageTab({ settings, canEdit, onSaved }: { settings: Settings & { de
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     await applyLanguage(lang);
-    logAudit({ action: "update", entity: "hospital_settings", entity_id: SETTINGS_ID, after: { default_language: lang } });
+    logAudit({ action: "update", entity: "hospital_settings", entityId: SETTINGS_ID, after: { default_language: lang } });
     toast.success("Language updated");
     onSaved();
   }
