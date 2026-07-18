@@ -2899,6 +2899,7 @@ export type Database = {
           address: string | null
           billing: Json
           created_at: string
+          default_language: string
           departments: Json
           email: string | null
           gst_no: string | null
@@ -2923,6 +2924,7 @@ export type Database = {
           address?: string | null
           billing?: Json
           created_at?: string
+          default_language?: string
           departments?: Json
           email?: string | null
           gst_no?: string | null
@@ -2947,6 +2949,7 @@ export type Database = {
           address?: string | null
           billing?: Json
           created_at?: string
+          default_language?: string
           departments?: Json
           email?: string | null
           gst_no?: string | null
