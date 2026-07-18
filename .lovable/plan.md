@@ -1,87 +1,59 @@
-# SBG Arogya Plus — Phased Build Plan
+# IPD Enhancements + Discharge Module + Package Billing — Phased Delivery
 
-This is a large, cross-module change set. To stay safe (no regressions to OPD/IPD/OT/ICU/Nurse Station that already work), I'll ship it in **8 phases**, each independently verifiable. Reply `continue` after each phase to move on.
+This is a large 14-task batch. To avoid regressions, I'll ship it in 4 focused phases. Reply "go" to start Phase A, or reorder as you like.
 
----
+## Phase A — IPD Core Edits + Date Filter (Tasks 1, 2, 3)
 
-## Phase 0 — Foundations (shared, no UI change)
-Build the primitives every later phase reuses so we don't repeat work or break existing screens.
+**IPD admission detail page (`ipd.$id.tsx`)**
+- Add **Edit** button in top action bar (next to Transfer/Discharge)
+- Modal to edit: ward/bed, attending doctor, department, diagnosis, admission reason, emergency contact, notes, admission date
 
-- **`super_admin` role gate**: helper `useIsSuperAdmin()` + `<RequireSuperAdmin>` wrapper. `Delete` buttons everywhere will use this — non–super-admins won't even see them.
-- **`<RecordActions>` component**: standard Edit / Delete / Print / Save / Download / WhatsApp button group, each opt-in via props (reuses existing `ModuleActionBar` pattern).
-- **`<DateRangeFilter From → To>`**: pairs with existing `useDateRange`.
-- **`lib/billing-aggregator.ts`**: single source-of-truth function `getPatientBillingSummary(patientId)` that pulls from `bills`, `bill_items`, `payments`, `pharmacy_sales`, `lab_orders`, `radiology_orders`, `surgeries`, `icu_procedures`, `nursing_service_catalog` usage, `bed_transfers` (room/bed days), `emergency_cases`. Returns department-wise breakdown + totals + pending.
-- **`lib/whatsapp-share.ts`**: already partially exists (`lib/share.ts`) — extend with PDF-link share helper.
+**IPD admissions list (`ipd.index.tsx`)**
+- Add row-level `RecordActions` (Edit / Print / WhatsApp / Download / Delete-admin) on Active tab (Discharged tab already has it)
+- Add **date range filter** (From / To + Today / Week / Month quick buttons) filtering by `admitted_at`
+- Excel/PDF export respects filter
 
-No DB change, no visual change.
+**OPD Registration list**
+- Ensure per-row Edit / Delete / Print / WhatsApp / Download via `RecordActions`
 
----
+## Phase B — Discharge Module + Auto Summary (Tasks 4, 5, 6, 8)
 
-## Phase 1 — Sidebar + Centralized Billing module shell
-- Remove **Appointments** from sidebar (route preserved).
-- Add **Billing** sidebar item directly below IPD.
-- New route `/billing-center` (keeps existing `/billing` invoice routes intact):
-  - Patient search by UHID / Patient ID / IPD ID.
-  - Summary screen wired to `getPatientBillingSummary`.
-  - Department-wise table, itemized list, payments, discounts, tax, pending, total, payment status badge.
-  - Record Payment dialog (writes to `payments` and updates root bill).
-  - `RecordActions`: Print / Save (PDF) / Download (Excel) / WhatsApp.
+- New sidebar item **Discharge** under Clinical, after IPD → route `/discharge`
+- Stats cards: Total Discharged, Today, This Month, Pending Summary
+- Filters: date range, search (name/UHID/adm no/doctor/mobile), summary-status filter (debounced 300ms)
+- Table with per-row actions: View Summary / Edit / Print / WhatsApp / Download / Delete
+- **Auto-generate discharge summary** on Confirm Discharge: pull diagnosis (rounds), OT surgeries, ICU stay, medications, last vitals, lab summary, full bill, discharge form data → save to `discharge_summaries`, print via existing `discharge.$id.print` route with hospital branding
 
----
+## Phase C — Billing Reports + Package Billing (Tasks 7, 10)
 
-## Phase 2 — Discharge gate (critical rule)
-- Extend `ipd.$id.discharge.tsx`: on load, call `getPatientBillingSummary`. If `pending > 0`, disable Discharge button + show blocking banner with the exact copy required.
-- After discharge, ensure admission_date + discharge_date always render on IPD patient page (already stored — just surface).
-- Add **"Discharged patients" search** tab in IPD list with From→To filter.
+**IPD Billing Reports sub-tab**
+- Date-range filter + report table (Bill # / Date / Patient / Dept / Total / Paid / Pending / Status)
+- Totals footer + Excel/PDF/Print
 
----
+**Package Billing** (in IPD Billing + Billing Center)
+- Uses existing `health_packages` + `scheme_packages`
+- List packages with Edit / Delete / Apply-to-Patient
+- Admin **+ New Package** form: name, description, line-items (service+price), total (auto/override), duration, department, status
+- Apply → inserts package as bill line items
 
-## Phase 3 — OPD upgrades
-- Consultation fee → read from `hospital_settings` (new column `default_consultation_fee` + per-doctor override already exists).
-- Fix bill totals: recompute `subtotal = Σ(qty × rate)`, `total = subtotal − discount + gst`. Add unit-tested helper.
-- Add Edit/Delete (super-admin) on every OPD bill row + consultation record.
-- WhatsApp prescription PDF share button on consultation screen.
-- OPD Reports: PDF + Excel export (xlsx already in tree), From→To filter, old vs new patient split.
+## Phase D — Cross-Cutting Global Passes (Tasks 9, 11, 12, 13, 14)
 
----
+- **Task 12 — OT Reports** date-range filter + filtered export; OT Schedule date filter
+- **Task 13 — Nurse Station MAR** row Edit modal (medicine/dose/route/frequency/timing/instructions/status), Delete (admin), MAR Print + WhatsApp; Nursing Notes already have Edit/Delete
+- **Task 9 — Download** button audit across every list module; add where missing (Excel default, PDF for summaries), filename `[Module]_Export_DD-MM-YYYY`
+- **Task 11 — Delete** button audit; ensure `RecordActions` present on: HR Attendance, HR Performance, Finance/Accounting, Insurance, Bed Management list, ICU list, OPD Consultation list, any missing lab/rad rows
+- **Task 14 — WhatsApp Share** audit; add where missing (report-level + row-level)
 
-## Phase 4 — IPD upgrades
-- Inline edit of patient demographics from IPD detail.
-- From→To filter on admissions list.
-- IPD Billing: Discount field, From→To report, **Package Billing** (new table `billing_packages` + `apply package` action that seeds bill items).
-- Discharge summary: Edit/Delete/Print/Save/WhatsApp via `RecordActions`.
+## Technical Notes
 
----
+- Reuse existing `RecordActions`, `ModuleActionBar`, `DateRangeTabs`, `PatientAttachments`, `PrintHeader`, `exportCsv`/`exportXlsx`, `shareOnWhatsApp`, `billing-aggregator`.
+- `discharge_summaries` table already exists (13 cols) — reuse.
+- No schema changes for Phases A/B/D. Phase C may need a `packages` table if `health_packages`/`scheme_packages` don't fit line-items → I'll evaluate before migrating.
+- Delete gating continues to use `useIsSuperAdmin` hook (already covers Admin + Super Admin).
+- All mutations invalidate React Query keys.
 
-## Phase 5 — Emergency + OT + ICU action-set parity
-- Emergency: full `RecordActions`. Verify UHID linkage to OPD/IPD/OT/ICU (already FK-able — surface "Linked records" panel).
-- Emergency charges → push to `bills` via aggregator hook on case close.
-- OT: Reports route with From→To, doctor, room, status filters. Ensure `syncBillToIPD` already pushes to central aggregator (it does).
-- ICU: confirm Add/Transfer flow, add Delete (super-admin), apply `RecordActions`.
+## Suggested order
 
----
+**A → B → C → D**, one phase per turn, each ends with a build check.
 
-## Phase 6 — Nurse Station fixes
-- Edit dialogs for vitals, MAR entries, nursing notes.
-- Fix Critical Alerts vitals formatting: validate BP `systolic/diastolic` both non-null before render; show `—` otherwise. Format as `BP 120/80`.
-- Apply `RecordActions` (no UI rewrite — per user's prior "do not modify Nurse Station UI" memo, this is additive only).
-
----
-
-## Phase 7 — Patients module
-- Patient Dashboard tab: demographics + visit timeline (OPD/IPD/ER/ICU/OT) + billing summary + documents.
-- CSV/Excel **Import** with template download + row-level validation report.
-- Excel + PDF **Export** of patient list with date filter.
-
----
-
-## Technical notes
-- **New tables (Phase 1, 4)**: `billing_packages(name, charges jsonb, total)`, `billing_package_applications(bill_id, package_id)`. Existing `bills` schema is sufficient for the aggregator.
-- **No destructive migrations**. All additive columns have defaults.
-- **RBAC**: extend `permissions.ts` with `delete` action checked against `super_admin` role for every module.
-- **Realtime**: aggregator subscribes to `bills`, `pharmacy_sales`, `lab_orders`, `radiology_orders` channels — billing screen updates live.
-- **PDF**: reuse existing print routes (`/billing/$id`, `/prescriptions/$id/print`, `/discharge/$id/print`) + `window.print()`. Excel via existing `lib/export.ts`.
-
----
-
-Reply **continue** and I'll start with **Phase 0 + Phase 1** (foundations + sidebar + centralized Billing shell) in one go since they're tightly coupled and non-breaking.
+Reply **go** to start Phase A, or tell me a different order/subset.
