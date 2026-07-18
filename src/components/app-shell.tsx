@@ -109,6 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [now] = useState(new Date());
   const { hasAnyRole, hasRole, profile, user, signOut, roles } = useAuth();
+  const { t } = useTranslation();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   // Force first-login password change
