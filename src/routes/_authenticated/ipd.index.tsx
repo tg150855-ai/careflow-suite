@@ -166,17 +166,17 @@ function IPDDashboard() {
               <TabsTrigger value="discharged">Discharged</TabsTrigger>
             </TabsList>
             <div className="flex items-center gap-2 flex-wrap">
-              {tab === "discharged" && (
-                <>
-                  <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
-                  <span className="text-muted-foreground text-sm">→</span>
-                  <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
-                </>
-              )}
+              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-40" />
+              <span className="text-muted-foreground text-sm">→</span>
+              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-40" />
+              <Button size="sm" variant="outline" onClick={() => { const d = new Date().toISOString().slice(0, 10); setFrom(d); setTo(d); }}>Today</Button>
+              <Button size="sm" variant="outline" onClick={() => { setFrom(new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)); setTo(new Date().toISOString().slice(0, 10)); }}>Week</Button>
+              <Button size="sm" variant="outline" onClick={() => { setFrom(new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)); setTo(new Date().toISOString().slice(0, 10)); }}>Month</Button>
               <div className="relative w-64">
                 <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search patient, UHID or bed" className="pl-9" />
               </div>
+              <Button size="sm" variant="outline" onClick={tab === "active" ? exportActive : exportDischarged}><Download className="size-4 mr-1" />Export</Button>
             </div>
           </div>
 
