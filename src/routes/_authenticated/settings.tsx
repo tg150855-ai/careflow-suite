@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Building2, Image as ImageIcon, Palette, Receipt, Pill, Shield,
-  MessageSquare, Printer, Loader2, Upload, Trash2,
+  MessageSquare, Printer, Loader2, Upload, Trash2, Languages,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
