@@ -182,12 +182,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                       </TooltipTrigger>
                       <TooltipContent side="right" className="p-0">
                         <div className="min-w-[200px] py-1">
-                          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{group.label}</div>
+                          <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{t(group.labelKey)}</div>
                           {group.items.map((item) => {
                             const active = path === item.to || path.startsWith(item.to + "/");
                             return (
                               <Link key={item.to} to={item.to} className={`flex items-center gap-2 px-3 h-8 text-xs hover:bg-accent ${active ? "text-primary font-medium" : ""}`}>
-                                <item.icon className="size-3.5" /> {item.label}
+                                <item.icon className="size-3.5" /> {t(item.labelKey)}
                               </Link>
                             );
                           })}
@@ -210,7 +210,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     }`}
                   >
                     <group.icon className={`size-4.5 shrink-0 ${hasActive ? "text-primary" : ""}`} />
-                    <span className="truncate flex-1 text-left">{group.label}</span>
+                    <span className="truncate flex-1 text-left">{t(group.labelKey)}</span>
                     <ChevronDown className={`size-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                   </button>
 
@@ -237,7 +237,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                                 }`}
                               >
                                 <item.icon className={`size-4 shrink-0 ${active ? "text-primary" : ""}`} />
-                                <span className="truncate">{item.label}</span>
+                                <span className="truncate">{t(item.labelKey)}</span>
                               </Link>
                             );
                           })}
