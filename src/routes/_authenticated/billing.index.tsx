@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Receipt, Clock, CheckCircle2, TrendingUp } from "lucide-react";
+import { Plus, Receipt, Clock, CheckCircle2, TrendingUp, FileBarChart, Package } from "lucide-react";
 import { format, startOfDay, startOfMonth, subMonths } from "date-fns";
 import { inr } from "@/lib/format";
 import { motion } from "framer-motion";
@@ -62,7 +62,11 @@ function BillingDashboard() {
           <h1 className="text-3xl font-semibold tracking-tight">Billing</h1>
           <p className="text-muted-foreground mt-1">Invoices, payments and revenue overview</p>
         </div>
-        <Button asChild size="lg"><Link to="/billing/new"><Plus className="size-4 mr-2" />New bill</Link></Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button asChild variant="outline"><Link to="/billing/packages"><Package className="size-4 mr-2" />Packages</Link></Button>
+          <Button asChild variant="outline"><Link to="/billing/reports"><FileBarChart className="size-4 mr-2" />Reports</Link></Button>
+          <Button asChild size="lg"><Link to="/billing/new"><Plus className="size-4 mr-2" />New bill</Link></Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
