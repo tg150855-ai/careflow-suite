@@ -56,12 +56,15 @@ function AdmissionDetail() {
             {adm.patients?.uhid} · {adm.patients?.mobile} · {adm.patients?.gender} · Bed {adm.beds?.bed_number ?? "—"} ({adm.wards?.name}) · Day {days}
           </div>
         </div>
-        {adm.status === "active" && (
-          <div className="flex gap-2">
-            <TransferDialog admission={adm} />
-            <DischargeDialog admission={adm} />
-          </div>
-        )}
+        <div className="flex gap-2 flex-wrap">
+          <EditAdmissionDialog admission={adm} />
+          {adm.status === "active" && (
+            <>
+              <TransferDialog admission={adm} />
+              <DischargeDialog admission={adm} />
+            </>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
