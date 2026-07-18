@@ -462,3 +462,59 @@ function Row({ label, full, children }: { label: string; full?: boolean; childre
     </div>
   );
 }
+
+// ---------- Language ----------
+function LanguageTab({ settings, canEdit, onSaved }: { settings: Settings & { default_language?: string }; canEdit: boolean; onSaved: () => void }) {
+  const [lang, setLang] = useState<AppLanguage>(((settings as any).default_language ?? "en") as AppLanguage);
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    const { error } = await (supabase as any)
+      .from("hospital_settings")
+      .update({ default_language: lang })
+      .eq("id", SETTINGS_ID);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    await applyLanguage(lang);
+    logAudit("update", "hospital_settings", SETTINGS_ID, null, { default_language: lang });
+    toast.success("Language updated");
+    onSaved();
+  }
+
+  return (
+    <Card className="p-6 space-y-5 max-w-2xl">
+      <div>
+        <h2 className="text-base font-semibold">System language</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Choose the default language for the entire HMIS interface. Applies to sidebar, buttons,
+          forms, dashboards and reports. Patient names, doctor notes and other user-entered data
+          are never translated.
+        </p>
+      </div>
+      <Separator />
+      <div className="space-y-2 max-w-sm">
+        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Default system language
+        </Label>
+        <Select value={lang} onValueChange={(v) => setLang(v as AppLanguage)} disabled={!canEdit}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {LANGUAGES.map((l) => (
+              <SelectItem key={l.code} value={l.code}>
+                <span className="mr-2">{l.flag}</span>
+                {l.native} <span className="text-muted-foreground ml-1">({l.label})</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex justify-end pt-2">
+        <Button onClick={save} disabled={!canEdit || saving}>
+          {saving ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
+          Save language
+        </Button>
+      </div>
+    </Card>
+  );
+}
