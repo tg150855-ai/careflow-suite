@@ -14,6 +14,7 @@ import { Ambulance, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { inr } from "@/lib/format";
+import { RecordActions } from "@/components/common/record-actions";
 
 export const Route = createFileRoute("/_authenticated/ambulance")({ component: AmbulancePage });
 
@@ -53,6 +54,19 @@ function AmbulancePage() {
     if (status === "completed" && ambulance_id) await (supabase as any).from("ambulances").update({ status: "available" } as any).eq("id", ambulance_id);
     load();
   }
+
+  async function removeTrip(id: string) {
+    const { error } = await (supabase as any).from("ambulance_dispatches").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Dispatch deleted"); load();
+  }
+
+  function whatsappTrip(t: any) {
+    const msg = `Ambulance dispatch ${t.dispatch_no}\nPickup: ${t.pickup_location}\nDestination: ${t.destination ?? "—"}\nETA: ${t.eta_minutes ?? "—"} min\nStatus: ${t.status}`;
+    const phone = (t.caller_phone ?? "").replace(/\D/g, "");
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+  }
+
 
   return (
     <div className="space-y-6">
@@ -99,10 +113,11 @@ function AmbulancePage() {
                     <TableCell className="text-sm">{t.caller_name}<div className="text-xs text-muted-foreground">{t.caller_phone}</div></TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{t.status.replace("_", " ")}</Badge></TableCell>
                     <TableCell>{inr(t.fare)}</TableCell>
-                    <TableCell className="flex gap-1">
+                    <TableCell className="flex gap-1 items-center flex-wrap">
                       {t.status === "dispatched" && <Button size="sm" variant="outline" onClick={() => updateTrip(t.id, "en_route", t.ambulance_id)}>En route</Button>}
                       {t.status === "en_route" && <Button size="sm" variant="outline" onClick={() => updateTrip(t.id, "arrived", t.ambulance_id)}>Arrived</Button>}
                       {["arrived", "en_route", "dispatched"].includes(t.status) && <Button size="sm" onClick={() => updateTrip(t.id, "completed", t.ambulance_id)}>Complete</Button>}
+                      <RecordActions onWhatsApp={() => whatsappTrip(t)} onDelete={() => removeTrip(t.id)} deleteLabel={`dispatch ${t.dispatch_no}`} />
                     </TableCell>
                   </TableRow>
                 ))}

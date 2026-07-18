@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ShieldCheck, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { inr } from "@/lib/format";
+import { RecordActions } from "@/components/common/record-actions";
 
 export const Route = createFileRoute("/_authenticated/insurance")({ component: InsurancePage });
 
@@ -67,6 +68,13 @@ function InsurancePage() {
     await (supabase as any).from("insurance_claims").update(patch as any).eq("id", id);
     load();
   }
+
+  async function removeClaim(id: string) {
+    const { error } = await (supabase as any).from("insurance_claims").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Claim deleted"); load();
+  }
+
 
   const totals = {
     active: claims.filter((c) => ["submitted", "under_review"].includes(c.status)).length,
@@ -132,7 +140,7 @@ function InsurancePage() {
                     <TableCell>{inr(c.approved_amount)}</TableCell>
                     <TableCell className="text-xs">{c.pre_auth_no ?? "—"}</TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{c.status.replace("_", " ")}</Badge></TableCell>
-                    <TableCell className="flex gap-1">
+                    <TableCell className="flex gap-1 items-center flex-wrap">
                       {c.status === "draft" && <Button size="sm" variant="outline" onClick={() => move(c.id, "submitted")}>Submit</Button>}
                       {c.status === "submitted" && <Button size="sm" variant="outline" onClick={() => move(c.id, "under_review")}>Review</Button>}
                       {c.status === "under_review" && <>
@@ -140,6 +148,7 @@ function InsurancePage() {
                         <Button size="sm" variant="destructive" onClick={() => move(c.id, "rejected")}>Reject</Button>
                       </>}
                       {c.status === "approved" && <Button size="sm" onClick={() => move(c.id, "settled")}>Settle</Button>}
+                      <RecordActions onDelete={() => removeClaim(c.id)} deleteLabel={`claim ${c.claim_no}`} />
                     </TableCell>
                   </TableRow>
                 ))}

@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Building2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { RecordActions } from "@/components/common/record-actions";
 
 export const Route = createFileRoute("/_authenticated/branches")({ component: Branches });
 
@@ -31,6 +32,12 @@ function Branches() {
     toast.success("Branch added"); setOpen(false);
     setForm({ code: "", name: "", address: "", city: "", state: "", phone: "", email: "" });
     load();
+  }
+
+  async function remove(id: string) {
+    const { error } = await (supabase as any).from("branches").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Branch deleted"); load();
   }
 
   return (
@@ -62,7 +69,7 @@ function Branches() {
         <CardHeader><CardTitle>All Branches ({rows.length})</CardTitle></CardHeader>
         <CardContent>
           <Table>
-            <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>City</TableHead><TableHead>Phone</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>City</TableHead><TableHead>Phone</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((r) => (
                 <TableRow key={r.id}>
@@ -71,9 +78,10 @@ function Branches() {
                   <TableCell>{r.city ?? "—"}</TableCell>
                   <TableCell>{r.phone ?? "—"}</TableCell>
                   <TableCell><Badge variant={r.active ? "default" : "secondary"}>{r.active ? "Active" : "Inactive"}</Badge></TableCell>
+                  <TableCell className="text-right"><RecordActions onDelete={() => remove(r.id)} deleteLabel={`branch "${r.name}"`} /></TableCell>
                 </TableRow>
               ))}
-              {rows.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No branches yet</TableCell></TableRow>}
+              {rows.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No branches yet</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>
