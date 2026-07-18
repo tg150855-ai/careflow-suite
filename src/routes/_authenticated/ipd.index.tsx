@@ -82,8 +82,46 @@ function IPDDashboard() {
       a.beds?.bed_number?.toLowerCase().includes(t)
     );
   };
-  const filteredActive = (data?.admissions ?? []).filter(matchQ);
+  const inRange = (iso?: string | null) => {
+    if (!iso) return false;
+    const t = new Date(iso).getTime();
+    return t >= new Date(from + "T00:00:00").getTime() && t <= new Date(to + "T23:59:59").getTime();
+  };
+  const filteredActive = useMemo(
+    () => (data?.admissions ?? []).filter((a: any) => matchQ(a) && inRange(a.admitted_at)),
+    [data?.admissions, q, from, to],
+  );
   const filteredDischarged = discharged.filter(matchQ);
+
+  const exportActive = () => {
+    const rows = filteredActive.map((a: any) => ({
+      Admission: a.admission_no,
+      Patient: a.patients?.full_name ?? "",
+      UHID: a.patients?.uhid ?? "",
+      Mobile: a.patients?.mobile ?? "",
+      Ward: a.wards?.name ?? "",
+      Bed: a.beds?.bed_number ?? "",
+      Doctor: a.doctors?.name ?? "",
+      "Admitted at": format(new Date(a.admitted_at), "dd MMM yyyy HH:mm"),
+      Reason: a.reason ?? a.initial_diagnosis ?? "",
+    }));
+    exportXlsx(rows, `IPD_Active_${format(new Date(), "dd-MM-yyyy")}`);
+  };
+  const exportDischarged = () => {
+    const rows = filteredDischarged.map((a: any) => {
+      const ds = Array.isArray(a.discharge_summaries) ? a.discharge_summaries[0] : a.discharge_summaries;
+      return {
+        Admission: a.admission_no,
+        Patient: a.patients?.full_name ?? "",
+        UHID: a.patients?.uhid ?? "",
+        Admitted: format(new Date(a.admitted_at), "dd MMM yyyy"),
+        Discharged: a.discharged_at ? format(new Date(a.discharged_at), "dd MMM yyyy") : "",
+        Doctor: a.doctors?.name ?? "",
+        Diagnosis: ds?.final_diagnosis ?? "",
+      };
+    });
+    exportXlsx(rows, `IPD_Discharged_${format(new Date(), "dd-MM-yyyy")}`);
+  };
 
   const cards = [
     { label: "Active admissions", value: data?.admissions.length ?? 0, icon: UserPlus, hint: "Currently in hospital" },
