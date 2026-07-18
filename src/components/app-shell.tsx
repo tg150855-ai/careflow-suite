@@ -24,6 +24,7 @@ import { format } from "date-fns";
 import { GlobalSearch } from "@/components/global-search";
 import { NotificationBell } from "@/components/notification-bell";
 import { BRAND, BrandLogo, BrandMark } from "@/components/brand";
+import { useTranslation } from "react-i18next";
 
 type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
 type NavGroup = { key: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[]; items: NavItem[] };
