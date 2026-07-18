@@ -20,6 +20,7 @@ import { useAuth } from "@/lib/auth-context";
 import { VoiceDictate } from "@/components/voice-dictate";
 import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 import { DischargeDialog } from "@/components/ipd/discharge-dialog";
+import { EditAdmissionDialog } from "@/components/ipd/edit-admission-dialog";
 
 export const Route = createFileRoute("/_authenticated/ipd/$id")({ component: AdmissionDetail });
 
