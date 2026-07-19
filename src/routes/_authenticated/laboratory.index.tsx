@@ -31,8 +31,9 @@ const STAGE_TONE: Record<string, string> = {
   patient: "outline", opd: "secondary", ipd: "default", icu: "destructive",
 };
 
-type StatusFilter = "all" | "pending" | "complete";
+type StatusFilter = "all" | "pending" | "in_progress" | "complete";
 type StageFilter = "all" | "patient" | "opd" | "ipd" | "icu";
+type PriorityFilter = "all" | "urgent" | "normal";
 
 function LabDashboard() {
   const qc = useQueryClient();
