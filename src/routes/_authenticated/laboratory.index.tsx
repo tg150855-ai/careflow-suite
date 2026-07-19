@@ -127,9 +127,11 @@ function LabDashboard() {
     exportCsv(
       filteredOrders.map((o) => ({
         order_no: o.order_no,
-        patient: o.patients?.full_name ?? "",
-        uhid: o.patients?.uhid ?? "",
-        doctor: o.doctors?.name ?? "",
+        patient: o.patients?.full_name ?? "—",
+        uhid: o.patients?.uhid ?? "—",
+        mobile: o.patients?.phone ?? "—",
+        doctor: o.doctors?.name ?? "—",
+        priority: o.priority ?? "normal",
         status: o.status,
         stage: o.test_stage,
         amount: o.total_amount,
