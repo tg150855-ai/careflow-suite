@@ -182,7 +182,8 @@ function LabDashboard() {
               <TabsList className="h-8">
                 <TabsTrigger value="all" className="text-xs h-7 px-3">All</TabsTrigger>
                 <TabsTrigger value="pending" className="text-xs h-7 px-3">Pending</TabsTrigger>
-                <TabsTrigger value="complete" className="text-xs h-7 px-3">Complete</TabsTrigger>
+                <TabsTrigger value="in_progress" className="text-xs h-7 px-3">In Progress</TabsTrigger>
+                <TabsTrigger value="complete" className="text-xs h-7 px-3">Completed</TabsTrigger>
               </TabsList>
             </Tabs>
             <Tabs value={stage} onValueChange={(v) => setStage(v as StageFilter)}>
@@ -194,7 +195,20 @@ function LabDashboard() {
                 <TabsTrigger value="icu" className="text-xs h-7 px-3">ICU</TabsTrigger>
               </TabsList>
             </Tabs>
+            <Tabs value={priority} onValueChange={(v) => setPriority(v as PriorityFilter)}>
+              <TabsList className="h-8">
+                <TabsTrigger value="all" className="text-xs h-7 px-3">Any priority</TabsTrigger>
+                <TabsTrigger value="urgent" className="text-xs h-7 px-3 data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">Urgent</TabsTrigger>
+                <TabsTrigger value="normal" className="text-xs h-7 px-3">Normal</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
+        </div>
+        <div className="flex flex-wrap items-end gap-2 mb-4">
+          <div><Label className="text-xs text-muted-foreground">From date</Label><Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-8 w-40" /></div>
+          <div><Label className="text-xs text-muted-foreground">To date</Label><Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-8 w-40" /></div>
+          <Button variant="outline" size="sm" onClick={() => { /* no-op: filters apply live */ }}>Apply</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setFromDate(""); setToDate(""); setStatus("all"); setStage("all"); setPriority("all"); setQ(""); }}>Reset</Button>
         </div>
         <div className="divide-y">
           {filteredOrders.map((o: any) => (
