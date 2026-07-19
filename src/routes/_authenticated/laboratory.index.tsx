@@ -41,6 +41,9 @@ function LabDashboard() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [stage, setStage] = useState<StageFilter>("all");
+  const [priority, setPriority] = useState<PriorityFilter>("all");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
 
   const { data } = useQuery({
     queryKey: ["lab-dashboard"],
