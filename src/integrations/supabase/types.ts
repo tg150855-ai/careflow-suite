@@ -1727,6 +1727,8 @@ export type Database = {
           doctor_id: string | null
           duration_min: number | null
           end_time: string | null
+          follow_up_at: string | null
+          follow_up_notes: string | null
           id: string
           machine_no: string | null
           notes: string | null
@@ -1744,6 +1746,8 @@ export type Database = {
           doctor_id?: string | null
           duration_min?: number | null
           end_time?: string | null
+          follow_up_at?: string | null
+          follow_up_notes?: string | null
           id?: string
           machine_no?: string | null
           notes?: string | null
@@ -1761,6 +1765,8 @@ export type Database = {
           doctor_id?: string | null
           duration_min?: number | null
           end_time?: string | null
+          follow_up_at?: string | null
+          follow_up_notes?: string | null
           id?: string
           machine_no?: string | null
           notes?: string | null
@@ -3920,6 +3926,7 @@ export type Database = {
           opd_visit_id: string | null
           order_no: string
           patient_id: string
+          priority: string
           status: Database["public"]["Enums"]["lab_order_status"]
           test_stage: Database["public"]["Enums"]["test_stage"]
           total_amount: number
@@ -3935,6 +3942,7 @@ export type Database = {
           opd_visit_id?: string | null
           order_no?: string
           patient_id: string
+          priority?: string
           status?: Database["public"]["Enums"]["lab_order_status"]
           test_stage?: Database["public"]["Enums"]["test_stage"]
           total_amount?: number
@@ -3950,6 +3958,7 @@ export type Database = {
           opd_visit_id?: string | null
           order_no?: string
           patient_id?: string
+          priority?: string
           status?: Database["public"]["Enums"]["lab_order_status"]
           test_stage?: Database["public"]["Enums"]["test_stage"]
           total_amount?: number

@@ -31,8 +31,9 @@ const STAGE_TONE: Record<string, string> = {
   patient: "outline", opd: "secondary", ipd: "default", icu: "destructive",
 };
 
-type StatusFilter = "all" | "pending" | "complete";
+type StatusFilter = "all" | "pending" | "in_progress" | "complete";
 type StageFilter = "all" | "patient" | "opd" | "ipd" | "icu";
+type PriorityFilter = "all" | "urgent" | "normal";
 
 function LabDashboard() {
   const qc = useQueryClient();
@@ -40,6 +41,9 @@ function LabDashboard() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [stage, setStage] = useState<StageFilter>("all");
+  const [priority, setPriority] = useState<PriorityFilter>("all");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
 
   const { data } = useQuery({
     queryKey: ["lab-dashboard"],
@@ -49,7 +53,7 @@ function LabDashboard() {
         supabase.from("lab_orders").select("id", { count: "exact" }).in("status", ["ordered", "sample_collected", "in_progress"]),
         supabase.from("lab_orders").select("id", { count: "exact" }).eq("status", "completed"),
         supabase.from("lab_orders").select("total_amount").gte("created_at", today.toISOString()),
-        supabase.from("lab_orders").select("id, order_no, status, total_amount, created_at, test_stage, notes, patients(full_name, uhid, phone), doctors(name), lab_results(id)").order("created_at", { ascending: false }).limit(60),
+        supabase.from("lab_orders").select("id, order_no, status, priority, total_amount, created_at, test_stage, notes, patients(full_name, uhid, phone), doctors(name), lab_results(id)").order("created_at", { ascending: false }).limit(200),
       ]);
       return {
         pending: pending.count ?? 0,
@@ -86,20 +90,31 @@ function LabDashboard() {
 
   const filteredOrders = useMemo(() => {
     let rows = (data?.orders ?? []) as any[];
-    if (status === "pending") rows = rows.filter((o) => ["ordered", "sample_collected", "in_progress"].includes(o.status));
+    if (status === "pending") rows = rows.filter((o) => ["ordered", "sample_collected"].includes(o.status));
+    else if (status === "in_progress") rows = rows.filter((o) => o.status === "in_progress");
     else if (status === "complete") rows = rows.filter((o) => o.status === "completed");
     if (stage !== "all") rows = rows.filter((o) => o.test_stage === stage);
+    if (priority !== "all") rows = rows.filter((o) => (o.priority ?? "normal") === priority);
+    if (fromDate) rows = rows.filter((o) => new Date(o.created_at) >= new Date(fromDate));
+    if (toDate) { const end = new Date(toDate); end.setHours(23,59,59,999); rows = rows.filter((o) => new Date(o.created_at) <= end); }
     if (q.trim().length >= 2) {
       const needle = q.toLowerCase();
       rows = rows.filter((o) =>
         (o.patients?.full_name ?? "").toLowerCase().includes(needle) ||
         (o.patients?.uhid ?? "").toLowerCase().includes(needle) ||
+        (o.patients?.phone ?? "").toLowerCase().includes(needle) ||
         (o.order_no ?? "").toLowerCase().includes(needle) ||
         (o.doctors?.name ?? "").toLowerCase().includes(needle),
       );
     }
-    return rows.slice(0, 30);
-  }, [data?.orders, status, stage, q]);
+    // Urgent orders float to top
+    rows = [...rows].sort((a, b) => {
+      const ap = a.priority === "urgent" ? 0 : 1;
+      const bp = b.priority === "urgent" ? 0 : 1;
+      return ap - bp;
+    });
+    return rows.slice(0, 60);
+  }, [data?.orders, status, stage, priority, fromDate, toDate, q]);
 
   const cards = [
     { label: "Pending tests", value: data?.pending ?? 0, icon: Clock },
@@ -112,9 +127,11 @@ function LabDashboard() {
     exportCsv(
       filteredOrders.map((o) => ({
         order_no: o.order_no,
-        patient: o.patients?.full_name ?? "",
-        uhid: o.patients?.uhid ?? "",
-        doctor: o.doctors?.name ?? "",
+        patient: o.patients?.full_name ?? "—",
+        uhid: o.patients?.uhid ?? "—",
+        mobile: o.patients?.phone ?? "—",
+        doctor: o.doctors?.name ?? "—",
+        priority: o.priority ?? "normal",
         status: o.status,
         stage: o.test_stage,
         amount: o.total_amount,
@@ -167,7 +184,8 @@ function LabDashboard() {
               <TabsList className="h-8">
                 <TabsTrigger value="all" className="text-xs h-7 px-3">All</TabsTrigger>
                 <TabsTrigger value="pending" className="text-xs h-7 px-3">Pending</TabsTrigger>
-                <TabsTrigger value="complete" className="text-xs h-7 px-3">Complete</TabsTrigger>
+                <TabsTrigger value="in_progress" className="text-xs h-7 px-3">In Progress</TabsTrigger>
+                <TabsTrigger value="complete" className="text-xs h-7 px-3">Completed</TabsTrigger>
               </TabsList>
             </Tabs>
             <Tabs value={stage} onValueChange={(v) => setStage(v as StageFilter)}>
@@ -179,7 +197,20 @@ function LabDashboard() {
                 <TabsTrigger value="icu" className="text-xs h-7 px-3">ICU</TabsTrigger>
               </TabsList>
             </Tabs>
+            <Tabs value={priority} onValueChange={(v) => setPriority(v as PriorityFilter)}>
+              <TabsList className="h-8">
+                <TabsTrigger value="all" className="text-xs h-7 px-3">Any priority</TabsTrigger>
+                <TabsTrigger value="urgent" className="text-xs h-7 px-3 data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">Urgent</TabsTrigger>
+                <TabsTrigger value="normal" className="text-xs h-7 px-3">Normal</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
+        </div>
+        <div className="flex flex-wrap items-end gap-2 mb-4">
+          <div><Label className="text-xs text-muted-foreground">From date</Label><Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-8 w-40" /></div>
+          <div><Label className="text-xs text-muted-foreground">To date</Label><Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-8 w-40" /></div>
+          <Button variant="outline" size="sm" onClick={() => { /* no-op: filters apply live */ }}>Apply</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setFromDate(""); setToDate(""); setStatus("all"); setStage("all"); setPriority("all"); setQ(""); }}>Reset</Button>
         </div>
         <div className="divide-y">
           {filteredOrders.map((o: any) => (
@@ -196,6 +227,7 @@ function LabDashboard() {
                   <div className="text-sm tabular-nums">{inr(o.total_amount)}</div>
                   <div className="flex items-center gap-2 justify-end mt-0.5">
                     <span className="text-xs text-muted-foreground">{format(new Date(o.created_at), "dd MMM")}</span>
+                    {o.priority === "urgent" && <Badge variant="destructive" className="text-[10px] uppercase">Urgent</Badge>}
                     <Badge variant={(STAGE_TONE[o.test_stage] as any) ?? "outline"} className="text-[10px] uppercase">{o.test_stage}</Badge>
                     <Badge variant={(STATUS_TONE[o.status] as any) ?? "outline"} className="text-[10px] capitalize">{o.status.replace("_", " ")}</Badge>
                   </div>

@@ -1,59 +1,74 @@
-# IPD Enhancements + Discharge Module + Package Billing — Phased Delivery
 
-This is a large 14-task batch. To avoid regressions, I'll ship it in 4 focused phases. Reply "go" to start Phase A, or reorder as you like.
+# Complete Module Updates — Phased Plan
 
-## Phase A — IPD Core Edits + Date Filter (Tasks 1, 2, 3)
+This is a very large scope (15+ modules, ~80 discrete changes). To keep quality high and avoid breaking existing flows, I'll ship it in **7 phases**, each independently reviewable. Skipping **Payroll** and **Reports & Analytics** per instructions ([PANDIT]).
 
-**IPD admission detail page (`ipd.$id.tsx`)**
-- Add **Edit** button in top action bar (next to Transfer/Discharge)
-- Modal to edit: ward/bed, attending doctor, department, diagnosis, admission reason, emergency contact, notes, admission date
+## Global reusable pieces (built once, used by every phase)
 
-**IPD admissions list (`ipd.index.tsx`)**
-- Add row-level `RecordActions` (Edit / Print / WhatsApp / Download / Delete-admin) on Active tab (Discharged tab already has it)
-- Add **date range filter** (From / To + Today / Week / Month quick buttons) filtering by `admitted_at`
-- Excel/PDF export respects filter
+- **`DateRangeFilter`** component: `[From] [To] [Apply] [Reset]` — wraps existing `DayMonthYearTabs` pattern, emits `{from, to}` range.
+- **`PatientSearchBox`** — thin wrapper around `SearchBox` with debounce=300ms, exposes `filter(rows, keys)` helper (name/UHID/mobile/bill#).
+- **`whatsappShare(mobile, text)`** helper in `src/lib/share.ts` (already exists — extend if needed).
+- **`attachReportToPatient(patientId, {type, title, url})`** — writes to `patient_documents` via UHID so lab/radiology reports appear across OPD/IPD/ICU/OT/Patient tabs automatically.
+- **Priority badge** enum for Lab + Radiology (`normal` / `urgent`).
 
-**OPD Registration list**
-- Ensure per-row Edit / Delete / Print / WhatsApp / Download via `RecordActions`
+All lists already use `RecordActions` (Edit/Delete admin-gated/WhatsApp/Print/Download) from earlier phases — I'll extend the modules that don't have full coverage yet.
 
-## Phase B — Discharge Module + Auto Summary (Tasks 4, 5, 6, 8)
+## Phase 1 — Laboratory (§①)
+- Fix empty patient listing (audit the Supabase query in `laboratory.index.tsx` — likely missing/failed JOIN on `patients`).
+- Add tabs: All / Pending / In Progress / Completed with count badges.
+- Add `priority` column via migration (`lab_orders.priority text default 'normal'`); urgent orders float to top, red badge.
+- From/To date filter, respected by Excel export.
+- **Test Management** admin panel: reuse `lab_tests` table with Add/Edit/Delete; feeds the "new order" dropdown.
+- On lab result verify → auto-insert row into `patient_documents` labelled `Lab Report — <test> — <date>` (visible everywhere via UHID).
+- Edit modal for lab orders (test, ordered_by, notes, status).
 
-- New sidebar item **Discharge** under Clinical, after IPD → route `/discharge`
-- Stats cards: Total Discharged, Today, This Month, Pending Summary
-- Filters: date range, search (name/UHID/adm no/doctor/mobile), summary-status filter (debounced 300ms)
-- Table with per-row actions: View Summary / Edit / Print / WhatsApp / Download / Delete
-- **Auto-generate discharge summary** on Confirm Discharge: pull diagnosis (rounds), OT surgeries, ICU stay, medications, last vitals, lab summary, full bill, discharge form data → save to `discharge_summaries`, print via existing `discharge.$id.print` route with hospital branding
+## Phase 2 — Radiology (§②)
+- Admin **Test/Modality Management** (add/edit/remove modalities feeding order form).
+- Patient search bar (name/UHID/mobile, 300ms debounce).
+- From/To date filter.
+- Priority (normal/urgent) column via migration; urgent sorted top, red badge.
+- Edit report modal (findings, impression, radiologist, date).
+- Auto-attach completed reports to `patient_documents` via UHID.
 
-## Phase C — Billing Reports + Package Billing (Tasks 7, 10)
+## Phase 3 — Sidebar cleanup + Assets/Vendors/Blood Bank/Dialysis (§③④⑤⑥)
+- Remove any remaining **Shift/Staffing** sidebar entry + delete `smart-staffing.tsx` route.
+- Assets & Vendors: add search + from/to date filter.
+- Blood Bank: add Edit modal on every row.
+- Dialysis: Edit modal + delete + WhatsApp share; add `follow_up_at` (timestamp) + `follow_up_notes` (text) via migration; from/to date filter.
 
-**IPD Billing Reports sub-tab**
-- Date-range filter + report table (Bill # / Date / Patient / Dept / Total / Paid / Pending / Status)
-- Totals footer + Excel/PDF/Print
+## Phase 4 — Birth & Death Registers (§⑦)
+- Both modules: `RecordActions` set = Edit / Delete (admin) / Print (certificate w/ hospital header) / Report / WhatsApp.
+- From/To date filter on both.
 
-**Package Billing** (in IPD Billing + Billing Center)
-- Uses existing `health_packages` + `scheme_packages`
-- List packages with Edit / Delete / Apply-to-Patient
-- Admin **+ New Package** form: name, description, line-items (service+price), total (auto/override), duration, department, status
-- Apply → inserts package as bill line items
+## Phase 5 — Billing + Insurance (§⑧⑩)
+- **Billing** (`billing.index.tsx`): patient search (name/UHID/bill#/mobile), from/to filter, edit modal (amounts/discount/status/mode/notes), WhatsApp bill link.
+- Verify cross-department bills already land in central billing (source: `billing-aggregator.ts`); patch any missing source.
+- Revenue reports already in `billing.reports.tsx` — add Excel/PDF export.
+- Insurance line-item deduction in bill totals (Total − Insurance − Discount).
+- **Insurance**: page-level Export/Report/Print/WhatsApp, per-row full action set, patient search, from/to filter, Pending vs Completed tabs w/ count badges, **Insurance Company Management** (admin CRUD → dropdown source).
 
-## Phase D — Cross-Cutting Global Passes (Tasks 9, 11, 12, 13, 14)
+## Phase 6 — Pharmacy + Finance (§⑨⑪)
+- **Pharmacy**: per-row Edit/Delete/WhatsApp; patient search auto-linking dispensed medicine to patient via UHID (visible in OPD/IPD/ICU medication tab).
+- Recent sales from/to filter.
+- **Stock management**: Add/Edit/Delete medicine (admin/pharmacist), low-stock alert threshold.
+- **Finance & Accounting**: page-level Export/Report/WhatsApp, per-row Edit/Delete/Export/WhatsApp, search, from/to filter.
 
-- **Task 12 — OT Reports** date-range filter + filtered export; OT Schedule date filter
-- **Task 13 — Nurse Station MAR** row Edit modal (medicine/dose/route/frequency/timing/instructions/status), Delete (admin), MAR Print + WhatsApp; Nursing Notes already have Edit/Delete
-- **Task 9 — Download** button audit across every list module; add where missing (Excel default, PDF for summaries), filename `[Module]_Export_DD-MM-YYYY`
-- **Task 11 — Delete** button audit; ensure `RecordActions` present on: HR Attendance, HR Performance, Finance/Accounting, Insurance, Bed Management list, ICU list, OPD Consultation list, any missing lab/rad rows
-- **Task 14 — WhatsApp Share** audit; add where missing (report-level + row-level)
+## Phase 7 — BI + HR (§⑬⑭⑮⑯⑱)
+- **BI dashboard**: fix IPD amount card overflow (`truncate` + smaller fluid font, `overflow-hidden`), add WhatsApp Share of today's KPI snapshot.
+- **HR Employees**: Documents tab on employee profile (upload PDF/JPG/PNG/DOCX ≤ 10MB → `employee_documents` bucket).
+- **HR Attendance**: full actions, employee search, from/to filter, ensure all records saved & visible, Excel/PDF export.
+- **HR Leave**: full actions, employee search, from/to filter, dashboard cards (Today / Next 7d / Next 30d / Pending Approvals with names).
+- **HR Performance**: WhatsApp share + Excel/PDF export.
 
 ## Technical Notes
 
-- Reuse existing `RecordActions`, `ModuleActionBar`, `DateRangeTabs`, `PatientAttachments`, `PrintHeader`, `exportCsv`/`exportXlsx`, `shareOnWhatsApp`, `billing-aggregator`.
-- `discharge_summaries` table already exists (13 cols) — reuse.
-- No schema changes for Phases A/B/D. Phase C may need a `packages` table if `health_packages`/`scheme_packages` don't fit line-items → I'll evaluate before migrating.
-- Delete gating continues to use `useIsSuperAdmin` hook (already covers Admin + Super Admin).
-- All mutations invalidate React Query keys.
+- Migrations needed: `lab_orders.priority`, `radiology_orders.priority`, `dialysis_sessions.follow_up_at + follow_up_notes`, optionally `insurance_companies` (exists), `patient_documents` category taxonomy (already exists).
+- All lists already use React Query — invalidation via existing `queryClient.invalidateQueries` after mutations.
+- No sidebar/theme/routing/auth changes beyond removing Shift/Staffing.
+- Null coalesce helper: `const dash = (v) => v ?? "—"` — apply in existing renderers where missing.
 
-## Suggested order
+## Delivery cadence
 
-**A → B → C → D**, one phase per turn, each ends with a build check.
+I'll ship **Phase 1 first**, verify build + a quick smoke of the Lab list, then continue phase-by-phase in subsequent messages so you can review incrementally and I can react to any regressions before piling on the next module.
 
-Reply **go** to start Phase A, or tell me a different order/subset.
+Reply **"go"** to start Phase 1 (Laboratory), or tell me if you want a different phase order (e.g. start with Billing).
