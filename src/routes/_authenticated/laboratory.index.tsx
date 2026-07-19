@@ -53,7 +53,7 @@ function LabDashboard() {
         supabase.from("lab_orders").select("id", { count: "exact" }).in("status", ["ordered", "sample_collected", "in_progress"]),
         supabase.from("lab_orders").select("id", { count: "exact" }).eq("status", "completed"),
         supabase.from("lab_orders").select("total_amount").gte("created_at", today.toISOString()),
-        supabase.from("lab_orders").select("id, order_no, status, total_amount, created_at, test_stage, notes, patients(full_name, uhid, phone), doctors(name), lab_results(id)").order("created_at", { ascending: false }).limit(60),
+        supabase.from("lab_orders").select("id, order_no, status, priority, total_amount, created_at, test_stage, notes, patients(full_name, uhid, phone), doctors(name), lab_results(id)").order("created_at", { ascending: false }).limit(200),
       ]);
       return {
         pending: pending.count ?? 0,
