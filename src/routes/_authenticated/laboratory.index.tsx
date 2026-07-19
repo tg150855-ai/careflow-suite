@@ -90,20 +90,31 @@ function LabDashboard() {
 
   const filteredOrders = useMemo(() => {
     let rows = (data?.orders ?? []) as any[];
-    if (status === "pending") rows = rows.filter((o) => ["ordered", "sample_collected", "in_progress"].includes(o.status));
+    if (status === "pending") rows = rows.filter((o) => ["ordered", "sample_collected"].includes(o.status));
+    else if (status === "in_progress") rows = rows.filter((o) => o.status === "in_progress");
     else if (status === "complete") rows = rows.filter((o) => o.status === "completed");
     if (stage !== "all") rows = rows.filter((o) => o.test_stage === stage);
+    if (priority !== "all") rows = rows.filter((o) => (o.priority ?? "normal") === priority);
+    if (fromDate) rows = rows.filter((o) => new Date(o.created_at) >= new Date(fromDate));
+    if (toDate) { const end = new Date(toDate); end.setHours(23,59,59,999); rows = rows.filter((o) => new Date(o.created_at) <= end); }
     if (q.trim().length >= 2) {
       const needle = q.toLowerCase();
       rows = rows.filter((o) =>
         (o.patients?.full_name ?? "").toLowerCase().includes(needle) ||
         (o.patients?.uhid ?? "").toLowerCase().includes(needle) ||
+        (o.patients?.phone ?? "").toLowerCase().includes(needle) ||
         (o.order_no ?? "").toLowerCase().includes(needle) ||
         (o.doctors?.name ?? "").toLowerCase().includes(needle),
       );
     }
-    return rows.slice(0, 30);
-  }, [data?.orders, status, stage, q]);
+    // Urgent orders float to top
+    rows = [...rows].sort((a, b) => {
+      const ap = a.priority === "urgent" ? 0 : 1;
+      const bp = b.priority === "urgent" ? 0 : 1;
+      return ap - bp;
+    });
+    return rows.slice(0, 60);
+  }, [data?.orders, status, stage, priority, fromDate, toDate, q]);
 
   const cards = [
     { label: "Pending tests", value: data?.pending ?? 0, icon: Clock },
