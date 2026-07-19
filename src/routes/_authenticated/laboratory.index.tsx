@@ -225,6 +225,7 @@ function LabDashboard() {
                   <div className="text-sm tabular-nums">{inr(o.total_amount)}</div>
                   <div className="flex items-center gap-2 justify-end mt-0.5">
                     <span className="text-xs text-muted-foreground">{format(new Date(o.created_at), "dd MMM")}</span>
+                    {o.priority === "urgent" && <Badge variant="destructive" className="text-[10px] uppercase">Urgent</Badge>}
                     <Badge variant={(STAGE_TONE[o.test_stage] as any) ?? "outline"} className="text-[10px] uppercase">{o.test_stage}</Badge>
                     <Badge variant={(STATUS_TONE[o.status] as any) ?? "outline"} className="text-[10px] capitalize">{o.status.replace("_", " ")}</Badge>
                   </div>
