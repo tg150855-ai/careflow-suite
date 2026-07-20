@@ -136,7 +136,24 @@ function BirthRegister() {
                     <RecordActions
                       size="icon"
                       deleteLabel={`birth record for ${r.patients?.full_name ?? "mother"}`}
-                      onPrint={() => window.print()}
+                      onEdit={() => setEditRow(r)}
+                      onPrint={() => printCertificate("Birth", hospital, {
+                        "Mother's Name": r.patients?.full_name ?? "—",
+                        "UHID": r.patients?.uhid ?? "—",
+                        "Admission No": r.admissions?.admission_no ?? "—",
+                        "Baby Name": r.baby_name ?? "—",
+                        "Sex": r.sex ?? "—",
+                        "Weight": r.weight_grams ? `${r.weight_grams} g` : "—",
+                        "Date & Time of Birth": format(new Date(r.born_at), "dd MMM yyyy, p"),
+                        "Delivery Type": r.delivery_type ?? "—",
+                        "Place of Birth": r.place_of_birth ?? "—",
+                        "Attending Doctor": r.attending_doctor_name ?? "—",
+                        "Remarks": r.remarks ?? "—",
+                      })}
+                      onDownload={() => exportXlsx([{
+                        Mother: r.patients?.full_name, UHID: r.patients?.uhid, Baby: r.baby_name, Sex: r.sex,
+                        "Weight (g)": r.weight_grams, "Born at": r.born_at, Delivery: r.delivery_type, Doctor: r.attending_doctor_name,
+                      }], `birth-${r.patients?.uhid ?? r.id}.xlsx`)}
                       onWhatsApp={() => shareOnWhatsApp(
                         summarizeRecord("Birth Certificate", {
                           Mother: r.patients?.full_name,
@@ -160,7 +177,75 @@ function BirthRegister() {
           </table>
         </div>
       </Card>
+      {editRow && <EditBirthDialog row={editRow} onClose={() => setEditRow(null)} />}
     </div>
+  );
+}
+
+function EditBirthDialog({ row, onClose }: { row: any; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [f, setF] = useState({
+    baby_name: row.baby_name ?? "",
+    sex: row.sex ?? "male",
+    weight_grams: row.weight_grams?.toString() ?? "",
+    born_at: new Date(row.born_at).toISOString().slice(0, 16),
+    delivery_type: row.delivery_type ?? "Normal",
+    place_of_birth: row.place_of_birth ?? "Hospital",
+    attending_doctor_name: row.attending_doctor_name ?? "",
+    remarks: row.remarks ?? "",
+  });
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("birth_register" as any).update({
+        baby_name: f.baby_name || null,
+        sex: f.sex,
+        weight_grams: f.weight_grams ? Number(f.weight_grams) : null,
+        born_at: new Date(f.born_at).toISOString(),
+        delivery_type: f.delivery_type || null,
+        place_of_birth: f.place_of_birth || null,
+        attending_doctor_name: f.attending_doctor_name || null,
+        remarks: f.remarks || null,
+      }).eq("id", row.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["birth-register"] }); onClose(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader><DialogTitle>Edit birth record</DialogTitle></DialogHeader>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1"><Label>Baby name</Label><Input value={f.baby_name} onChange={(e) => setF({ ...f, baby_name: e.target.value })} /></div>
+          <div className="space-y-1"><Label>Sex</Label>
+            <Select value={f.sex} onValueChange={(v) => setF({ ...f, sex: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["male","female","other"].map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1"><Label>Weight (g)</Label><Input type="number" value={f.weight_grams} onChange={(e) => setF({ ...f, weight_grams: e.target.value })} /></div>
+          <div className="space-y-1"><Label>Date & time</Label><Input type="datetime-local" value={f.born_at} onChange={(e) => setF({ ...f, born_at: e.target.value })} /></div>
+          <div className="space-y-1"><Label>Delivery type</Label>
+            <Select value={f.delivery_type} onValueChange={(v) => setF({ ...f, delivery_type: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["Normal","C-Section","Assisted","Preterm","Other"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1"><Label>Place</Label>
+            <Select value={f.place_of_birth} onValueChange={(v) => setF({ ...f, place_of_birth: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["Hospital","Labour Room","OT","Emergency","En route"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1 col-span-2"><Label>Attending doctor</Label><Input value={f.attending_doctor_name} onChange={(e) => setF({ ...f, attending_doctor_name: e.target.value })} /></div>
+          <div className="space-y-1 col-span-2"><Label>Remarks</Label><Textarea rows={2} value={f.remarks} onChange={(e) => setF({ ...f, remarks: e.target.value })} /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
