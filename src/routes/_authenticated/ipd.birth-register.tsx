@@ -48,6 +48,8 @@ function BirthRegister() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const { range, preset, setPreset } = useDateRange("month");
+  const { data: hospital } = useHospitalProfile();
+  const [editRow, setEditRow] = useState<any | null>(null);
 
   const { data: rows = [] } = useQuery({
     queryKey: ["birth-register"],
