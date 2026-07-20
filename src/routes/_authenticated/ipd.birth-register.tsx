@@ -19,6 +19,28 @@ import { SearchBox } from "@/components/common/search-box";
 import { DayMonthYearTabs, useDateRange } from "@/components/common/date-range-tabs";
 import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 import { exportXlsx, printPage } from "@/lib/export";
+import { useHospitalProfile, type HospitalProfile } from "@/components/print-header";
+
+function printCertificate(kind: "Birth" | "Death", h: HospitalProfile | undefined, fields: Record<string, string>) {
+  const w = window.open("", "_blank", "width=900,height=1000");
+  if (!w) return;
+  const accent = h?.primary_color || "#0EA5E9";
+  const rows = Object.entries(fields).map(([k, v]) => `<tr><td style="padding:6px 12px;font-weight:600;width:35%;border-bottom:1px solid #eee">${k}</td><td style="padding:6px 12px;border-bottom:1px solid #eee">${v || "—"}</td></tr>`).join("");
+  const meta = [h?.phone && `Phone: ${h.phone}`, h?.email && `Email: ${h.email}`].filter(Boolean).join(" | ");
+  const reg = [h?.registration_no && `License: ${h.registration_no}`, h?.gst_no && `GSTIN: ${h.gst_no}`, h?.nabh_no && `NABH: ${h.nabh_no}`].filter(Boolean).join(" | ");
+  w.document.write(`<!doctype html><html><head><title>${kind} Certificate</title>
+<style>body{font-family:system-ui,-apple-system,sans-serif;padding:32px;color:#111}.hdr{display:flex;gap:16px;align-items:flex-start;padding-bottom:12px}.hdr img{max-height:64px;max-width:120px;object-fit:contain}.name{font-size:22px;font-weight:700;color:${accent}}.small{font-size:11px;color:#555}.rule{height:2px;background:${accent};margin:4px 0 8px}.title{font-size:16px;font-weight:700;text-align:center;letter-spacing:2px;color:${accent};margin:24px 0 16px;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}.foot{margin-top:48px;display:flex;justify-content:space-between;font-size:11px;color:#666}.sig{margin-top:64px;text-align:right;font-size:12px}@media print{@page{size:A4;margin:14mm}}</style>
+</head><body>
+<div class="hdr">${h?.logo_url ? `<img src="${h.logo_url}"/>` : ""}<div style="flex:1"><div class="name">${h?.hospital_name || ""}</div>${h?.tagline ? `<div class="small">${h.tagline}</div>` : ""}${h?.address ? `<div class="small" style="white-space:pre-line">${h.address}</div>` : ""}${meta ? `<div class="small">${meta}</div>` : ""}${reg ? `<div class="small">${reg}</div>` : ""}</div></div>
+<div class="rule"></div>
+<div class="title">Certificate of ${kind}</div>
+<table>${rows}</table>
+<div class="sig">Authorised Signatory<br/><span class="small">${h?.hospital_name || ""}</span></div>
+<div class="foot"><span>${h?.hospital_name || ""}</span><span>Computer generated · ${new Date().toLocaleString()}</span></div>
+<script>window.onload=()=>setTimeout(()=>window.print(),300)</script>
+</body></html>`);
+  w.document.close();
+}
 
 export const Route = createFileRoute("/_authenticated/ipd/birth-register")({ component: BirthRegister });
 
