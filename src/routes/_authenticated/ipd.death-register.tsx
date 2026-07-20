@@ -19,6 +19,28 @@ import { SearchBox } from "@/components/common/search-box";
 import { DayMonthYearTabs, useDateRange } from "@/components/common/date-range-tabs";
 import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 import { exportXlsx, printPage } from "@/lib/export";
+import { useHospitalProfile, type HospitalProfile } from "@/components/print-header";
+
+function printCertificate(kind: "Birth" | "Death", h: HospitalProfile | undefined, fields: Record<string, string>) {
+  const w = window.open("", "_blank", "width=900,height=1000");
+  if (!w) return;
+  const accent = h?.primary_color || "#0EA5E9";
+  const rows = Object.entries(fields).map(([k, v]) => `<tr><td style="padding:6px 12px;font-weight:600;width:35%;border-bottom:1px solid #eee">${k}</td><td style="padding:6px 12px;border-bottom:1px solid #eee">${v || "—"}</td></tr>`).join("");
+  const meta = [h?.phone && `Phone: ${h.phone}`, h?.email && `Email: ${h.email}`].filter(Boolean).join(" | ");
+  const reg = [h?.registration_no && `License: ${h.registration_no}`, h?.gst_no && `GSTIN: ${h.gst_no}`, h?.nabh_no && `NABH: ${h.nabh_no}`].filter(Boolean).join(" | ");
+  w.document.write(`<!doctype html><html><head><title>${kind} Certificate</title>
+<style>body{font-family:system-ui,-apple-system,sans-serif;padding:32px;color:#111}.hdr{display:flex;gap:16px;align-items:flex-start;padding-bottom:12px}.hdr img{max-height:64px;max-width:120px;object-fit:contain}.name{font-size:22px;font-weight:700;color:${accent}}.small{font-size:11px;color:#555}.rule{height:2px;background:${accent};margin:4px 0 8px}.title{font-size:16px;font-weight:700;text-align:center;letter-spacing:2px;color:${accent};margin:24px 0 16px;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}.foot{margin-top:48px;display:flex;justify-content:space-between;font-size:11px;color:#666}.sig{margin-top:64px;text-align:right;font-size:12px}@media print{@page{size:A4;margin:14mm}}</style>
+</head><body>
+<div class="hdr">${h?.logo_url ? `<img src="${h.logo_url}"/>` : ""}<div style="flex:1"><div class="name">${h?.hospital_name || ""}</div>${h?.tagline ? `<div class="small">${h.tagline}</div>` : ""}${h?.address ? `<div class="small" style="white-space:pre-line">${h.address}</div>` : ""}${meta ? `<div class="small">${meta}</div>` : ""}${reg ? `<div class="small">${reg}</div>` : ""}</div></div>
+<div class="rule"></div>
+<div class="title">Certificate of ${kind}</div>
+<table>${rows}</table>
+<div class="sig">Authorised Signatory<br/><span class="small">${h?.hospital_name || ""}</span></div>
+<div class="foot"><span>${h?.hospital_name || ""}</span><span>Computer generated · ${new Date().toLocaleString()}</span></div>
+<script>window.onload=()=>setTimeout(()=>window.print(),300)</script>
+</body></html>`);
+  w.document.close();
+}
 
 export const Route = createFileRoute("/_authenticated/ipd/death-register")({ component: DeathRegister });
 
@@ -26,6 +48,8 @@ function DeathRegister() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const { range, preset, setPreset } = useDateRange("month");
+  const { data: hospital } = useHospitalProfile();
+  const [editRow, setEditRow] = useState<any | null>(null);
 
   const { data: rows = [] } = useQuery({
     queryKey: ["death-register"],
@@ -103,7 +127,23 @@ function DeathRegister() {
                     <RecordActions
                       size="icon"
                       deleteLabel={`death record for ${r.patients?.full_name ?? "patient"}`}
-                      onPrint={() => window.print()}
+                      onEdit={() => setEditRow(r)}
+                      onPrint={() => printCertificate("Death", hospital, {
+                        "Patient Name": r.patients?.full_name ?? "—",
+                        "UHID": r.patients?.uhid ?? "—",
+                        "Admission No": r.admissions?.admission_no ?? "—",
+                        "Date & Time of Death": format(new Date(r.died_at), "dd MMM yyyy, p"),
+                        "Place of Death": r.place_of_death ?? "—",
+                        "Cause of Death": r.cause_of_death ?? "—",
+                        "Immediate Cause": r.immediate_cause ?? "—",
+                        "Underlying Cause": r.underlying_cause ?? "—",
+                        "Certifying Doctor": r.certifying_doctor_name ?? "—",
+                        "Remarks": r.remarks ?? "—",
+                      })}
+                      onDownload={() => exportXlsx([{
+                        Patient: r.patients?.full_name, UHID: r.patients?.uhid, Admission: r.admissions?.admission_no,
+                        "Died at": r.died_at, Cause: r.cause_of_death, Doctor: r.certifying_doctor_name, Place: r.place_of_death,
+                      }], `death-${r.patients?.uhid ?? r.id}.xlsx`)}
                       onWhatsApp={() => shareOnWhatsApp(
                         summarizeRecord("Death Record", {
                           Patient: r.patients?.full_name,
@@ -126,7 +166,66 @@ function DeathRegister() {
           </table>
         </div>
       </Card>
+      {editRow && <EditDeathDialog row={editRow} onClose={() => setEditRow(null)} />}
     </div>
+  );
+}
+
+function EditDeathDialog({ row, onClose }: { row: any; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [f, setF] = useState({
+    died_at: new Date(row.died_at).toISOString().slice(0, 16),
+    place_of_death: row.place_of_death ?? "Hospital",
+    cause_of_death: row.cause_of_death ?? "",
+    immediate_cause: row.immediate_cause ?? "",
+    underlying_cause: row.underlying_cause ?? "",
+    certifying_doctor_name: row.certifying_doctor_name ?? "",
+    remarks: row.remarks ?? "",
+  });
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("death_register").update({
+        died_at: new Date(f.died_at).toISOString(),
+        place_of_death: f.place_of_death || null,
+        cause_of_death: f.cause_of_death,
+        immediate_cause: f.immediate_cause || null,
+        underlying_cause: f.underlying_cause || null,
+        certifying_doctor_name: f.certifying_doctor_name || null,
+        remarks: f.remarks || null,
+      }).eq("id", row.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["death-register"] }); onClose(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader><DialogTitle>Edit death record</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1"><Label>Date & time</Label><Input type="datetime-local" value={f.died_at} onChange={(e) => setF({ ...f, died_at: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Place</Label>
+              <Select value={f.place_of_death} onValueChange={(v) => setF({ ...f, place_of_death: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{["Hospital","ICU","OT","Emergency","Brought dead"].map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1"><Label>Cause of death</Label><Textarea rows={2} value={f.cause_of_death} onChange={(e) => setF({ ...f, cause_of_death: e.target.value })} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1"><Label>Immediate cause</Label><Input value={f.immediate_cause} onChange={(e) => setF({ ...f, immediate_cause: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Underlying cause</Label><Input value={f.underlying_cause} onChange={(e) => setF({ ...f, underlying_cause: e.target.value })} /></div>
+          </div>
+          <div className="space-y-1"><Label>Certifying doctor</Label><Input value={f.certifying_doctor_name} onChange={(e) => setF({ ...f, certifying_doctor_name: e.target.value })} /></div>
+          <div className="space-y-1"><Label>Remarks</Label><Textarea rows={2} value={f.remarks} onChange={(e) => setF({ ...f, remarks: e.target.value })} /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
