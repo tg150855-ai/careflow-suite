@@ -117,39 +117,67 @@ function RadiologyPage() {
         <StatCard label="Revenue Today" value={inr(stats.revenue)} icon={Activity} />
       </div>
 
+      <Card>
+        <CardContent className="p-3 flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[240px]"><Label className="text-xs">Search</Label><SearchBox value={q} onChange={setQ} placeholder="Name, UHID, investigation, modality…" /></div>
+          <div><Label className="text-xs">From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" /></div>
+          <div><Label className="text-xs">To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" /></div>
+          {(q || from || to) && <Button variant="ghost" size="sm" onClick={() => { setQ(""); setFrom(""); setTo(""); }}>Reset</Button>}
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="all">
         <TabsList>
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
-        {["all", "pending", "completed"].map((tab) => (
-          <TabsContent key={tab} value={tab}>
-            <Card>
-              <CardContent className="p-0 divide-y">
-                {orders.filter((o) => tab === "all" || (tab === "pending" ? ["pending", "scheduled"].includes(o.status) : o.status === "completed")).map((o) => (
-                  <div key={o.id} className="p-4 flex items-center gap-3 hover:bg-surface-muted">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium">{o.investigation} <span className="text-muted-foreground font-normal">· {o.modality}</span></div>
-                      <div className="text-xs text-muted-foreground">{o.patients?.full_name} ({o.patients?.uhid}) · {o.doctors?.name ?? "—"} · {format(new Date(o.created_at), "dd MMM HH:mm")}</div>
+        {["all", "pending", "completed"].map((tab) => {
+          const ql = q.toLowerCase();
+          const fromT = from ? new Date(from).getTime() : 0;
+          const toT = to ? new Date(to).getTime() + 86400000 : Infinity;
+          const filtered = orders
+            .filter((o) => tab === "all" || (tab === "pending" ? ["pending", "scheduled"].includes(o.status) : o.status === "completed"))
+            .filter((o) => {
+              const t = new Date(o.created_at).getTime();
+              if (t < fromT || t > toT) return false;
+              if (!ql) return true;
+              return (
+                o.patients?.full_name?.toLowerCase().includes(ql) ||
+                o.patients?.uhid?.toLowerCase().includes(ql) ||
+                o.investigation?.toLowerCase().includes(ql) ||
+                o.modality?.toLowerCase().includes(ql)
+              );
+            })
+            .sort((a, b) => (a.priority === "urgent" || a.priority === "emergency" ? -1 : 0) - (b.priority === "urgent" || b.priority === "emergency" ? -1 : 0));
+          return (
+            <TabsContent key={tab} value={tab}>
+              <Card>
+                <CardContent className="p-0 divide-y">
+                  {filtered.map((o) => (
+                    <div key={o.id} className="p-4 flex items-center gap-3 hover:bg-surface-muted">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">{o.investigation} <span className="text-muted-foreground font-normal">· {o.modality}</span></div>
+                        <div className="text-xs text-muted-foreground">{o.patients?.full_name} ({o.patients?.uhid}) · {o.doctors?.name ?? "—"} · {format(new Date(o.created_at), "dd MMM HH:mm")}</div>
+                      </div>
+                      <Badge variant={o.priority === "emergency" ? "destructive" : o.priority === "urgent" ? "default" : "outline"} className="capitalize">{o.priority}</Badge>
+                      <Badge variant="outline" className="capitalize">{o.status}</Badge>
+                      {o.status !== "completed" && <Button size="sm" variant="outline" onClick={() => updateStatus(o.id, "completed")}>Mark Done</Button>}
+                      {o.status === "completed" && <Button size="sm" onClick={() => setReportFor(o)}>Report</Button>}
+                      <RecordActions
+                        onPrint={() => printOrder(o)}
+                        onWhatsApp={() => whatsAppOrder(o)}
+                        onDelete={() => removeOrder(o.id)}
+                        deleteLabel="this radiology order"
+                      />
                     </div>
-                    <Badge variant={o.priority === "emergency" ? "destructive" : o.priority === "urgent" ? "default" : "outline"} className="capitalize">{o.priority}</Badge>
-                    <Badge variant="outline" className="capitalize">{o.status}</Badge>
-                    {o.status !== "completed" && <Button size="sm" variant="outline" onClick={() => updateStatus(o.id, "completed")}>Mark Done</Button>}
-                    {o.status === "completed" && <Button size="sm" onClick={() => setReportFor(o)}>Report</Button>}
-                    <RecordActions
-                      onPrint={() => printOrder(o)}
-                      onWhatsApp={() => whatsAppOrder(o)}
-                      onDelete={() => removeOrder(o.id)}
-                      deleteLabel="this radiology order"
-                    />
-                  </div>
-                ))}
-                {orders.length === 0 && <div className="p-12 text-center text-sm text-muted-foreground">No radiology orders yet.</div>}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
+                  ))}
+                  {filtered.length === 0 && <div className="p-12 text-center text-sm text-muted-foreground">No radiology orders match.</div>}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          );
+        })}
       </Tabs>
 
       <ReportDialog order={reportFor} onClose={() => { setReportFor(null); load(); }} />
