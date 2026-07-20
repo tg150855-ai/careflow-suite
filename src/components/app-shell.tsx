@@ -81,7 +81,7 @@ const GROUPS: NavGroup[] = [
       { to: "/hr/attendance", labelKey: "nav.items.attendance", icon: Clock },
       { to: "/hr/leave", labelKey: "nav.items.leave", icon: CalendarCheck },
       { to: "/hr/payroll", labelKey: "nav.items.payroll", icon: Wallet },
-      { to: "/smart-staffing", labelKey: "nav.items.shift_staffing", icon: Users },
+      
       { to: "/performance", labelKey: "nav.items.performance", icon: BarChart3 },
     ],
   },
