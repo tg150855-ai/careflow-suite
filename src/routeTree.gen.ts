@@ -15,7 +15,6 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedStaffRouteImport } from './routes/_authenticated/staff'
-import { Route as AuthenticatedSmartStaffingRouteImport } from './routes/_authenticated/smart-staffing'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSecurityCenterRouteImport } from './routes/_authenticated/security-center'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
@@ -134,12 +133,6 @@ const AuthenticatedStaffRoute = AuthenticatedStaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedSmartStaffingRoute =
-  AuthenticatedSmartStaffingRouteImport.update({
-    id: '/smart-staffing',
-    path: '/smart-staffing',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -657,7 +650,6 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthenticatedReportsRoute
   '/security-center': typeof AuthenticatedSecurityCenterRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/smart-staffing': typeof AuthenticatedSmartStaffingRoute
   '/staff': typeof AuthenticatedStaffRouteWithChildren
   '/vendors': typeof AuthenticatedVendorsRoute
   '/billing/$id': typeof AuthenticatedBillingIdRoute
@@ -746,7 +738,6 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/security-center': typeof AuthenticatedSecurityCenterRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/smart-staffing': typeof AuthenticatedSmartStaffingRoute
   '/staff': typeof AuthenticatedStaffRouteWithChildren
   '/vendors': typeof AuthenticatedVendorsRoute
   '/billing/$id': typeof AuthenticatedBillingIdRoute
@@ -844,7 +835,6 @@ export interface FileRoutesById {
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/security-center': typeof AuthenticatedSecurityCenterRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/smart-staffing': typeof AuthenticatedSmartStaffingRoute
   '/_authenticated/staff': typeof AuthenticatedStaffRouteWithChildren
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/billing/$id': typeof AuthenticatedBillingIdRoute
@@ -942,7 +932,6 @@ export interface FileRouteTypes {
     | '/reports'
     | '/security-center'
     | '/settings'
-    | '/smart-staffing'
     | '/staff'
     | '/vendors'
     | '/billing/$id'
@@ -1031,7 +1020,6 @@ export interface FileRouteTypes {
     | '/reports'
     | '/security-center'
     | '/settings'
-    | '/smart-staffing'
     | '/staff'
     | '/vendors'
     | '/billing/$id'
@@ -1128,7 +1116,6 @@ export interface FileRouteTypes {
     | '/_authenticated/reports'
     | '/_authenticated/security-center'
     | '/_authenticated/settings'
-    | '/_authenticated/smart-staffing'
     | '/_authenticated/staff'
     | '/_authenticated/vendors'
     | '/_authenticated/billing/$id'
@@ -1233,13 +1220,6 @@ declare module '@tanstack/react-router' {
       path: '/staff'
       fullPath: '/staff'
       preLoaderRoute: typeof AuthenticatedStaffRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/smart-staffing': {
-      id: '/_authenticated/smart-staffing'
-      path: '/smart-staffing'
-      fullPath: '/smart-staffing'
-      preLoaderRoute: typeof AuthenticatedSmartStaffingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
@@ -2082,7 +2062,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSecurityCenterRoute: typeof AuthenticatedSecurityCenterRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedSmartStaffingRoute: typeof AuthenticatedSmartStaffingRoute
   AuthenticatedStaffRoute: typeof AuthenticatedStaffRouteWithChildren
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedHrAttendanceRoute: typeof AuthenticatedHrAttendanceRoute
@@ -2132,7 +2111,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSecurityCenterRoute: AuthenticatedSecurityCenterRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedSmartStaffingRoute: AuthenticatedSmartStaffingRoute,
   AuthenticatedStaffRoute: AuthenticatedStaffRouteWithChildren,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedHrAttendanceRoute: AuthenticatedHrAttendanceRoute,

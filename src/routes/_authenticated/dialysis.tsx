@@ -128,6 +128,12 @@ function DialysisPage() {
                   {format(new Date(s.session_date), "dd MMM yyyy")} · Machine {s.machine_no ?? "—"} · Dr. {s.doctors?.name ?? "—"}
                   {s.duration_min ? ` · ${s.duration_min} min` : ""}
                 </div>
+                {s.follow_up_at && (
+                  <div className="text-xs text-primary mt-0.5">
+                    Follow-up: {format(new Date(s.follow_up_at), "dd MMM yyyy")}
+                    {s.follow_up_notes ? ` — ${s.follow_up_notes}` : ""}
+                  </div>
+                )}
               </div>
               <Badge variant="outline" className="capitalize">{s.status.replace("_", " ")}</Badge>
               {s.status === "scheduled" && <Button size="sm" variant="outline" onClick={() => update(s.id, { status: "in_progress", start_time: new Date().toISOString() })}>Start</Button>}
@@ -169,12 +175,14 @@ function StatCard({ label, value }: any) {
 
 function NewSessionDialog({ patients, doctors, onCreated }: any) {
   const [open, setOpen] = useState(false);
-  const [f, setF] = useState({ patient_id: "", doctor_id: "", machine_no: "DM-01", session_date: format(new Date(), "yyyy-MM-dd"), pre_weight: "", notes: "" });
+  const [f, setF] = useState({ patient_id: "", doctor_id: "", machine_no: "DM-01", session_date: format(new Date(), "yyyy-MM-dd"), pre_weight: "", notes: "", follow_up_at: "", follow_up_notes: "" });
   const submit = async () => {
     if (!f.patient_id) return toast.error("Patient required");
     const { error } = await supabase.from("dialysis_sessions" as any).insert({
       patient_id: f.patient_id, doctor_id: f.doctor_id || null, machine_no: f.machine_no,
       session_date: f.session_date, pre_weight: f.pre_weight ? Number(f.pre_weight) : null, notes: f.notes || null,
+      follow_up_at: f.follow_up_at ? new Date(f.follow_up_at).toISOString() : null,
+      follow_up_notes: f.follow_up_notes || null,
     });
     if (error) return toast.error(error.message);
     toast.success("Scheduled"); setOpen(false); onCreated();
@@ -201,6 +209,8 @@ function NewSessionDialog({ patients, doctors, onCreated }: any) {
             <div><Label>Machine</Label><Input value={f.machine_no} onChange={(e) => setF({ ...f, machine_no: e.target.value })} /></div>
             <div><Label>Date</Label><Input type="date" value={f.session_date} onChange={(e) => setF({ ...f, session_date: e.target.value })} /></div>
             <div><Label>Pre Weight (kg)</Label><Input type="number" step="0.1" value={f.pre_weight} onChange={(e) => setF({ ...f, pre_weight: e.target.value })} /></div>
+            <div><Label>Follow-up Date</Label><Input type="date" value={f.follow_up_at} onChange={(e) => setF({ ...f, follow_up_at: e.target.value })} /></div>
+            <div className="col-span-2"><Label>Follow-up Notes</Label><Input value={f.follow_up_notes} onChange={(e) => setF({ ...f, follow_up_notes: e.target.value })} placeholder="Optional notes for the follow-up visit" /></div>
           </div>
         </div>
         <DialogFooter><Button onClick={submit}>Schedule</Button></DialogFooter>
@@ -208,3 +218,4 @@ function NewSessionDialog({ patients, doctors, onCreated }: any) {
     </Dialog>
   );
 }
+
