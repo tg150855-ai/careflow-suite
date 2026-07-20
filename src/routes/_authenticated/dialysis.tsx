@@ -128,6 +128,12 @@ function DialysisPage() {
                   {format(new Date(s.session_date), "dd MMM yyyy")} · Machine {s.machine_no ?? "—"} · Dr. {s.doctors?.name ?? "—"}
                   {s.duration_min ? ` · ${s.duration_min} min` : ""}
                 </div>
+                {s.follow_up_at && (
+                  <div className="text-xs text-primary mt-0.5">
+                    Follow-up: {format(new Date(s.follow_up_at), "dd MMM yyyy")}
+                    {s.follow_up_notes ? ` — ${s.follow_up_notes}` : ""}
+                  </div>
+                )}
               </div>
               <Badge variant="outline" className="capitalize">{s.status.replace("_", " ")}</Badge>
               {s.status === "scheduled" && <Button size="sm" variant="outline" onClick={() => update(s.id, { status: "in_progress", start_time: new Date().toISOString() })}>Start</Button>}
