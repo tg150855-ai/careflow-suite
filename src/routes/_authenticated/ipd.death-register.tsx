@@ -127,7 +127,23 @@ function DeathRegister() {
                     <RecordActions
                       size="icon"
                       deleteLabel={`death record for ${r.patients?.full_name ?? "patient"}`}
-                      onPrint={() => window.print()}
+                      onEdit={() => setEditRow(r)}
+                      onPrint={() => printCertificate("Death", hospital, {
+                        "Patient Name": r.patients?.full_name ?? "—",
+                        "UHID": r.patients?.uhid ?? "—",
+                        "Admission No": r.admissions?.admission_no ?? "—",
+                        "Date & Time of Death": format(new Date(r.died_at), "dd MMM yyyy, p"),
+                        "Place of Death": r.place_of_death ?? "—",
+                        "Cause of Death": r.cause_of_death ?? "—",
+                        "Immediate Cause": r.immediate_cause ?? "—",
+                        "Underlying Cause": r.underlying_cause ?? "—",
+                        "Certifying Doctor": r.certifying_doctor_name ?? "—",
+                        "Remarks": r.remarks ?? "—",
+                      })}
+                      onDownload={() => exportXlsx([{
+                        Patient: r.patients?.full_name, UHID: r.patients?.uhid, Admission: r.admissions?.admission_no,
+                        "Died at": r.died_at, Cause: r.cause_of_death, Doctor: r.certifying_doctor_name, Place: r.place_of_death,
+                      }], `death-${r.patients?.uhid ?? r.id}.xlsx`)}
                       onWhatsApp={() => shareOnWhatsApp(
                         summarizeRecord("Death Record", {
                           Patient: r.patients?.full_name,
@@ -150,7 +166,66 @@ function DeathRegister() {
           </table>
         </div>
       </Card>
+      {editRow && <EditDeathDialog row={editRow} onClose={() => setEditRow(null)} />}
     </div>
+  );
+}
+
+function EditDeathDialog({ row, onClose }: { row: any; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [f, setF] = useState({
+    died_at: new Date(row.died_at).toISOString().slice(0, 16),
+    place_of_death: row.place_of_death ?? "Hospital",
+    cause_of_death: row.cause_of_death ?? "",
+    immediate_cause: row.immediate_cause ?? "",
+    underlying_cause: row.underlying_cause ?? "",
+    certifying_doctor_name: row.certifying_doctor_name ?? "",
+    remarks: row.remarks ?? "",
+  });
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("death_register").update({
+        died_at: new Date(f.died_at).toISOString(),
+        place_of_death: f.place_of_death || null,
+        cause_of_death: f.cause_of_death,
+        immediate_cause: f.immediate_cause || null,
+        underlying_cause: f.underlying_cause || null,
+        certifying_doctor_name: f.certifying_doctor_name || null,
+        remarks: f.remarks || null,
+      }).eq("id", row.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["death-register"] }); onClose(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader><DialogTitle>Edit death record</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1"><Label>Date & time</Label><Input type="datetime-local" value={f.died_at} onChange={(e) => setF({ ...f, died_at: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Place</Label>
+              <Select value={f.place_of_death} onValueChange={(v) => setF({ ...f, place_of_death: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{["Hospital","ICU","OT","Emergency","Brought dead"].map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1"><Label>Cause of death</Label><Textarea rows={2} value={f.cause_of_death} onChange={(e) => setF({ ...f, cause_of_death: e.target.value })} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1"><Label>Immediate cause</Label><Input value={f.immediate_cause} onChange={(e) => setF({ ...f, immediate_cause: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Underlying cause</Label><Input value={f.underlying_cause} onChange={(e) => setF({ ...f, underlying_cause: e.target.value })} /></div>
+          </div>
+          <div className="space-y-1"><Label>Certifying doctor</Label><Input value={f.certifying_doctor_name} onChange={(e) => setF({ ...f, certifying_doctor_name: e.target.value })} /></div>
+          <div className="space-y-1"><Label>Remarks</Label><Textarea rows={2} value={f.remarks} onChange={(e) => setF({ ...f, remarks: e.target.value })} /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
