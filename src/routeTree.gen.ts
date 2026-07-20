@@ -86,7 +86,6 @@ import { Route as AuthenticatedLaboratoryIdRouteImport } from './routes/_authent
 import { Route as AuthenticatedIpdSettingsRouteImport } from './routes/_authenticated/ipd.settings'
 import { Route as AuthenticatedIpdReportsRouteImport } from './routes/_authenticated/ipd.reports'
 import { Route as AuthenticatedIpdNewRouteImport } from './routes/_authenticated/ipd.new'
-import { Route as AuthenticatedIpdDeathRegisterRouteImport } from './routes/_authenticated/ipd.death-register'
 import { Route as AuthenticatedIpdBirthRegisterRouteImport } from './routes/_authenticated/ipd.birth-register'
 import { Route as AuthenticatedIpdBedsRouteImport } from './routes/_authenticated/ipd.beds'
 import { Route as AuthenticatedIpdIdRouteImport } from './routes/_authenticated/ipd.$id'
@@ -511,12 +510,6 @@ const AuthenticatedIpdNewRoute = AuthenticatedIpdNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AuthenticatedIpdRoute,
 } as any)
-const AuthenticatedIpdDeathRegisterRoute =
-  AuthenticatedIpdDeathRegisterRouteImport.update({
-    id: '/death-register',
-    path: '/death-register',
-    getParentRoute: () => AuthenticatedIpdRoute,
-  } as any)
 const AuthenticatedIpdBirthRegisterRoute =
   AuthenticatedIpdBirthRegisterRouteImport.update({
     id: '/birth-register',
@@ -666,7 +659,6 @@ export interface FileRoutesByFullPath {
   '/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
   '/ipd/beds': typeof AuthenticatedIpdBedsRoute
   '/ipd/birth-register': typeof AuthenticatedIpdBirthRegisterRoute
-  '/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
   '/ipd/new': typeof AuthenticatedIpdNewRoute
   '/ipd/reports': typeof AuthenticatedIpdReportsRoute
   '/ipd/settings': typeof AuthenticatedIpdSettingsRoute
@@ -754,7 +746,6 @@ export interface FileRoutesByTo {
   '/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
   '/ipd/beds': typeof AuthenticatedIpdBedsRoute
   '/ipd/birth-register': typeof AuthenticatedIpdBirthRegisterRoute
-  '/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
   '/ipd/new': typeof AuthenticatedIpdNewRoute
   '/ipd/reports': typeof AuthenticatedIpdReportsRoute
   '/ipd/settings': typeof AuthenticatedIpdSettingsRoute
@@ -851,7 +842,6 @@ export interface FileRoutesById {
   '/_authenticated/ipd/$id': typeof AuthenticatedIpdIdRouteWithChildren
   '/_authenticated/ipd/beds': typeof AuthenticatedIpdBedsRoute
   '/_authenticated/ipd/birth-register': typeof AuthenticatedIpdBirthRegisterRoute
-  '/_authenticated/ipd/death-register': typeof AuthenticatedIpdDeathRegisterRoute
   '/_authenticated/ipd/new': typeof AuthenticatedIpdNewRoute
   '/_authenticated/ipd/reports': typeof AuthenticatedIpdReportsRoute
   '/_authenticated/ipd/settings': typeof AuthenticatedIpdSettingsRoute
@@ -948,7 +938,6 @@ export interface FileRouteTypes {
     | '/ipd/$id'
     | '/ipd/beds'
     | '/ipd/birth-register'
-    | '/ipd/death-register'
     | '/ipd/new'
     | '/ipd/reports'
     | '/ipd/settings'
@@ -1036,7 +1025,6 @@ export interface FileRouteTypes {
     | '/ipd/$id'
     | '/ipd/beds'
     | '/ipd/birth-register'
-    | '/ipd/death-register'
     | '/ipd/new'
     | '/ipd/reports'
     | '/ipd/settings'
@@ -1132,7 +1120,6 @@ export interface FileRouteTypes {
     | '/_authenticated/ipd/$id'
     | '/_authenticated/ipd/beds'
     | '/_authenticated/ipd/birth-register'
-    | '/_authenticated/ipd/death-register'
     | '/_authenticated/ipd/new'
     | '/_authenticated/ipd/reports'
     | '/_authenticated/ipd/settings'
@@ -1719,13 +1706,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIpdNewRouteImport
       parentRoute: typeof AuthenticatedIpdRoute
     }
-    '/_authenticated/ipd/death-register': {
-      id: '/_authenticated/ipd/death-register'
-      path: '/death-register'
-      fullPath: '/ipd/death-register'
-      preLoaderRoute: typeof AuthenticatedIpdDeathRegisterRouteImport
-      parentRoute: typeof AuthenticatedIpdRoute
-    }
     '/_authenticated/ipd/birth-register': {
       id: '/_authenticated/ipd/birth-register'
       path: '/birth-register'
@@ -1892,7 +1872,6 @@ interface AuthenticatedIpdRouteChildren {
   AuthenticatedIpdIdRoute: typeof AuthenticatedIpdIdRouteWithChildren
   AuthenticatedIpdBedsRoute: typeof AuthenticatedIpdBedsRoute
   AuthenticatedIpdBirthRegisterRoute: typeof AuthenticatedIpdBirthRegisterRoute
-  AuthenticatedIpdDeathRegisterRoute: typeof AuthenticatedIpdDeathRegisterRoute
   AuthenticatedIpdNewRoute: typeof AuthenticatedIpdNewRoute
   AuthenticatedIpdReportsRoute: typeof AuthenticatedIpdReportsRoute
   AuthenticatedIpdSettingsRoute: typeof AuthenticatedIpdSettingsRoute
@@ -1903,7 +1882,6 @@ const AuthenticatedIpdRouteChildren: AuthenticatedIpdRouteChildren = {
   AuthenticatedIpdIdRoute: AuthenticatedIpdIdRouteWithChildren,
   AuthenticatedIpdBedsRoute: AuthenticatedIpdBedsRoute,
   AuthenticatedIpdBirthRegisterRoute: AuthenticatedIpdBirthRegisterRoute,
-  AuthenticatedIpdDeathRegisterRoute: AuthenticatedIpdDeathRegisterRoute,
   AuthenticatedIpdNewRoute: AuthenticatedIpdNewRoute,
   AuthenticatedIpdReportsRoute: AuthenticatedIpdReportsRoute,
   AuthenticatedIpdSettingsRoute: AuthenticatedIpdSettingsRoute,
