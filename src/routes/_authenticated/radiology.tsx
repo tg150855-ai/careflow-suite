@@ -35,6 +35,9 @@ function RadiologyPage() {
   const [doctors, setDoctors] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [reportFor, setReportFor] = useState<any>(null);
+  const [q, setQ] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = () => {
     supabase.from("radiology_orders" as any).select("*, patients(full_name, uhid), doctors(name), radiology_reports(*)")
