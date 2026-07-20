@@ -42,10 +42,14 @@ function printCertificate(kind: "Birth" | "Death", h: HospitalProfile | undefine
   w.document.close();
 }
 
+export const Route = createFileRoute("/_authenticated/ipd/death-register")({ component: DeathRegister });
+
 function DeathRegister() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const { range, preset, setPreset } = useDateRange("month");
+  const { data: hospital } = useHospitalProfile();
+  const [editRow, setEditRow] = useState<any | null>(null);
 
   const { data: rows = [] } = useQuery({
     queryKey: ["death-register"],
