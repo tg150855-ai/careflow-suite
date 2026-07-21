@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { fmtINR } from "@/lib/format";
 import { format } from "date-fns";
 import { useAuth } from "@/lib/auth-context";
+import { RecordActions } from "@/components/common/record-actions";
+import { SearchBox } from "@/components/common/search-box";
 
 export const Route = createFileRoute("/_authenticated/finance")({ component: Finance });
 
@@ -63,8 +65,31 @@ function Finance() {
     load();
   }
 
-  const totalIncome = txns.filter((t) => t.type === "income" || t.type === "revenue").reduce((s, t) => s + +t.amount, 0);
-  const totalExpense = txns.filter((t) => t.type === "expense").reduce((s, t) => s + +t.amount, 0);
+  async function removeTxn(id: string) {
+    const { error } = await (supabase as any).from("transactions").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Transaction deleted"); load();
+  }
+
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const filteredTxns = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const fromT = from ? new Date(from).getTime() : null;
+    const toT = to ? new Date(to).getTime() + 86_400_000 - 1 : null;
+    return txns.filter((t) => {
+      const d = new Date(t.txn_date).getTime();
+      if (fromT && d < fromT) return false;
+      if (toT && d > toT) return false;
+      if (!q) return true;
+      return `${t.category ?? ""} ${t.description ?? ""} ${t.type ?? ""}`.toLowerCase().includes(q);
+    });
+  }, [txns, search, from, to]);
+
+  const totalIncome = filteredTxns.filter((t) => t.type === "income" || t.type === "revenue").reduce((s, t) => s + +t.amount, 0);
+  const totalExpense = filteredTxns.filter((t) => t.type === "expense").reduce((s, t) => s + +t.amount, 0);
   const profit = totalIncome - totalExpense;
 
   // Trial balance
@@ -136,11 +161,17 @@ function Finance() {
                 </DialogContent>
               </Dialog>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="min-w-[220px] flex-1"><Label className="text-xs">Search</Label><SearchBox value={search} onChange={setSearch} placeholder="Category, description, type" /></div>
+                <div><Label className="text-xs">From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" /></div>
+                <div><Label className="text-xs">To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" /></div>
+                <Button variant="outline" size="sm" onClick={() => { setSearch(""); setFrom(""); setTo(""); }}>Reset</Button>
+              </div>
               <Table>
-                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead>Account</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead>Account</TableHead><TableHead className="text-right">Amount</TableHead><TableHead></TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {txns.map((t) => (
+                  {filteredTxns.map((t) => (
                     <TableRow key={t.id}>
                       <TableCell className="text-xs">{format(new Date(t.txn_date), "dd MMM")}</TableCell>
                       <TableCell><Badge variant={t.type === "income" || t.type === "revenue" ? "default" : "secondary"}>{t.type}</Badge></TableCell>
@@ -148,8 +179,19 @@ function Finance() {
                       <TableCell>{t.description ?? "—"}</TableCell>
                       <TableCell className="font-mono text-xs">{accMap[t.account_id]?.code ?? "—"}</TableCell>
                       <TableCell className="text-right font-semibold">{fmtINR(t.amount)}</TableCell>
+                      <TableCell>
+                        <RecordActions
+                          onWhatsApp={() => {
+                            const msg = `${t.type.toUpperCase()} · ${t.category ?? ""}\n${t.description ?? ""}\nAmount: ${fmtINR(t.amount)}`;
+                            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+                          }}
+                          onDelete={() => removeTxn(t.id)}
+                          deleteLabel={`transaction ${fmtINR(t.amount)}`}
+                        />
+                      </TableCell>
                     </TableRow>
                   ))}
+                  {filteredTxns.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No transactions match filters</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -179,7 +221,7 @@ function Finance() {
             </CardHeader>
             <CardContent>
               <Table>
-                <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
                 <TableBody>
                   {accounts.map((a) => (
                     <TableRow key={a.id}>
@@ -187,6 +229,16 @@ function Finance() {
                       <TableCell className="font-medium">{a.name}</TableCell>
                       <TableCell><Badge variant="outline">{a.type}</Badge></TableCell>
                       <TableCell>{a.active ? <Badge>Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</TableCell>
+                      <TableCell>
+                        <RecordActions
+                          onDelete={async () => {
+                            const { error } = await (supabase as any).from("accounts").delete().eq("id", a.id);
+                            if (error) return toast.error(error.message);
+                            toast.success("Account deleted"); load();
+                          }}
+                          deleteLabel={`account ${a.code}`}
+                        />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
