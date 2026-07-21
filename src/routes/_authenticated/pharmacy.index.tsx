@@ -1,20 +1,28 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Pill, AlertTriangle, Clock, XCircle, Plus, Package } from "lucide-react";
 import { motion } from "framer-motion";
 import { inr } from "@/lib/format";
 import { addDays, format } from "date-fns";
 import { RecordActions } from "@/components/common/record-actions";
+import { SearchBox } from "@/components/common/search-box";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/pharmacy/")({ component: PharmacyDashboard });
 
 function PharmacyDashboard() {
   const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
   const { data } = useQuery({
     queryKey: ["pharm-dashboard"],
     queryFn: async () => {
@@ -23,14 +31,11 @@ function PharmacyDashboard() {
       const [meds, batches, salesToday, recentSales] = await Promise.all([
         supabase.from("medicines").select("id, minimum_stock"),
         supabase.from("medicine_batches").select("id, medicine_id, quantity, expiry_date, medicines(name)"),
-        supabase.from("pharmacy_sales").select("total").gte("created_at", new Date().setHours(0,0,0,0) as any),
-        supabase.from("pharmacy_sales").select("id, invoice_no, total, created_at, patients(full_name)").order("created_at", { ascending: false }).limit(8),
+        supabase.from("pharmacy_sales").select("total").gte("created_at", new Date().setHours(0, 0, 0, 0) as any),
+        supabase.from("pharmacy_sales").select("id, invoice_no, total, created_at, patients(full_name, uhid, mobile)").order("created_at", { ascending: false }).limit(200),
       ]);
-      // aggregate stock per medicine
       const stockByMed: Record<string, number> = {};
       (batches.data ?? []).forEach((b: any) => { stockByMed[b.medicine_id] = (stockByMed[b.medicine_id] ?? 0) + b.quantity; });
-      const minByMed: Record<string, number> = {};
-      (meds.data ?? []).forEach((m: any) => { minByMed[m.id] = m.minimum_stock; });
       const lowStock = (meds.data ?? []).filter((m: any) => (stockByMed[m.id] ?? 0) > 0 && (stockByMed[m.id] ?? 0) <= m.minimum_stock).length;
       const outOfStock = (meds.data ?? []).filter((m: any) => (stockByMed[m.id] ?? 0) === 0).length;
       const expiring = (batches.data ?? []).filter((b: any) => b.expiry_date <= in30 && b.expiry_date >= today && b.quantity > 0);
@@ -46,11 +51,25 @@ function PharmacyDashboard() {
     },
   });
 
+  const filteredSales = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const fromT = from ? new Date(from).getTime() : null;
+    const toT = to ? new Date(to).getTime() + 86_400_000 - 1 : null;
+    return (data?.recentSales ?? []).filter((s: any) => {
+      const t = new Date(s.created_at).getTime();
+      if (fromT && t < fromT) return false;
+      if (toT && t > toT) return false;
+      if (!q) return true;
+      const hay = `${s.invoice_no ?? ""} ${s.patients?.full_name ?? ""} ${s.patients?.uhid ?? ""} ${s.patients?.mobile ?? ""}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [data?.recentSales, search, from, to]);
+
   const cards = [
     { label: "Total medicines", value: data?.totalMeds ?? 0, icon: Pill },
-    { label: "Low stock", value: data?.lowStock ?? 0, icon: AlertTriangle, tone: "warning" },
-    { label: "Expiring (30d)", value: data?.expiringCount ?? 0, icon: Clock, tone: "warning" },
-    { label: "Out of stock", value: data?.outOfStock ?? 0, icon: XCircle, tone: "destructive" },
+    { label: "Low stock", value: data?.lowStock ?? 0, icon: AlertTriangle },
+    { label: "Expiring (30d)", value: data?.expiringCount ?? 0, icon: Clock },
+    { label: "Out of stock", value: data?.outOfStock ?? 0, icon: XCircle },
   ];
 
   return (
@@ -77,9 +96,21 @@ function PharmacyDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <Card className="p-6 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4"><h2 className="font-semibold">Recent sales</h2><div className="text-sm text-muted-foreground">Today: <span className="font-semibold text-foreground">{inr(data?.todayRevenue ?? 0)}</span></div></div>
+          <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+            <h2 className="font-semibold">Recent sales</h2>
+            <div className="text-sm text-muted-foreground">Today: <span className="font-semibold text-foreground">{inr(data?.todayRevenue ?? 0)}</span></div>
+          </div>
+          <div className="flex flex-wrap gap-2 items-end mb-3">
+            <div className="min-w-[200px] flex-1">
+              <Label className="text-xs">Search</Label>
+              <SearchBox value={search} onChange={setSearch} placeholder="Invoice, patient, UHID, mobile" />
+            </div>
+            <div><Label className="text-xs">From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" /></div>
+            <div><Label className="text-xs">To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" /></div>
+            <Button variant="outline" size="sm" onClick={() => { setSearch(""); setFrom(""); setTo(""); }}>Reset</Button>
+          </div>
           <div className="divide-y">
-            {(data?.recentSales ?? []).map((s: any) => (
+            {filteredSales.map((s: any) => (
               <div key={s.id} className="flex items-center justify-between py-3 gap-3">
                 <div className="min-w-0 flex-1"><div className="text-sm font-medium truncate">{s.patients?.full_name ?? "Walk-in"}</div><div className="text-xs text-muted-foreground font-mono">{s.invoice_no} · {format(new Date(s.created_at), "dd MMM HH:mm")}</div></div>
                 <div className="text-sm font-medium tabular-nums">{inr(s.total)}</div>
@@ -102,7 +133,7 @@ function PharmacyDashboard() {
                 />
               </div>
             ))}
-            {(data?.recentSales ?? []).length === 0 && <div className="py-8 text-sm text-muted-foreground text-center">No sales yet.</div>}
+            {filteredSales.length === 0 && <div className="py-8 text-sm text-muted-foreground text-center">No sales match filters.</div>}
           </div>
         </Card>
 
