@@ -161,11 +161,17 @@ function Finance() {
                 </DialogContent>
               </Dialog>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="min-w-[220px] flex-1"><Label className="text-xs">Search</Label><SearchBox value={search} onChange={setSearch} placeholder="Category, description, type" /></div>
+                <div><Label className="text-xs">From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" /></div>
+                <div><Label className="text-xs">To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" /></div>
+                <Button variant="outline" size="sm" onClick={() => { setSearch(""); setFrom(""); setTo(""); }}>Reset</Button>
+              </div>
               <Table>
-                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead>Account</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead>Account</TableHead><TableHead className="text-right">Amount</TableHead><TableHead></TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {txns.map((t) => (
+                  {filteredTxns.map((t) => (
                     <TableRow key={t.id}>
                       <TableCell className="text-xs">{format(new Date(t.txn_date), "dd MMM")}</TableCell>
                       <TableCell><Badge variant={t.type === "income" || t.type === "revenue" ? "default" : "secondary"}>{t.type}</Badge></TableCell>
@@ -173,8 +179,19 @@ function Finance() {
                       <TableCell>{t.description ?? "—"}</TableCell>
                       <TableCell className="font-mono text-xs">{accMap[t.account_id]?.code ?? "—"}</TableCell>
                       <TableCell className="text-right font-semibold">{fmtINR(t.amount)}</TableCell>
+                      <TableCell>
+                        <RecordActions
+                          onWhatsApp={() => {
+                            const msg = `${t.type.toUpperCase()} · ${t.category ?? ""}\n${t.description ?? ""}\nAmount: ${fmtINR(t.amount)}`;
+                            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+                          }}
+                          onDelete={() => removeTxn(t.id)}
+                          deleteLabel={`transaction ${fmtINR(t.amount)}`}
+                        />
+                      </TableCell>
                     </TableRow>
                   ))}
+                  {filteredTxns.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No transactions match filters</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
