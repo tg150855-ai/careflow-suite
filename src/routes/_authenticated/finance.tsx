@@ -221,7 +221,7 @@ function Finance() {
             </CardHeader>
             <CardContent>
               <Table>
-                <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
                 <TableBody>
                   {accounts.map((a) => (
                     <TableRow key={a.id}>
@@ -229,6 +229,16 @@ function Finance() {
                       <TableCell className="font-medium">{a.name}</TableCell>
                       <TableCell><Badge variant="outline">{a.type}</Badge></TableCell>
                       <TableCell>{a.active ? <Badge>Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</TableCell>
+                      <TableCell>
+                        <RecordActions
+                          onDelete={async () => {
+                            const { error } = await (supabase as any).from("accounts").delete().eq("id", a.id);
+                            if (error) return toast.error(error.message);
+                            toast.success("Account deleted"); load();
+                          }}
+                          deleteLabel={`account ${a.code}`}
+                        />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
