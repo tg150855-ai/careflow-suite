@@ -65,8 +65,31 @@ function Finance() {
     load();
   }
 
-  const totalIncome = txns.filter((t) => t.type === "income" || t.type === "revenue").reduce((s, t) => s + +t.amount, 0);
-  const totalExpense = txns.filter((t) => t.type === "expense").reduce((s, t) => s + +t.amount, 0);
+  async function removeTxn(id: string) {
+    const { error } = await (supabase as any).from("transactions").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Transaction deleted"); load();
+  }
+
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const filteredTxns = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const fromT = from ? new Date(from).getTime() : null;
+    const toT = to ? new Date(to).getTime() + 86_400_000 - 1 : null;
+    return txns.filter((t) => {
+      const d = new Date(t.txn_date).getTime();
+      if (fromT && d < fromT) return false;
+      if (toT && d > toT) return false;
+      if (!q) return true;
+      return `${t.category ?? ""} ${t.description ?? ""} ${t.type ?? ""}`.toLowerCase().includes(q);
+    });
+  }, [txns, search, from, to]);
+
+  const totalIncome = filteredTxns.filter((t) => t.type === "income" || t.type === "revenue").reduce((s, t) => s + +t.amount, 0);
+  const totalExpense = filteredTxns.filter((t) => t.type === "expense").reduce((s, t) => s + +t.amount, 0);
   const profit = totalIncome - totalExpense;
 
   // Trial balance
