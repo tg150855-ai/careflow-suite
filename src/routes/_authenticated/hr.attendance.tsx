@@ -23,7 +23,8 @@ function Attendance() {
   const [today, setToday] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ employee_id: "", status: "present", method: "manual" });
-  const date = format(new Date(), "yyyy-MM-dd");
+  const [q, setQ] = useState("");
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
   async function load() {
     const [{ data: e }, { data: a }] = await Promise.all([
@@ -32,7 +33,7 @@ function Attendance() {
     ]);
     setEmps(e ?? []); setToday(a ?? []);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [date]);
 
   async function mark() {
     if (!form.employee_id) return toast.error("Select employee");
@@ -51,10 +52,31 @@ function Attendance() {
   }
 
   const empMap = Object.fromEntries(emps.map((e) => [e.id, e]));
-  const present = today.filter((t) => t.status === "present").length;
-  const absent = emps.length - today.length;
-  const late = today.filter((t) => t.check_in && new Date(t.check_in).getHours() >= 10).length;
-  const overtime = today.filter((t) => t.overtime_hours > 0).length;
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return today;
+    return today.filter((t) => {
+      const e = empMap[t.employee_id];
+      return [e?.full_name, e?.employee_no, e?.department, t.status].some((v) => (v ?? "").toString().toLowerCase().includes(s));
+    });
+  }, [today, q, empMap]);
+  const present = filtered.filter((t) => t.status === "present").length;
+  const absent = emps.length - filtered.length;
+  const late = filtered.filter((t) => t.check_in && new Date(t.check_in).getHours() >= 10).length;
+  const overtime = filtered.filter((t) => t.overtime_hours > 0).length;
+
+  function exportRows() {
+    exportXlsx(filtered.map((t) => {
+      const e = empMap[t.employee_id];
+      return {
+        Date: t.date, "Emp ID": e?.employee_no ?? "", Name: e?.full_name ?? "", Department: e?.department ?? "",
+        "Check In": t.check_in ? format(new Date(t.check_in), "HH:mm") : "",
+        "Check Out": t.check_out ? format(new Date(t.check_out), "HH:mm") : "",
+        Hours: t.working_hours ?? "", Overtime: t.overtime_hours ?? "", Status: t.status, Method: t.method ?? "",
+      };
+    }), `attendance-${date}`);
+  }
+
 
   return (
     <div className="space-y-6">
