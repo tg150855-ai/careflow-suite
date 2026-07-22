@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,63 +7,88 @@ import { BarChart3, TrendingUp, Users, BedDouble, Activity } from "lucide-react"
 import { fmtINR } from "@/lib/format";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, CartesianGrid, PieChart, Pie, Cell, Legend } from "recharts";
 import { format, subDays } from "date-fns";
+import { DayMonthYearTabs, useDateRange } from "@/components/common/date-range-tabs";
 
 export const Route = createFileRoute("/_authenticated/bi")({ component: BI });
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
 function BI() {
-  const [kpis, setKpis] = useState({ totalRev: 0, opd: 0, ipd: 0, pharm: 0, lab: 0, ot: 0, patients: 0, occ: 0, totalBeds: 0, occupied: 0, claims: 0, claimsSettled: 0 });
-  const [revTrend, setRevTrend] = useState<any[]>([]);
-  const [deptPerf, setDeptPerf] = useState<any[]>([]);
+  const [raw, setRaw] = useState<any>({ bills: [], patients: [], beds: [], claims: [], sales: [], labs: [], surg: [] });
+  const { range, preset, setPreset } = useDateRange("month");
 
   useEffect(() => {
     (async () => {
       const [bills, patients, beds, claims, sales, labs, surg] = await Promise.all([
         (supabase as any).from("bills").select("total,paid,created_at,bill_items(category,amount)"),
-        (supabase as any).from("patients").select("id"),
+        (supabase as any).from("patients").select("id,created_at"),
         (supabase as any).from("beds").select("status"),
-        (supabase as any).from("insurance_claims").select("claim_amount,approved_amount,status"),
-        (supabase as any).from("pharmacy_sales").select("total"),
-        (supabase as any).from("lab_orders").select("total_amount"),
-        (supabase as any).from("surgeries").select("estimated_cost"),
+        (supabase as any).from("insurance_claims").select("claim_amount,approved_amount,status,created_at"),
+        (supabase as any).from("pharmacy_sales").select("total,created_at"),
+        (supabase as any).from("lab_orders").select("total_amount,created_at"),
+        (supabase as any).from("surgeries").select("estimated_cost,created_at"),
       ]);
-
-      const totalRev = (bills.data ?? []).reduce((s: number, b: any) => s + +(b.paid ?? 0), 0);
-      const opd = (bills.data ?? []).reduce((s: number, b: any) => s + (b.bill_items ?? []).filter((i: any) => i.category === "consultation").reduce((x: number, i: any) => x + +i.amount, 0), 0);
-      const ipd = (bills.data ?? []).reduce((s: number, b: any) => s + (b.bill_items ?? []).filter((i: any) => ["bed","ipd","admission"].includes((i.category ?? "").toLowerCase())).reduce((x: number, i: any) => x + +i.amount, 0), 0);
-      const pharm = (sales.data ?? []).reduce((s: number, x: any) => s + +x.total, 0);
-      const lab = (labs.data ?? []).reduce((s: number, x: any) => s + +x.total_amount, 0);
-      const ot = (surg.data ?? []).reduce((s: number, x: any) => s + +(x.estimated_cost ?? 0), 0);
-      const totalBeds = (beds.data ?? []).length;
-      const occupied = (beds.data ?? []).filter((b: any) => b.status === "occupied").length;
-      const claimsAmt = (claims.data ?? []).reduce((s: number, c: any) => s + +c.claim_amount, 0);
-      const claimsSettled = (claims.data ?? []).filter((c: any) => c.status === "settled").length;
-      setKpis({ totalRev, opd, ipd, pharm, lab, ot, patients: (patients.data ?? []).length, occ: totalBeds ? (occupied / totalBeds) * 100 : 0, totalBeds, occupied, claims: claimsAmt, claimsSettled });
-
-      // 7-day revenue trend
-      const days = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), "yyyy-MM-dd"));
-      const trend = days.map((d) => ({
-        date: format(new Date(d), "dd MMM"),
-        revenue: (bills.data ?? []).filter((b: any) => b.created_at?.startsWith(d)).reduce((s: number, b: any) => s + +(b.paid ?? 0), 0),
-      }));
-      setRevTrend(trend);
-
-      setDeptPerf([
-        { dept: "OPD", value: opd },
-        { dept: "IPD", value: ipd },
-        { dept: "Pharmacy", value: pharm },
-        { dept: "Laboratory", value: lab },
-        { dept: "OT", value: ot },
-      ]);
+      setRaw({
+        bills: bills.data ?? [], patients: patients.data ?? [], beds: beds.data ?? [],
+        claims: claims.data ?? [], sales: sales.data ?? [], labs: labs.data ?? [], surg: surg.data ?? [],
+      });
     })();
   }, []);
 
+  const inRange = (v?: string) => {
+    if (preset === "all" || !v) return preset === "all";
+    const d = new Date(v);
+    return d >= range.from && d <= range.to;
+  };
+  const anyRange = (v?: string) => preset === "all" ? true : inRange(v);
+
+  const { kpis, revTrend, deptPerf } = useMemo(() => {
+    const bills = raw.bills.filter((b: any) => anyRange(b.created_at));
+    const sales = raw.sales.filter((b: any) => anyRange(b.created_at));
+    const labs = raw.labs.filter((b: any) => anyRange(b.created_at));
+    const surg = raw.surg.filter((b: any) => anyRange(b.created_at));
+    const claims = raw.claims.filter((b: any) => anyRange(b.created_at));
+    const patients = raw.patients.filter((b: any) => anyRange(b.created_at));
+
+    const totalRev = bills.reduce((s: number, b: any) => s + +(b.paid ?? 0), 0);
+    const opd = bills.reduce((s: number, b: any) => s + (b.bill_items ?? []).filter((i: any) => i.category === "consultation").reduce((x: number, i: any) => x + +i.amount, 0), 0);
+    const ipd = bills.reduce((s: number, b: any) => s + (b.bill_items ?? []).filter((i: any) => ["bed","ipd","admission"].includes((i.category ?? "").toLowerCase())).reduce((x: number, i: any) => x + +i.amount, 0), 0);
+    const pharm = sales.reduce((s: number, x: any) => s + +x.total, 0);
+    const lab = labs.reduce((s: number, x: any) => s + +x.total_amount, 0);
+    const ot = surg.reduce((s: number, x: any) => s + +(x.estimated_cost ?? 0), 0);
+    const totalBeds = raw.beds.length;
+    const occupied = raw.beds.filter((b: any) => b.status === "occupied").length;
+    const claimsAmt = claims.reduce((s: number, c: any) => s + +c.claim_amount, 0);
+    const claimsSettled = claims.filter((c: any) => c.status === "settled").length;
+
+    const days = Array.from({ length: 7 }, (_, i) => format(subDays(new Date(), 6 - i), "yyyy-MM-dd"));
+    const revTrend = days.map((d) => ({
+      date: format(new Date(d), "dd MMM"),
+      revenue: raw.bills.filter((b: any) => b.created_at?.startsWith(d)).reduce((s: number, b: any) => s + +(b.paid ?? 0), 0),
+    }));
+
+    const deptPerf = [
+      { dept: "OPD", value: opd },
+      { dept: "IPD", value: ipd },
+      { dept: "Pharmacy", value: pharm },
+      { dept: "Laboratory", value: lab },
+      { dept: "OT", value: ot },
+    ];
+
+    return {
+      kpis: { totalRev, opd, ipd, pharm, lab, ot, patients: patients.length, occ: totalBeds ? (occupied / totalBeds) * 100 : 0, totalBeds, occupied, claims: claimsAmt, claimsSettled },
+      revTrend, deptPerf,
+    };
+  }, [raw, preset, range]);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold flex items-center gap-2"><BarChart3 className="size-6 text-primary" /> Executive BI Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Hospital-wide performance and operational intelligence.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold flex items-center gap-2"><BarChart3 className="size-6 text-primary" /> Executive BI Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Hospital-wide performance and operational intelligence.</p>
+        </div>
+        <DayMonthYearTabs value={preset} onChange={(p) => setPreset(p)} />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
