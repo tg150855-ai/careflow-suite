@@ -143,11 +143,28 @@ function Payroll() {
           </CardContent></Card>
         </TabsContent>
         <TabsContent value="slips">
-          <Card><CardContent className="pt-6">
+          <Card>
+            <CardHeader className="space-y-3">
+              <CardTitle>Salary Slips ({filteredSlips.length})</CardTitle>
+              <ModuleActionBar
+                leading={<SearchBox value={qSlip} onChange={setQSlip} placeholder="Search employee name or ID…" />}
+                onExport={() => exportXlsx(filteredSlips.map((s) => {
+                  const e = empMap[s.employee_id];
+                  return {
+                    "Emp ID": e?.employee_no ?? "", Name: e?.full_name ?? "", Department: e?.department ?? "",
+                    Basic: s.basic, HRA: s.hra, DA: s.da, Allowances: s.allowances, Gross: s.gross,
+                    PF: s.pf, ESI: s.esi, PT: s.professional_tax, Other: s.other_deductions,
+                    "Total Deductions": s.total_deductions, "Net Pay": s.net_pay,
+                  };
+                }), `salary-slips-${format(new Date(), "yyyyMMdd")}`)}
+                onPrint={() => window.print()}
+              />
+            </CardHeader>
+            <CardContent>
             <Table>
               <TableHeader><TableRow><TableHead>Employee</TableHead><TableHead>Gross</TableHead><TableHead>Deductions</TableHead><TableHead>Net Pay</TableHead></TableRow></TableHeader>
               <TableBody>
-                {slips.map((s) => (
+                {filteredSlips.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{empMap[s.employee_id]?.full_name ?? "—"}</TableCell>
                     <TableCell>{fmtINR(s.gross)}</TableCell>
@@ -155,7 +172,7 @@ function Payroll() {
                     <TableCell className="font-semibold text-emerald-600">{fmtINR(s.net_pay)}</TableCell>
                   </TableRow>
                 ))}
-                {slips.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No slips</TableCell></TableRow>}
+                {filteredSlips.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No slips</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent></Card>
