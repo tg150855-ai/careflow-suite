@@ -134,12 +134,25 @@ function Attendance() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Today's Log ({today.length})</CardTitle></CardHeader>
+        <CardHeader className="space-y-3">
+          <CardTitle>Attendance Log ({filtered.length})</CardTitle>
+          <ModuleActionBar
+            leading={<SearchBox value={q} onChange={setQ} placeholder="Search name, ID, department, status…" />}
+            onExport={exportRows}
+            onPrint={() => window.print()}
+            extra={
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground">Date</Label>
+                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-9 w-40" />
+              </div>
+            }
+          />
+        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader><TableRow><TableHead>Employee</TableHead><TableHead>Department</TableHead><TableHead>Check In</TableHead><TableHead>Check Out</TableHead><TableHead>Hours</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
             <TableBody>
-              {today.map((t) => {
+              {filtered.map((t) => {
                 const e = empMap[t.employee_id];
                 return (
                   <TableRow key={t.id}>
@@ -153,11 +166,12 @@ function Attendance() {
                   </TableRow>
                 );
               })}
-              {today.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No records today</TableCell></TableRow>}
+              {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No records for this date</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
     </div>
   );
 }
