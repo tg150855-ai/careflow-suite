@@ -76,6 +76,14 @@ function Payroll() {
   }
 
   const empMap = Object.fromEntries(emps.map((e) => [e.id, e]));
+  const filteredSlips = useMemo(() => {
+    const s = qSlip.trim().toLowerCase();
+    if (!s) return slips;
+    return slips.filter((sl: any) => {
+      const e = empMap[sl.employee_id];
+      return [e?.full_name, e?.employee_no, e?.department].some((v) => (v ?? "").toString().toLowerCase().includes(s));
+    });
+  }, [slips, qSlip, empMap]);
 
   return (
     <div className="space-y-6">
