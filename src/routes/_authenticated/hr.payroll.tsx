@@ -28,6 +28,7 @@ function Payroll() {
   const [slips, setSlips] = useState<any[]>([]);
   const [openStruct, setOpenStruct] = useState(false);
   const [openRun, setOpenRun] = useState(false);
+  const [qSlip, setQSlip] = useState("");
   const now = new Date();
   const [structForm, setStructForm] = useState({ employee_id: "", basic: 0, hra: 0, da: 0, allowances: 0, pf: 0, esi: 0, professional_tax: 0, other_deductions: 0 });
   const [runForm, setRunForm] = useState({ period_month: now.getMonth() + 1, period_year: now.getFullYear() });
