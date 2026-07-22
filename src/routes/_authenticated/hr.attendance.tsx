@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Clock, LogIn, LogOut, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { SearchBox } from "@/components/common/search-box";
+import { ModuleActionBar } from "@/components/common/action-bar";
+import { exportXlsx } from "@/lib/export";
 
 export const Route = createFileRoute("/_authenticated/hr/attendance")({ component: Attendance });
 
