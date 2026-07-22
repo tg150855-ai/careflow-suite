@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,9 @@ import { toast } from "sonner";
 import { fmtINR } from "@/lib/format";
 import { format } from "date-fns";
 import { useAuth } from "@/lib/auth-context";
+import { SearchBox } from "@/components/common/search-box";
+import { ModuleActionBar } from "@/components/common/action-bar";
+import { exportXlsx } from "@/lib/export";
 
 export const Route = createFileRoute("/_authenticated/hr/payroll")({ component: Payroll });
 
