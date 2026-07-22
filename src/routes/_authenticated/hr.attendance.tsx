@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Clock, LogIn, LogOut, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { SearchBox } from "@/components/common/search-box";
+import { ModuleActionBar } from "@/components/common/action-bar";
+import { exportXlsx } from "@/lib/export";
 
 export const Route = createFileRoute("/_authenticated/hr/attendance")({ component: Attendance });
 
@@ -20,7 +23,8 @@ function Attendance() {
   const [today, setToday] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ employee_id: "", status: "present", method: "manual" });
-  const date = format(new Date(), "yyyy-MM-dd");
+  const [q, setQ] = useState("");
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
   async function load() {
     const [{ data: e }, { data: a }] = await Promise.all([
@@ -29,7 +33,7 @@ function Attendance() {
     ]);
     setEmps(e ?? []); setToday(a ?? []);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [date]);
 
   async function mark() {
     if (!form.employee_id) return toast.error("Select employee");
@@ -48,10 +52,31 @@ function Attendance() {
   }
 
   const empMap = Object.fromEntries(emps.map((e) => [e.id, e]));
-  const present = today.filter((t) => t.status === "present").length;
-  const absent = emps.length - today.length;
-  const late = today.filter((t) => t.check_in && new Date(t.check_in).getHours() >= 10).length;
-  const overtime = today.filter((t) => t.overtime_hours > 0).length;
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return today;
+    return today.filter((t) => {
+      const e = empMap[t.employee_id];
+      return [e?.full_name, e?.employee_no, e?.department, t.status].some((v) => (v ?? "").toString().toLowerCase().includes(s));
+    });
+  }, [today, q, empMap]);
+  const present = filtered.filter((t) => t.status === "present").length;
+  const absent = emps.length - filtered.length;
+  const late = filtered.filter((t) => t.check_in && new Date(t.check_in).getHours() >= 10).length;
+  const overtime = filtered.filter((t) => t.overtime_hours > 0).length;
+
+  function exportRows() {
+    exportXlsx(filtered.map((t) => {
+      const e = empMap[t.employee_id];
+      return {
+        Date: t.date, "Emp ID": e?.employee_no ?? "", Name: e?.full_name ?? "", Department: e?.department ?? "",
+        "Check In": t.check_in ? format(new Date(t.check_in), "HH:mm") : "",
+        "Check Out": t.check_out ? format(new Date(t.check_out), "HH:mm") : "",
+        Hours: t.working_hours ?? "", Overtime: t.overtime_hours ?? "", Status: t.status, Method: t.method ?? "",
+      };
+    }), `attendance-${date}`);
+  }
+
 
   return (
     <div className="space-y-6">
@@ -109,12 +134,25 @@ function Attendance() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Today's Log ({today.length})</CardTitle></CardHeader>
+        <CardHeader className="space-y-3">
+          <CardTitle>Attendance Log ({filtered.length})</CardTitle>
+          <ModuleActionBar
+            leading={<SearchBox value={q} onChange={setQ} placeholder="Search name, ID, department, status…" />}
+            onExport={exportRows}
+            onPrint={() => window.print()}
+            extra={
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground">Date</Label>
+                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-9 w-40" />
+              </div>
+            }
+          />
+        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader><TableRow><TableHead>Employee</TableHead><TableHead>Department</TableHead><TableHead>Check In</TableHead><TableHead>Check Out</TableHead><TableHead>Hours</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
             <TableBody>
-              {today.map((t) => {
+              {filtered.map((t) => {
                 const e = empMap[t.employee_id];
                 return (
                   <TableRow key={t.id}>
@@ -128,11 +166,12 @@ function Attendance() {
                   </TableRow>
                 );
               })}
-              {today.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No records today</TableCell></TableRow>}
+              {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No records for this date</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
     </div>
   );
 }

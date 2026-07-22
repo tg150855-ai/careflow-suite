@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,9 @@ import { toast } from "sonner";
 import { fmtINR } from "@/lib/format";
 import { format } from "date-fns";
 import { useAuth } from "@/lib/auth-context";
+import { SearchBox } from "@/components/common/search-box";
+import { ModuleActionBar } from "@/components/common/action-bar";
+import { exportXlsx } from "@/lib/export";
 
 export const Route = createFileRoute("/_authenticated/hr/payroll")({ component: Payroll });
 
@@ -25,6 +28,7 @@ function Payroll() {
   const [slips, setSlips] = useState<any[]>([]);
   const [openStruct, setOpenStruct] = useState(false);
   const [openRun, setOpenRun] = useState(false);
+  const [qSlip, setQSlip] = useState("");
   const now = new Date();
   const [structForm, setStructForm] = useState({ employee_id: "", basic: 0, hra: 0, da: 0, allowances: 0, pf: 0, esi: 0, professional_tax: 0, other_deductions: 0 });
   const [runForm, setRunForm] = useState({ period_month: now.getMonth() + 1, period_year: now.getFullYear() });
@@ -72,6 +76,14 @@ function Payroll() {
   }
 
   const empMap = Object.fromEntries(emps.map((e) => [e.id, e]));
+  const filteredSlips = useMemo(() => {
+    const s = qSlip.trim().toLowerCase();
+    if (!s) return slips;
+    return slips.filter((sl: any) => {
+      const e = empMap[sl.employee_id];
+      return [e?.full_name, e?.employee_no, e?.department].some((v) => (v ?? "").toString().toLowerCase().includes(s));
+    });
+  }, [slips, qSlip, empMap]);
 
   return (
     <div className="space-y-6">
@@ -139,11 +151,28 @@ function Payroll() {
           </CardContent></Card>
         </TabsContent>
         <TabsContent value="slips">
-          <Card><CardContent className="pt-6">
+          <Card>
+            <CardHeader className="space-y-3">
+              <CardTitle>Salary Slips ({filteredSlips.length})</CardTitle>
+              <ModuleActionBar
+                leading={<SearchBox value={qSlip} onChange={setQSlip} placeholder="Search employee name or ID…" />}
+                onExport={() => exportXlsx(filteredSlips.map((s) => {
+                  const e = empMap[s.employee_id];
+                  return {
+                    "Emp ID": e?.employee_no ?? "", Name: e?.full_name ?? "", Department: e?.department ?? "",
+                    Basic: s.basic, HRA: s.hra, DA: s.da, Allowances: s.allowances, Gross: s.gross,
+                    PF: s.pf, ESI: s.esi, PT: s.professional_tax, Other: s.other_deductions,
+                    "Total Deductions": s.total_deductions, "Net Pay": s.net_pay,
+                  };
+                }), `salary-slips-${format(new Date(), "yyyyMMdd")}`)}
+                onPrint={() => window.print()}
+              />
+            </CardHeader>
+            <CardContent>
             <Table>
               <TableHeader><TableRow><TableHead>Employee</TableHead><TableHead>Gross</TableHead><TableHead>Deductions</TableHead><TableHead>Net Pay</TableHead></TableRow></TableHeader>
               <TableBody>
-                {slips.map((s) => (
+                {filteredSlips.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{empMap[s.employee_id]?.full_name ?? "—"}</TableCell>
                     <TableCell>{fmtINR(s.gross)}</TableCell>
@@ -151,7 +180,7 @@ function Payroll() {
                     <TableCell className="font-semibold text-emerald-600">{fmtINR(s.net_pay)}</TableCell>
                   </TableRow>
                 ))}
-                {slips.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No slips</TableCell></TableRow>}
+                {filteredSlips.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No slips</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent></Card>
