@@ -81,7 +81,24 @@ function Leave() {
     });
   }, [rows, q, preset, range, empMap]);
 
-  const pending = rows.filter((r) => r.status === "pending").length;
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const stats = useMemo(() => {
+    const inRange = (r: any) => {
+      if (preset === "all") return true;
+      const created = r.created_at ? new Date(r.created_at) : null;
+      return !!created && created >= range.from && created <= range.to;
+    };
+    const scoped = rows.filter(inRange);
+    return {
+      totalEmployees: emps.length,
+      applied: scoped.length,
+      approved: scoped.filter((r) => r.status === "approved").length,
+      pending: scoped.filter((r) => r.status === "pending").length,
+      rejected: scoped.filter((r) => r.status === "rejected").length,
+      onLeaveToday: rows.filter((r) => r.status === "approved" && r.from_date <= todayStr && r.to_date >= todayStr).length,
+    };
+  }, [rows, emps, preset, range, todayStr]);
+  const pending = stats.pending;
 
   function exportRows() {
     exportXlsx(filtered.map((r) => ({
