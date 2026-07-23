@@ -2407,31 +2407,52 @@ export type Database = {
       }
       employee_documents: {
         Row: {
+          created_at: string
+          description: string | null
           doc_type: string
           doc_url: string | null
           employee_id: string
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
           id: string
           notes: string | null
+          storage_path: string | null
           uploaded_at: string
           uploaded_by: string | null
+          uploaded_by_name: string | null
         }
         Insert: {
+          created_at?: string
+          description?: string | null
           doc_type: string
           doc_url?: string | null
           employee_id: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
           id?: string
           notes?: string | null
+          storage_path?: string | null
           uploaded_at?: string
           uploaded_by?: string | null
+          uploaded_by_name?: string | null
         }
         Update: {
+          created_at?: string
+          description?: string | null
           doc_type?: string
           doc_url?: string | null
           employee_id?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
           id?: string
           notes?: string | null
+          storage_path?: string | null
           uploaded_at?: string
           uploaded_by?: string | null
+          uploaded_by_name?: string | null
         }
         Relationships: []
       }

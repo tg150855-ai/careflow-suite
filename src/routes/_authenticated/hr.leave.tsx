@@ -81,7 +81,24 @@ function Leave() {
     });
   }, [rows, q, preset, range, empMap]);
 
-  const pending = rows.filter((r) => r.status === "pending").length;
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const stats = useMemo(() => {
+    const inRange = (r: any) => {
+      if (preset === "all") return true;
+      const created = r.created_at ? new Date(r.created_at) : null;
+      return !!created && created >= range.from && created <= range.to;
+    };
+    const scoped = rows.filter(inRange);
+    return {
+      totalEmployees: emps.length,
+      applied: scoped.length,
+      approved: scoped.filter((r) => r.status === "approved").length,
+      pending: scoped.filter((r) => r.status === "pending").length,
+      rejected: scoped.filter((r) => r.status === "rejected").length,
+      onLeaveToday: rows.filter((r) => r.status === "approved" && r.from_date <= todayStr && r.to_date >= todayStr).length,
+    };
+  }, [rows, emps, preset, range, todayStr]);
+  const pending = stats.pending;
 
   function exportRows() {
     exportXlsx(filtered.map((r) => ({
@@ -125,6 +142,24 @@ function Leave() {
             <DialogFooter><Button onClick={submit}>Submit</Button></DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: "Total Employees", value: stats.totalEmployees },
+          { label: "Leave Applied", value: stats.applied },
+          { label: "Approved", value: stats.approved, cls: "text-emerald-600" },
+          { label: "Pending", value: stats.pending, cls: "text-amber-600" },
+          { label: "Rejected", value: stats.rejected, cls: "text-destructive" },
+          { label: "On Leave Today", value: stats.onLeaveToday, cls: "text-primary" },
+        ].map((s) => (
+          <Card key={s.label}>
+            <CardContent className="pt-4">
+              <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{s.label}</div>
+              <div className={`text-2xl font-semibold ${s.cls ?? ""}`}>{s.value}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Card>

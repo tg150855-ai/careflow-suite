@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Briefcase, Plus } from "lucide-react";
+import { Briefcase, Plus, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
+import { EmployeeAttachments } from "@/components/employee-attachments";
 import { format } from "date-fns";
 import { ModuleActionBar } from "@/components/common/action-bar";
 import { RecordActions } from "@/components/common/record-actions";
@@ -30,6 +31,7 @@ function Employees() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState<any>(EMPTY);
+  const [docsFor, setDocsFor] = useState<any | null>(null);
   const { range, preset, setPreset } = useDateRange("all");
 
   async function load() {
@@ -158,17 +160,22 @@ function Employees() {
                   <TableCell>{r.phone ?? "—"}</TableCell>
                   <TableCell><Badge variant={r.status === "active" ? "default" : "secondary"}>{r.status}</Badge></TableCell>
                   <TableCell className="text-right">
-                    <RecordActions
-                      size="icon"
-                      deleteLabel={`employee ${r.full_name}`}
-                      onEdit={() => openEdit(r)}
-                      onWhatsApp={() => shareOnWhatsApp(summarizeRecord("Employee", {
-                        "Emp ID": r.employee_no, Name: r.full_name, Department: r.department,
-                        Designation: r.designation ?? "—", Phone: r.phone ?? "—",
-                        Email: r.email ?? "—", Joined: r.joining_date ?? "—",
-                      }), undefined, r.phone ?? undefined)}
-                      onDelete={() => removeEmp(r.id)}
-                    />
+                    <div className="flex items-center justify-end gap-1">
+                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setDocsFor(r)} title="Documents">
+                        <FolderOpen className="size-3.5" />
+                      </Button>
+                      <RecordActions
+                        size="icon"
+                        deleteLabel={`employee ${r.full_name}`}
+                        onEdit={() => openEdit(r)}
+                        onWhatsApp={() => shareOnWhatsApp(summarizeRecord("Employee", {
+                          "Emp ID": r.employee_no, Name: r.full_name, Department: r.department,
+                          Designation: r.designation ?? "—", Phone: r.phone ?? "—",
+                          Email: r.email ?? "—", Joined: r.joining_date ?? "—",
+                        }), undefined, r.phone ?? undefined)}
+                        onDelete={() => removeEmp(r.id)}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -177,6 +184,22 @@ function Employees() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!docsFor} onOpenChange={(o) => !o && setDocsFor(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Documents — {docsFor?.full_name} <span className="text-muted-foreground text-xs font-normal">({docsFor?.employee_no})</span>
+            </DialogTitle>
+          </DialogHeader>
+          {docsFor && (
+            <EmployeeAttachments
+              employeeId={docsFor.id}
+              employee={{ full_name: docsFor.full_name, employee_no: docsFor.employee_no, phone: docsFor.phone }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
