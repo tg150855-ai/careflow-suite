@@ -31,6 +31,7 @@ function Employees() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState<any>(EMPTY);
+  const [docsFor, setDocsFor] = useState<any | null>(null);
   const { range, preset, setPreset } = useDateRange("all");
 
   async function load() {
