@@ -2,9 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart3, TrendingUp, TrendingDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BarChart3, TrendingUp, TrendingDown, FileSpreadsheet, FileText, FileDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { inr } from "@/lib/format";
+import { exportXlsx, exportCsv, downloadAsPdf } from "@/lib/export";
+import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/performance")({ component: PerfPage });
