@@ -53,9 +53,36 @@ function PerfPage() {
     </CardContent></Card>
   );
 
+  function exportRows() {
+    return [
+      { Metric: "Revenue (30d)", Value: k.revenue30 },
+      { Metric: "OPD Growth %", Value: Number(k.opdGrowth.toFixed(2)) },
+      { Metric: "Bed Occupancy %", Value: Number(k.occupancy.toFixed(2)) },
+      { Metric: "Mortality Rate %", Value: k.mortality },
+      { Metric: "Readmission Rate %", Value: k.readmission },
+      { Metric: "Claim Success %", Value: Number(k.claimSuccess.toFixed(2)) },
+      ...k.deptRanks.map((d: any) => ({ Metric: `Dept — ${d.name}`, Value: Number(d.score.toFixed(2)) })),
+      ...k.doctorRanks.map((d: any) => ({ Metric: `Doctor — ${d.name}`, Value: Number(d.productivity.toFixed(2)) })),
+    ];
+  }
+  const stamp = format(new Date(), "yyyyMMdd");
+
   return (
     <div className="space-y-6">
       <PageHeader icon={BarChart3} title="Hospital Performance Intelligence" subtitle="Executive KPIs, department ranking and doctor productivity." />
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={() => exportXlsx(exportRows(), `performance-${stamp}`)}>
+          <FileSpreadsheet className="size-4 mr-1.5" /> Excel
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => exportCsv(exportRows(), `performance-${stamp}`)}>
+          <FileText className="size-4 mr-1.5" /> CSV
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => downloadAsPdf(`performance-${stamp}`)}>
+          <FileDown className="size-4 mr-1.5" /> PDF
+        </Button>
+      </div>
+
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KPI label="Revenue (30d)" value={inr(k.revenue30)} />
