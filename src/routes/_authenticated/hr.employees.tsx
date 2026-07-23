@@ -160,17 +160,22 @@ function Employees() {
                   <TableCell>{r.phone ?? "—"}</TableCell>
                   <TableCell><Badge variant={r.status === "active" ? "default" : "secondary"}>{r.status}</Badge></TableCell>
                   <TableCell className="text-right">
-                    <RecordActions
-                      size="icon"
-                      deleteLabel={`employee ${r.full_name}`}
-                      onEdit={() => openEdit(r)}
-                      onWhatsApp={() => shareOnWhatsApp(summarizeRecord("Employee", {
-                        "Emp ID": r.employee_no, Name: r.full_name, Department: r.department,
-                        Designation: r.designation ?? "—", Phone: r.phone ?? "—",
-                        Email: r.email ?? "—", Joined: r.joining_date ?? "—",
-                      }), undefined, r.phone ?? undefined)}
-                      onDelete={() => removeEmp(r.id)}
-                    />
+                    <div className="flex items-center justify-end gap-1">
+                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setDocsFor(r)} title="Documents">
+                        <FolderOpen className="size-3.5" />
+                      </Button>
+                      <RecordActions
+                        size="icon"
+                        deleteLabel={`employee ${r.full_name}`}
+                        onEdit={() => openEdit(r)}
+                        onWhatsApp={() => shareOnWhatsApp(summarizeRecord("Employee", {
+                          "Emp ID": r.employee_no, Name: r.full_name, Department: r.department,
+                          Designation: r.designation ?? "—", Phone: r.phone ?? "—",
+                          Email: r.email ?? "—", Joined: r.joining_date ?? "—",
+                        }), undefined, r.phone ?? undefined)}
+                        onDelete={() => removeEmp(r.id)}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
