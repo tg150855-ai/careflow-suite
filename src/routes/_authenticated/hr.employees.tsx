@@ -184,6 +184,22 @@ function Employees() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!docsFor} onOpenChange={(o) => !o && setDocsFor(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Documents — {docsFor?.full_name} <span className="text-muted-foreground text-xs font-normal">({docsFor?.employee_no})</span>
+            </DialogTitle>
+          </DialogHeader>
+          {docsFor && (
+            <EmployeeAttachments
+              employeeId={docsFor.id}
+              employee={{ full_name: docsFor.full_name, employee_no: docsFor.employee_no, phone: docsFor.phone }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
