@@ -144,6 +144,24 @@ function Leave() {
         </Dialog>
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: "Total Employees", value: stats.totalEmployees },
+          { label: "Leave Applied", value: stats.applied },
+          { label: "Approved", value: stats.approved, cls: "text-emerald-600" },
+          { label: "Pending", value: stats.pending, cls: "text-amber-600" },
+          { label: "Rejected", value: stats.rejected, cls: "text-destructive" },
+          { label: "On Leave Today", value: stats.onLeaveToday, cls: "text-primary" },
+        ].map((s) => (
+          <Card key={s.label}>
+            <CardContent className="pt-4">
+              <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{s.label}</div>
+              <div className={`text-2xl font-semibold ${s.cls ?? ""}`}>{s.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       <Card>
         <CardHeader className="space-y-3">
           <CardTitle>All Requests ({filtered.length})</CardTitle>
