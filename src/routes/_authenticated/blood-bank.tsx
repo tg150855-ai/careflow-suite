@@ -358,3 +358,54 @@ function NewRequestDialog({ patients, onCreated }: any) {
     </Dialog>
   );
 }
+
+function EditInventoryButton({ unit, onSaved }: { unit: any; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({
+    bag_no: unit.bag_no ?? "",
+    blood_group: unit.blood_group,
+    component: unit.component,
+    collection_date: unit.collection_date?.slice(0, 10) ?? "",
+    expiry_date: unit.expiry_date?.slice(0, 10) ?? "",
+    status: unit.status,
+  });
+  const save = async () => {
+    const { error } = await supabase.from("blood_inventory" as any).update(f).eq("id", unit.id);
+    if (error) return toast.error(error.message);
+    toast.success("Updated");
+    setOpen(false);
+    onSaved();
+  };
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button size="sm" variant="outline">Edit</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Edit Blood Unit</DialogTitle></DialogHeader>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Bag No</Label><Input value={f.bag_no} onChange={(e) => setF({ ...f, bag_no: e.target.value })} /></div>
+          <div><Label>Group</Label>
+            <Select value={f.blood_group} onValueChange={(v) => setF({ ...f, blood_group: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{GROUPS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Component</Label>
+            <Select value={f.component} onValueChange={(v) => setF({ ...f, component: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{COMPONENTS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Status</Label>
+            <Select value={f.status} onValueChange={(v) => setF({ ...f, status: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["available", "reserved", "issued", "discarded", "expired"].map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Collection Date</Label><Input type="date" value={f.collection_date} onChange={(e) => setF({ ...f, collection_date: e.target.value })} /></div>
+          <div><Label>Expiry Date</Label><Input type="date" value={f.expiry_date} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} /></div>
+        </div>
+        <DialogFooter><Button onClick={save}>Save</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
