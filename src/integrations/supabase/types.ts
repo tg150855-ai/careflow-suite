@@ -3614,6 +3614,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "insurance_claims_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "insurance_claims_patient_insurance_id_fkey"
             columns: ["patient_insurance_id"]
             isOneToOne: false
@@ -5939,6 +5946,39 @@ export type Database = {
           },
         ]
       }
+      radiology_report_templates: {
+        Row: {
+          body_part: string | null
+          created_at: string
+          findings: string | null
+          id: string
+          impression: string | null
+          modality: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          body_part?: string | null
+          created_at?: string
+          findings?: string | null
+          id?: string
+          impression?: string | null
+          modality: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          body_part?: string | null
+          created_at?: string
+          findings?: string | null
+          id?: string
+          impression?: string | null
+          modality?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       radiology_reports: {
         Row: {
           created_at: string
@@ -5985,6 +6025,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      radiology_test_master: {
+        Row: {
+          active: boolean
+          body_part: string | null
+          created_at: string
+          id: string
+          modality: string
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body_part?: string | null
+          created_at?: string
+          id?: string
+          modality: string
+          name: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body_part?: string | null
+          created_at?: string
+          id?: string
+          modality?: string
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       recovery_logs: {
         Row: {
@@ -6837,7 +6910,50 @@ export type Database = {
           surgery_no?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "surgeries_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surgeries_anesthetist_id_fkey"
+            columns: ["anesthetist_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surgeries_assistant_surgeon_id_fkey"
+            columns: ["assistant_surgeon_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surgeries_ot_room_id_fkey"
+            columns: ["ot_room_id"]
+            isOneToOne: false
+            referencedRelation: "ot_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surgeries_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "surgeries_primary_surgeon_id_fkey"
+            columns: ["primary_surgeon_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       surgery_checklists: {
         Row: {

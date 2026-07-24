@@ -53,7 +53,7 @@ function LabDashboard() {
         supabase.from("lab_orders").select("id", { count: "exact" }).in("status", ["ordered", "sample_collected", "in_progress"]),
         supabase.from("lab_orders").select("id", { count: "exact" }).eq("status", "completed"),
         supabase.from("lab_orders").select("total_amount").gte("created_at", today.toISOString()),
-        supabase.from("lab_orders").select("id, order_no, status, priority, total_amount, created_at, test_stage, notes, patients(full_name, uhid, phone), doctors(name), lab_results(id)").order("created_at", { ascending: false }).limit(200),
+        supabase.from("lab_orders").select("id, order_no, status, priority, total_amount, created_at, test_stage, notes, patients(full_name, uhid, mobile), doctors(name), lab_results(id)").order("created_at", { ascending: false }).limit(200),
       ]);
       return {
         pending: pending.count ?? 0,
@@ -70,7 +70,7 @@ function LabDashboard() {
       const since = new Date(); since.setHours(0, 0, 0, 0);
       const { data } = await supabase
         .from("lab_schedules")
-        .select("id, title, scheduled_at, technician, room, notes, patient_id, patients(full_name, uhid, phone)")
+        .select("id, title, scheduled_at, technician, room, notes, patient_id, patients(full_name, uhid, mobile)")
         .gte("scheduled_at", since.toISOString())
         .order("scheduled_at", { ascending: true })
         .limit(20);
@@ -102,7 +102,7 @@ function LabDashboard() {
       rows = rows.filter((o) =>
         (o.patients?.full_name ?? "").toLowerCase().includes(needle) ||
         (o.patients?.uhid ?? "").toLowerCase().includes(needle) ||
-        (o.patients?.phone ?? "").toLowerCase().includes(needle) ||
+        (o.patients?.mobile ?? "").toLowerCase().includes(needle) ||
         (o.order_no ?? "").toLowerCase().includes(needle) ||
         (o.doctors?.name ?? "").toLowerCase().includes(needle),
       );
@@ -129,7 +129,7 @@ function LabDashboard() {
         order_no: o.order_no,
         patient: o.patients?.full_name ?? "—",
         uhid: o.patients?.uhid ?? "—",
-        mobile: o.patients?.phone ?? "—",
+        mobile: o.patients?.mobile ?? "—",
         doctor: o.doctors?.name ?? "—",
         priority: o.priority ?? "normal",
         status: o.status,
@@ -245,7 +245,7 @@ function LabDashboard() {
                         Amount: inr(o.total_amount),
                       }),
                       undefined,
-                      o.patients?.phone,
+                      o.patients?.mobile,
                     )
                   }
                   onDelete={async () => {
@@ -294,7 +294,7 @@ function LabDashboard() {
                       Notes: s.notes,
                     }),
                     undefined,
-                    s.patients?.phone,
+                    s.patients?.mobile,
                   )
                 }
               >

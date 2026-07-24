@@ -103,13 +103,16 @@ function BloodBankPage() {
       </div>
 
       <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-        {stockByGroup.map((s) => (
-          <Card key={s.g}><CardContent className="pt-4 text-center">
-            <div className="text-xs text-muted-foreground">{s.g}</div>
-            <div className="text-2xl font-semibold tabular-nums mt-1">{s.count}</div>
-            <div className="text-[10px] text-muted-foreground">units</div>
-          </CardContent></Card>
-        ))}
+        {stockByGroup.map((s) => {
+          const low = s.count < 2;
+          return (
+            <Card key={s.g} className={low ? "border-destructive/60 bg-destructive/5" : ""}><CardContent className="pt-4 text-center">
+              <div className="text-xs text-muted-foreground">{s.g}</div>
+              <div className={`text-2xl font-semibold tabular-nums mt-1 ${low ? "text-destructive" : ""}`}>{s.count}</div>
+              <div className="text-[10px] text-muted-foreground">{low ? "LOW / CRITICAL" : "units"}</div>
+            </CardContent></Card>
+          );
+        })}
       </div>
 
       <ModuleActionBar
@@ -139,8 +142,9 @@ function BloodBankPage() {
           <Card><CardContent className="p-0 divide-y">
             {filteredInventory.map((i) => {
               const days = differenceInDays(new Date(i.expiry_date), new Date());
+              const critical = i.status === "available" && days >= 0 && days < 7;
               return (
-                <div key={i.id} className="p-3 flex items-center gap-3">
+                <div key={i.id} className={`p-3 flex items-center gap-3 ${critical ? "bg-destructive/5" : ""}`}>
                   <Badge>{i.blood_group}</Badge>
                   <div className="flex-1">
                     <div className="text-sm font-medium">{i.component} <span className="text-muted-foreground font-normal">· Bag {i.bag_no ?? "—"}</span></div>
@@ -150,6 +154,7 @@ function BloodBankPage() {
                     {days < 0 ? "Expired" : `${days}d to expiry`}
                   </Badge>
                   <Badge variant="outline" className="capitalize">{i.status}</Badge>
+                  <EditInventoryButton unit={i} onSaved={load} />
                   <RecordActions
                     size="icon"
                     deleteLabel={`bag ${i.bag_no ?? i.id.slice(0, 6)}`}
@@ -349,6 +354,57 @@ function NewRequestDialog({ patients, onCreated }: any) {
           </div>
         </div>
         <DialogFooter><Button onClick={submit}>Submit</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditInventoryButton({ unit, onSaved }: { unit: any; onSaved: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({
+    bag_no: unit.bag_no ?? "",
+    blood_group: unit.blood_group,
+    component: unit.component,
+    collection_date: unit.collection_date?.slice(0, 10) ?? "",
+    expiry_date: unit.expiry_date?.slice(0, 10) ?? "",
+    status: unit.status,
+  });
+  const save = async () => {
+    const { error } = await supabase.from("blood_inventory" as any).update(f).eq("id", unit.id);
+    if (error) return toast.error(error.message);
+    toast.success("Updated");
+    setOpen(false);
+    onSaved();
+  };
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button size="sm" variant="outline">Edit</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Edit Blood Unit</DialogTitle></DialogHeader>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Bag No</Label><Input value={f.bag_no} onChange={(e) => setF({ ...f, bag_no: e.target.value })} /></div>
+          <div><Label>Group</Label>
+            <Select value={f.blood_group} onValueChange={(v) => setF({ ...f, blood_group: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{GROUPS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Component</Label>
+            <Select value={f.component} onValueChange={(v) => setF({ ...f, component: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{COMPONENTS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Status</Label>
+            <Select value={f.status} onValueChange={(v) => setF({ ...f, status: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{["available", "reserved", "issued", "discarded", "expired"].map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Collection Date</Label><Input type="date" value={f.collection_date} onChange={(e) => setF({ ...f, collection_date: e.target.value })} /></div>
+          <div><Label>Expiry Date</Label><Input type="date" value={f.expiry_date} onChange={(e) => setF({ ...f, expiry_date: e.target.value })} /></div>
+        </div>
+        <DialogFooter><Button onClick={save}>Save</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
