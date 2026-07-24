@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,17 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Activity, AlertTriangle, CalendarClock, CheckCircle2, Clock3, DoorOpen, Plus, Scissors, Siren, Zap } from "lucide-react";
 import { format, startOfDay, endOfDay } from "date-fns";
+import { RecordActions } from "@/components/common/record-actions";
+import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/ot/")({ component: OtDashboard });
 
 function OtDashboard() {
   const fromISO = startOfDay(new Date()).toISOString();
   const toISO = endOfDay(new Date()).toISOString();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: today = [] } = useQuery({
     queryKey: ["ot-today", fromISO, toISO],
     queryFn: async () => (await (supabase as any).from("surgeries")
-      .select("id, surgery_no, procedure_name, priority, status, scheduled_start, scheduled_end, ot_room_id, patients(full_name, uhid), ot_rooms(name)")
+      .select("id, surgery_no, procedure_name, priority, status, scheduled_start, scheduled_end, ot_room_id, patients(full_name, uhid, mobile), ot_rooms(name)")
       .gte("scheduled_start", fromISO).lte("scheduled_start", toISO)
       .order("scheduled_start")).data ?? [],
   });
@@ -78,13 +83,38 @@ function OtDashboard() {
               {today.map((s: any) => (
                 <TableRow key={s.id}>
                   <TableCell className="font-mono text-xs">{s.surgery_no}</TableCell>
-                  <TableCell>{s.patients?.full_name} <span className="text-xs text-muted-foreground">{s.patients?.uhid}</span></TableCell>
-                  <TableCell>{s.procedure_name}</TableCell>
+                  <TableCell>{s.patients?.full_name ?? "—"} <span className="text-xs text-muted-foreground">{s.patients?.uhid ?? ""}</span></TableCell>
+                  <TableCell>{s.procedure_name ?? "—"}</TableCell>
                   <TableCell>{s.ot_rooms?.name ?? "—"}</TableCell>
-                  <TableCell className="text-xs">{format(new Date(s.scheduled_start), "HH:mm")}</TableCell>
+                  <TableCell className="text-xs">{s.scheduled_start ? format(new Date(s.scheduled_start), "HH:mm") : "—"}</TableCell>
                   <TableCell><PriorityBadge p={s.priority} /></TableCell>
                   <TableCell><StatusBadge s={s.status} /></TableCell>
-                  <TableCell><Button asChild size="sm" variant="outline"><Link to="/ot/$id" params={{ id: s.id }}>Open</Link></Button></TableCell>
+                  <TableCell>
+                    <RecordActions
+                      size="icon"
+                      deleteLabel={`surgery ${s.surgery_no}`}
+                      onEdit={() => navigate({ to: "/ot/$id", params: { id: s.id } })}
+                      onPrint={() => {
+                        const w = window.open("", "_blank"); if (!w) return;
+                        w.document.write(`<html><head><title>OT Slip - ${s.surgery_no}</title><style>body{font-family:system-ui;padding:24px;max-width:640px;margin:auto}h1{font-size:18px}td{padding:6px 8px;border-bottom:1px solid #eee;font-size:13px}td:first-child{color:#666;width:40%}</style></head><body><h1>OT Record — ${s.surgery_no}</h1><table><tbody><tr><td>Patient</td><td>${s.patients?.full_name ?? "—"} (${s.patients?.uhid ?? "—"})</td></tr><tr><td>Procedure</td><td>${s.procedure_name ?? "—"}</td></tr><tr><td>OT Room</td><td>${s.ot_rooms?.name ?? "—"}</td></tr><tr><td>Scheduled</td><td>${s.scheduled_start ? format(new Date(s.scheduled_start), "dd MMM yyyy HH:mm") : "—"}</td></tr><tr><td>Priority</td><td>${s.priority ?? "—"}</td></tr><tr><td>Status</td><td>${s.status ?? "—"}</td></tr></tbody></table><script>window.print()</script></body></html>`);
+                        w.document.close();
+                      }}
+                      onWhatsApp={() => shareOnWhatsApp(summarizeRecord(`OT ${s.surgery_no}`, {
+                        Patient: s.patients?.full_name, UHID: s.patients?.uhid,
+                        Procedure: s.procedure_name, Room: s.ot_rooms?.name,
+                        When: s.scheduled_start ? format(new Date(s.scheduled_start), "dd MMM HH:mm") : "—",
+                        Priority: s.priority, Status: s.status,
+                      }), undefined, s.patients?.mobile)}
+                      onDelete={async () => {
+                        const { error } = await (supabase as any).from("surgeries").delete().eq("id", s.id);
+                        if (error) return toast.error(error.message);
+                        toast.success("Surgery deleted");
+                        qc.invalidateQueries({ queryKey: ["ot-today"] });
+                        qc.invalidateQueries({ queryKey: ["ot-all-counts"] });
+                      }}
+                    />
+                    <Button asChild size="sm" variant="ghost" className="ml-1"><Link to="/ot/$id" params={{ id: s.id }}>Open</Link></Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
