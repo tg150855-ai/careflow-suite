@@ -103,13 +103,16 @@ function BloodBankPage() {
       </div>
 
       <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-        {stockByGroup.map((s) => (
-          <Card key={s.g}><CardContent className="pt-4 text-center">
-            <div className="text-xs text-muted-foreground">{s.g}</div>
-            <div className="text-2xl font-semibold tabular-nums mt-1">{s.count}</div>
-            <div className="text-[10px] text-muted-foreground">units</div>
-          </CardContent></Card>
-        ))}
+        {stockByGroup.map((s) => {
+          const low = s.count < 2;
+          return (
+            <Card key={s.g} className={low ? "border-destructive/60 bg-destructive/5" : ""}><CardContent className="pt-4 text-center">
+              <div className="text-xs text-muted-foreground">{s.g}</div>
+              <div className={`text-2xl font-semibold tabular-nums mt-1 ${low ? "text-destructive" : ""}`}>{s.count}</div>
+              <div className="text-[10px] text-muted-foreground">{low ? "LOW / CRITICAL" : "units"}</div>
+            </CardContent></Card>
+          );
+        })}
       </div>
 
       <ModuleActionBar
@@ -139,8 +142,9 @@ function BloodBankPage() {
           <Card><CardContent className="p-0 divide-y">
             {filteredInventory.map((i) => {
               const days = differenceInDays(new Date(i.expiry_date), new Date());
+              const critical = i.status === "available" && days >= 0 && days < 7;
               return (
-                <div key={i.id} className="p-3 flex items-center gap-3">
+                <div key={i.id} className={`p-3 flex items-center gap-3 ${critical ? "bg-destructive/5" : ""}`}>
                   <Badge>{i.blood_group}</Badge>
                   <div className="flex-1">
                     <div className="text-sm font-medium">{i.component} <span className="text-muted-foreground font-normal">· Bag {i.bag_no ?? "—"}</span></div>
@@ -150,6 +154,7 @@ function BloodBankPage() {
                     {days < 0 ? "Expired" : `${days}d to expiry`}
                   </Badge>
                   <Badge variant="outline" className="capitalize">{i.status}</Badge>
+                  <EditInventoryButton unit={i} onSaved={load} />
                   <RecordActions
                     size="icon"
                     deleteLabel={`bag ${i.bag_no ?? i.id.slice(0, 6)}`}
