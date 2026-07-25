@@ -18,7 +18,10 @@ import { Search, Receipt, Users, AlertTriangle, CheckCircle2, LogOut } from "luc
 
 export const Route = createFileRoute("/_authenticated/billing-center")({
   component: BillingCenter,
-  validateSearch: (s: Record<string, unknown>) => ({ patient: (s.patient as string) || undefined }),
+  validateSearch: (s: Record<string, unknown>): { patient?: string } => {
+    const p = s.patient;
+    return typeof p === "string" && p ? { patient: p } : {};
+  },
 });
 
 function BillingCenter() {
