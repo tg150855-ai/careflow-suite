@@ -18,11 +18,18 @@ import { Search, Receipt, Users, AlertTriangle, CheckCircle2, LogOut } from "luc
 
 export const Route = createFileRoute("/_authenticated/billing-center")({
   component: BillingCenter,
+  validateSearch: (s: Record<string, unknown>) => ({ patient: (s.patient as string) || undefined }),
 });
 
 function BillingCenter() {
+  const { patient: patientParam } = Route.useSearch();
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(patientParam ?? null);
+
+  // Keep in sync if user navigates from another page with a new ?patient=
+  if (patientParam && patientParam !== selectedId) {
+    setSelectedId(patientParam);
+  }
 
   const searchRes = useQuery({
     queryKey: ["billing-center-search", query],
