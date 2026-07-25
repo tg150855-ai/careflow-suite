@@ -1,13 +1,18 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Receipt, Clock, CheckCircle2, TrendingUp, FileBarChart, Package } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Receipt, Clock, CheckCircle2, TrendingUp, FileBarChart, Package, AlertTriangle, Eye, IndianRupee, MessageCircle, Printer, Search } from "lucide-react";
 import { format, startOfDay, startOfMonth, subMonths } from "date-fns";
 import { inr } from "@/lib/format";
 import { motion } from "framer-motion";
+import { shareOnWhatsApp } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/billing/")({ component: BillingDashboard });
 
@@ -119,6 +124,200 @@ function BillingDashboard() {
           </div>
         </Card>
       </div>
+
+      <PendingBillsSection />
     </div>
+  );
+}
+
+type PendingBill = {
+  id: string;
+  bill_no: string;
+  total: number;
+  paid: number;
+  pending: number;
+  status: string;
+  created_at: string;
+  admission_id: string | null;
+  opd_visit_id: string | null;
+  patient_id: string;
+  patients: { id: string; full_name: string; uhid: string; mobile: string | null } | null;
+  bill_items: { category: string | null }[];
+};
+
+function classifyDept(b: PendingBill): string {
+  const cats = (b.bill_items ?? []).map((i) => (i.category ?? "").toLowerCase());
+  if (cats.some((c) => c.includes("ot") || c.includes("surger"))) return "OT";
+  if (cats.some((c) => c.includes("icu"))) return "ICU";
+  if (cats.some((c) => c.includes("pharm") || c.includes("medicine"))) return "Pharmacy";
+  if (cats.some((c) => c.includes("lab"))) return "Laboratory";
+  if (cats.some((c) => c.includes("radio") || c.includes("xray") || c.includes("scan"))) return "Radiology";
+  if (b.admission_id) return "IPD";
+  if (b.opd_visit_id) return "OPD";
+  return "Other";
+}
+
+function PendingBillsSection() {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const { data } = useQuery({
+    queryKey: ["pending-bills-all"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("bills")
+        .select("id, bill_no, total, paid, pending, status, created_at, admission_id, opd_visit_id, patient_id, patients(id, full_name, uhid, mobile), bill_items(category)")
+        .gt("pending", 0)
+        .order("pending", { ascending: false })
+        .limit(500);
+      return (data ?? []) as unknown as PendingBill[];
+    },
+    refetchInterval: 30000,
+  });
+
+  const filtered = useMemo(() => {
+    const ql = q.trim().toLowerCase();
+    const fromT = from ? new Date(from).getTime() : 0;
+    const toT = to ? new Date(to).getTime() + 86400000 : Infinity;
+    return (data ?? []).filter((b) => {
+      const t = new Date(b.created_at).getTime();
+      if (t < fromT || t > toT) return false;
+      if (!ql) return true;
+      return (
+        b.patients?.full_name?.toLowerCase().includes(ql) ||
+        b.patients?.uhid?.toLowerCase().includes(ql) ||
+        b.bill_no?.toLowerCase().includes(ql)
+      );
+    });
+  }, [data, q, from, to]);
+
+  // Aggregate by patient
+  const rows = useMemo(() => {
+    const map = new Map<string, {
+      patient_id: string; name: string; uhid: string; mobile: string | null;
+      total: number; paid: number; pending: number; bills: PendingBill[]; depts: Set<string>;
+      lastBillStatus: string;
+    }>();
+    for (const b of filtered) {
+      const pid = b.patient_id;
+      if (!pid) continue;
+      const existing = map.get(pid) ?? {
+        patient_id: pid,
+        name: b.patients?.full_name ?? "—",
+        uhid: b.patients?.uhid ?? "—",
+        mobile: b.patients?.mobile ?? null,
+        total: 0, paid: 0, pending: 0, bills: [], depts: new Set<string>(),
+        lastBillStatus: b.status,
+      };
+      existing.total += Number(b.total || 0);
+      existing.paid += Number(b.paid || 0);
+      existing.pending += Number(b.pending || 0);
+      existing.bills.push(b);
+      existing.depts.add(classifyDept(b));
+      map.set(pid, existing);
+    }
+    return Array.from(map.values()).sort((a, b) => b.pending - a.pending);
+  }, [filtered]);
+
+  const totalOutstanding = rows.reduce((s, r) => s + r.pending, 0);
+
+  const whatsAppRemind = (r: typeof rows[number]) => {
+    const msg = `Payment Reminder — SBG Arogya Plus\n\nDear ${r.name} (${r.uhid}),\n\nYou have an outstanding balance of ${inr(r.pending)} on your hospital account (${r.bills.length} pending bill${r.bills.length > 1 ? "s" : ""}).\n\nDepartments: ${Array.from(r.depts).join(", ")}\n\nKindly clear the pending amount at your earliest. Thank you.`;
+    shareOnWhatsApp(msg, undefined, r.mobile ?? undefined);
+  };
+
+  const printSummary = () => {
+    const w = window.open("", "_blank"); if (!w) return;
+    w.document.write(`<html><head><title>Pending Bills</title><style>body{font-family:system-ui;padding:24px}h1{font-size:18px;margin-bottom:4px}.sum{color:#b91c1c;font-weight:600;margin-bottom:16px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px 8px;border-bottom:1px solid #eee;text-align:left}th{background:#f8f8f8}td.r{text-align:right}.pend{color:#b91c1c;font-weight:600}</style></head><body>
+      <h1>Pending Bills Report</h1>
+      <div class="sum">Total Outstanding: ${inr(totalOutstanding)} · ${rows.length} patient(s)</div>
+      <table><thead><tr><th>Patient</th><th>UHID</th><th>Dept</th><th class="r">Total</th><th class="r">Paid</th><th class="r">Pending</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr><td>${r.name}</td><td>${r.uhid}</td><td>${Array.from(r.depts).join(", ")}</td><td class="r">${inr(r.total)}</td><td class="r">${inr(r.paid)}</td><td class="r pend">${inr(r.pending)}</td></tr>`).join("")}
+      </tbody></table>
+      <script>window.print()</script></body></html>`);
+    w.document.close();
+  };
+
+  return (
+    <Card className="p-6 border-red-200">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="size-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center">
+            <AlertTriangle className="size-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Pending Bills</h2>
+            <div className="text-sm">
+              <span className="text-muted-foreground">Total Outstanding: </span>
+              <span className="text-red-700 font-bold text-base tabular-nums">{inr(totalOutstanding)}</span>
+              <span className="text-muted-foreground"> · {rows.length} patient{rows.length !== 1 ? "s" : ""}</span>
+            </div>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={printSummary}><Printer className="size-4 mr-2" />Print Report</Button>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <div className="flex-1 min-w-[240px]">
+          <Label className="text-xs">Search</Label>
+          <div className="relative">
+            <Search className="size-4 absolute left-2 top-2.5 text-muted-foreground" />
+            <Input className="pl-8 h-9" placeholder="Patient name, UHID, bill no…" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+        </div>
+        <div><Label className="text-xs">From</Label><Input type="date" className="h-9" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+        <div><Label className="text-xs">To</Label><Input type="date" className="h-9" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+        {(q || from || to) && <Button variant="ghost" size="sm" onClick={() => { setQ(""); setFrom(""); setTo(""); }}>Reset</Button>}
+      </div>
+
+      <div className="rounded-md border overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Patient</TableHead>
+              <TableHead>UHID</TableHead>
+              <TableHead>Department</TableHead>
+              <TableHead className="text-right">Total Bill</TableHead>
+              <TableHead className="text-right">Paid</TableHead>
+              <TableHead className="text-right">Pending</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => {
+              const status = r.paid <= 0 ? "Unpaid" : "Partially Paid";
+              const goPatient = () => navigate({ to: "/billing-center", search: { patient: r.patient_id } as any });
+              return (
+                <TableRow key={r.patient_id}>
+                  <TableCell className="font-medium">{r.name}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.uhid}</TableCell>
+                  <TableCell><div className="flex flex-wrap gap-1">{Array.from(r.depts).map((d) => <Badge key={d} variant="outline" className="text-[10px]">{d}</Badge>)}</div></TableCell>
+                  <TableCell className="text-right tabular-nums">{inr(r.total)}</TableCell>
+                  <TableCell className="text-right tabular-nums text-emerald-700">{inr(r.paid)}</TableCell>
+                  <TableCell className="text-right tabular-nums font-bold text-red-600">{inr(r.pending)}</TableCell>
+                  <TableCell><Badge className={status === "Unpaid" ? "bg-red-100 text-red-800 hover:bg-red-100" : "bg-amber-100 text-amber-800 hover:bg-amber-100"}>{status}</Badge></TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button size="icon" variant="ghost" title="View Bills" onClick={goPatient}><Eye className="size-4" /></Button>
+                      <Button size="icon" variant="ghost" title="Collect Payment" onClick={goPatient}><IndianRupee className="size-4 text-emerald-600" /></Button>
+                      <Button size="icon" variant="ghost" title="WhatsApp reminder" onClick={() => whatsAppRemind(r)}><MessageCircle className="size-4 text-green-600" /></Button>
+                      <Button size="icon" variant="ghost" title="Print" onClick={() => { const b = r.bills[0]; if (b) window.open(`/billing/${b.id}`, "_blank"); }}><Printer className="size-4" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+            {rows.length === 0 && (
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-sm text-muted-foreground">
+                {q || from || to ? "No pending bills match your filters." : "🎉 All bills are fully paid."}
+              </TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </Card>
   );
 }
