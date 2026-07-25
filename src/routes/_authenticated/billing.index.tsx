@@ -1,13 +1,18 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Receipt, Clock, CheckCircle2, TrendingUp, FileBarChart, Package } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Receipt, Clock, CheckCircle2, TrendingUp, FileBarChart, Package, AlertTriangle, Eye, IndianRupee, MessageCircle, Printer, Search } from "lucide-react";
 import { format, startOfDay, startOfMonth, subMonths } from "date-fns";
 import { inr } from "@/lib/format";
 import { motion } from "framer-motion";
+import { shareOnWhatsApp } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/billing/")({ component: BillingDashboard });
 
