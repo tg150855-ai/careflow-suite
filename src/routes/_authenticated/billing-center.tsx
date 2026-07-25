@@ -189,12 +189,42 @@ function PatientBillingPanel({ patientId }: { patientId: string }) {
               )}
             </div>
           </div>
-          <Badge className={`text-sm px-3 py-1 ${statusVariant[paymentStatus]}`}>
-            {paymentStatus === "Paid" ? <CheckCircle2 className="size-4 mr-1 inline" /> : <AlertTriangle className="size-4 mr-1 inline" />}
-            {paymentStatus}
-          </Badge>
+          {totals.pending > 0.01 ? (
+            <Badge className="text-sm px-3 py-1.5 bg-red-100 text-red-800 hover:bg-red-100 border border-red-300 font-bold">
+              <AlertTriangle className="size-4 mr-1 inline" />
+              Pending: {inr(totals.pending)}
+            </Badge>
+          ) : bills.length > 0 ? (
+            <Badge className="text-sm px-3 py-1.5 bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 font-bold">
+              <CheckCircle2 className="size-4 mr-1 inline" />
+              Fully Paid
+            </Badge>
+          ) : (
+            <Badge className={`text-sm px-3 py-1 ${statusVariant[paymentStatus]}`}>{paymentStatus}</Badge>
+          )}
         </CardContent>
       </Card>
+
+      {totals.pending > 0.01 && (
+        <Card className="border-2 border-red-400 bg-red-50">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="size-6 text-red-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <div className="text-lg font-bold text-red-700">Outstanding Payment: {inr(totals.pending)}</div>
+                <div className="text-sm text-red-900 mt-1">
+                  Pending across {deptRows.filter((r) => r.Pending > 0).length} department(s):{" "}
+                  {deptRows.filter((r) => r.Pending > 0).map((r) => (
+                    <Badge key={r.Department} variant="outline" className="ml-1 border-red-300 bg-white text-red-800">
+                      {r.Department}: <span className="font-bold ml-1">{inr(r.Pending)}</span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <ModuleActionBar onExport={onExport} onPrint={() => window.print()} onWhatsAppShare={onWhatsApp} />
 
