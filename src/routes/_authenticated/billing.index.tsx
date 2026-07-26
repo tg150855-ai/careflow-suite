@@ -232,12 +232,57 @@ function PendingBillsSection() {
 
   const printSummary = () => {
     const w = window.open("", "_blank"); if (!w) return;
-    w.document.write(`<html><head><title>Pending Bills</title><style>body{font-family:system-ui;padding:24px}h1{font-size:18px;margin-bottom:4px}.sum{color:#b91c1c;font-weight:600;margin-bottom:16px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:6px 8px;border-bottom:1px solid #eee;text-align:left}th{background:#f8f8f8}td.r{text-align:right}.pend{color:#b91c1c;font-weight:600}</style></head><body>
-      <h1>Pending Bills Report</h1>
-      <div class="sum">Total Outstanding: ${inr(totalOutstanding)} · ${rows.length} patient(s)</div>
-      <table><thead><tr><th>Patient</th><th>UHID</th><th>Dept</th><th class="r">Total</th><th class="r">Paid</th><th class="r">Pending</th></tr></thead><tbody>
-      ${rows.map((r) => `<tr><td>${r.name}</td><td>${r.uhid}</td><td>${Array.from(r.depts).join(", ")}</td><td class="r">${inr(r.total)}</td><td class="r">${inr(r.paid)}</td><td class="r pend">${inr(r.pending)}</td></tr>`).join("")}
+    const h = hospital;
+    const esc = (s: any) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+    const contact = [h?.phone && `Ph: ${h.phone}`, h?.email && `Email: ${h.email}`, h?.website && `Web: ${h.website}`].filter(Boolean).join(" · ");
+    const regLine = [h?.registration_no && `Reg. No: ${h.registration_no}`, h?.nabh_no && `NABH: ${h.nabh_no}`, h?.gst_no && `GSTIN: ${h.gst_no}`].filter(Boolean).join(" · ");
+    const accent = h?.primary_color || "#0EA5E9";
+    w.document.write(`<html><head><title>Pending Bills — ${esc(h?.hospital_name ?? "")}</title><style>
+      @page { size: A4; margin: 14mm 12mm 16mm 12mm; @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size:9pt; color:#666; } }
+      body{font-family:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;color:#111;margin:0;padding:0;font-size:11pt}
+      .hdr{display:flex;align-items:flex-start;gap:16px;padding-bottom:10px}
+      .hdr img{max-height:64px;max-width:130px;object-fit:contain}
+      .hdr .mid{flex:1;text-align:center}
+      .name{font-size:20px;font-weight:800;color:${accent};letter-spacing:-.01em}
+      .tag{font-size:10px;font-style:italic;color:#555;margin-top:2px}
+      .addr{font-size:10px;color:#444;margin-top:3px;white-space:pre-line}
+      .contact{font-size:10px;color:#444;margin-top:2px}
+      .reg{font-size:9px;color:#666;margin-top:2px}
+      .bar{height:2px;background:${accent};width:100%}
+      .title{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:12px}
+      .title .t{font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${accent}}
+      .sum{color:#b91c1c;font-weight:600;margin:12px 0}
+      table{width:100%;border-collapse:collapse;font-size:11px}
+      th,td{padding:6px 8px;border-bottom:1px solid #eee;text-align:left}
+      th{background:#f5f7fa;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#555}
+      td.r{text-align:right;font-variant-numeric:tabular-nums}
+      .pend{color:#b91c1c;font-weight:600}
+      .foot{margin-top:24px;padding-top:8px;border-top:1px solid #ddd;font-size:9px;color:#666;display:flex;justify-content:space-between;gap:16px}
+    </style></head><body>
+      <div class="hdr">
+        ${h?.logo_url ? `<img src="${esc(h.logo_url)}" alt="${esc(h.hospital_name)}"/>` : `<div style="width:130px"></div>`}
+        <div class="mid">
+          <div class="name">${esc(h?.hospital_name ?? "")}</div>
+          ${h?.tagline ? `<div class="tag">${esc(h.tagline)}</div>` : ""}
+          ${h?.address ? `<div class="addr">${esc(h.address)}</div>` : ""}
+          ${contact ? `<div class="contact">${esc(contact)}</div>` : ""}
+          ${regLine ? `<div class="reg">${esc(regLine)}</div>` : ""}
+        </div>
+        <div style="width:130px;text-align:right;font-size:10px;color:#666">
+          Date: ${new Date().toLocaleDateString("en-GB")}<br/>Time: ${new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}
+        </div>
+      </div>
+      <div class="bar"></div>
+      <div class="title"><span class="t">Pending Bills Report</span><span style="color:#666">${rows.length} patient(s)</span></div>
+      <div style="height:1px;background:#ddd"></div>
+      <div class="sum">Total Outstanding: ${inr(totalOutstanding)}</div>
+      <table><thead><tr><th>Patient</th><th>UHID</th><th>Mobile</th><th>Dept</th><th class="r">Total</th><th class="r">Paid</th><th class="r">Pending</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr><td>${esc(r.name)}</td><td>${esc(r.uhid)}</td><td>${esc(r.mobile ?? "—")}</td><td>${esc(Array.from(r.depts).join(", "))}</td><td class="r">${inr(r.total)}</td><td class="r">${inr(r.paid)}</td><td class="r pend">${inr(r.pending)}</td></tr>`).join("")}
       </tbody></table>
+      <div class="foot">
+        <div><div style="font-weight:600;color:#333">${esc(h?.hospital_name ?? "")}</div>${h?.address ? `<div>${esc(h.address)}</div>` : ""}${contact ? `<div>${esc(contact)}</div>` : ""}</div>
+        <div style="text-align:right">Computer Generated Document<br/>Printed: ${new Date().toLocaleString("en-GB")}</div>
+      </div>
       <script>window.print()</script></body></html>`);
     w.document.close();
   };
