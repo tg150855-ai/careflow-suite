@@ -75,6 +75,7 @@ function PrintDischarge() {
           <div>Patient signature</div>
           <div>Dr. {adm?.doctors?.name}</div>
         </div>
+        <PrintFooter />
       </div>
       <style>{`@media print { body { background: white; } .print\\:hidden { display: none !important; } }`}</style>
     </div>
