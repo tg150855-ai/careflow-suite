@@ -160,6 +160,7 @@ function classifyDept(b: PendingBill): string {
 
 function PendingBillsSection() {
   const navigate = useNavigate();
+  const { data: hospital } = useHospitalProfile();
   const [q, setQ] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
