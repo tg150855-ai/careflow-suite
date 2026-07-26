@@ -183,11 +183,16 @@
 
 @media print {
   .no-print { display: none !important; }
-  body { background: white !important; color: black !important; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  @page { size: A4; margin: 15mm; }
+  body { background: white !important; color: black !important; font-family: "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, sans-serif; font-size: 11pt; }
+  @page { size: A4; margin: 14mm 12mm 16mm 12mm; }
+  @page { @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size: 9pt; color: #666; } }
   thead { display: table-header-group; }
   tfoot { display: table-footer-group; }
   tr, td, th { page-break-inside: avoid; }
+  h1, h2, h3, h4 { page-break-after: avoid; }
   .print-zebra tbody tr:nth-child(even) { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .print-header-logo, .print-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-header, .print-header-logo, .print-footer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-header { display: table-header-group; }
+  .print-footer { display: table-footer-group; }
+  a { color: inherit; text-decoration: none; }
 }

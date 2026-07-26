@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { Printer, MessageCircle } from "lucide-react";
-import { PrintHeader } from "@/components/print-header";
+import { PrintHeader, PrintFooter } from "@/components/print-header";
 
 export const Route = createFileRoute("/prescriptions/$id/print")({ component: PrintRx });
 
@@ -172,6 +172,7 @@ function PrintRx() {
           <div className="text-[10px] text-gray-500">Doctor signature</div>
         </div>
       </footer>
+      <PrintFooter />
 
       <style>{`@media print { .no-print { display: none !important; } @page { margin: 12mm; } }`}</style>
     </div>
