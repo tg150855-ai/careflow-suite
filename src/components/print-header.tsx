@@ -61,45 +61,46 @@ type PrintHeaderProps = {
 export function PrintHeader({ title, documentNo, rightSlot, timestamp }: PrintHeaderProps) {
   const { data: h } = useHospitalProfile();
   const ts = timestamp ? new Date(timestamp) : new Date();
-  const meta = [
-    h?.phone && `Phone: ${h.phone}`,
+  const contact = [
+    h?.phone && `Ph: ${h.phone}`,
     h?.email && `Email: ${h.email}`,
-  ].filter(Boolean).join(" | ");
+    h?.website && `Web: ${h.website}`,
+  ].filter(Boolean).join("  ·  ");
   const regLine = [
-    h?.registration_no && `License No: ${h.registration_no}`,
-    h?.gst_no && `GSTIN: ${h.gst_no}`,
+    h?.registration_no && `Reg. No: ${h.registration_no}`,
     h?.nabh_no && `NABH: ${h.nabh_no}`,
-  ].filter(Boolean).join(" | ");
+    h?.gst_no && `GSTIN: ${h.gst_no}`,
+  ].filter(Boolean).join("  ·  ");
   const accent = h?.primary_color || "#0EA5E9";
 
   return (
     <header className="print-header w-full">
-      <div className="flex items-start gap-4 pb-3">
-        {h?.logo_url && (
+      <div className="flex items-start gap-5 pb-3">
+        {h?.logo_url ? (
           <img
             src={h.logo_url}
             alt={h.hospital_name}
             className="print-header-logo shrink-0"
-            style={{ maxHeight: 64, maxWidth: 120, objectFit: "contain" }}
+            style={{ maxHeight: 72, maxWidth: 140, objectFit: "contain" }}
           />
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="text-xl font-bold leading-tight" style={{ color: accent }}>
+        ) : null}
+        <div className="flex-1 min-w-0 text-center">
+          <div className="text-2xl font-extrabold leading-tight tracking-tight" style={{ color: accent }}>
             {h?.hospital_name}
           </div>
-          {h?.tagline && <div className="text-xs text-gray-600 mt-0.5">{h.tagline}</div>}
-          {h?.address && <div className="text-xs text-gray-700 mt-0.5 whitespace-pre-line">{h.address}</div>}
-          {meta && <div className="text-xs text-gray-700 mt-0.5">{meta}</div>}
-          {regLine && <div className="text-xs text-gray-600 mt-0.5">{regLine}</div>}
+          {h?.tagline && <div className="text-[11px] italic text-gray-600 mt-0.5">{h.tagline}</div>}
+          {h?.address && <div className="text-[11px] text-gray-700 mt-1 whitespace-pre-line">{h.address}</div>}
+          {contact && <div className="text-[11px] text-gray-700 mt-0.5">{contact}</div>}
+          {regLine && <div className="text-[10px] text-gray-600 mt-0.5">{regLine}</div>}
         </div>
-        {rightSlot && <div className="text-right text-xs">{rightSlot}</div>}
+        {rightSlot ? <div className="text-right text-xs shrink-0">{rightSlot}</div> : <div style={{ width: h?.logo_url ? 140 : 0 }} className="shrink-0" />}
       </div>
       <div className="h-[2px] w-full" style={{ background: accent }} />
       <div className="flex items-center justify-between py-2 text-sm">
-        <div className="font-semibold uppercase tracking-wide" style={{ color: accent }}>{title}</div>
+        <div className="font-semibold uppercase tracking-wider" style={{ color: accent }}>{title}</div>
         <div className="text-xs text-gray-600">
           {documentNo && <span className="font-mono mr-3">#{documentNo}</span>}
-          Generated on: {format(ts, "dd/MM/yyyy")} | Time: {format(ts, "HH:mm")}
+          Date: {format(ts, "dd/MM/yyyy")} · Time: {format(ts, "HH:mm")}
         </div>
       </div>
       <div className="h-px w-full bg-gray-300" />
@@ -107,13 +108,23 @@ export function PrintHeader({ title, documentNo, rightSlot, timestamp }: PrintHe
   );
 }
 
-/** Footer with page-number placeholder + hospital name. Rendered by browser print. */
+/** Footer with hospital identity + computer-generated notice. Print-friendly. */
 export function PrintFooter() {
   const { data: h } = useHospitalProfile();
+  const contact = [h?.phone, h?.email, h?.website].filter(Boolean).join(" · ");
   return (
-    <footer className="print-footer mt-8 pt-3 border-t text-[10px] text-gray-500 flex justify-between">
-      <span>{h?.hospital_name}</span>
-      <span>Computer generated · {format(new Date(), "dd/MM/yyyy HH:mm")}</span>
+    <footer className="print-footer mt-8 pt-3 border-t text-[10px] text-gray-500">
+      <div className="flex justify-between gap-4">
+        <div className="min-w-0">
+          <div className="font-semibold text-gray-700">{h?.hospital_name}</div>
+          {h?.address && <div className="truncate">{h.address}</div>}
+          {contact && <div>{contact}</div>}
+        </div>
+        <div className="text-right shrink-0">
+          <div>Computer Generated Document</div>
+          <div>Printed: {format(new Date(), "dd/MM/yyyy HH:mm")}</div>
+        </div>
+      </div>
     </footer>
   );
 }
