@@ -896,8 +896,29 @@ function BillingTab({ admission, days }: { admission: any; days: number }) {
 
   return (
     <div className="space-y-4 mt-4">
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
+      <Card className="p-6 print:shadow-none print:border-0 print:p-0">
+        <div className="hidden print:block mb-4">
+          <PrintHeader
+            title="IPD Hospital Bill"
+            documentNo={bill?.bill_no ?? admission.admission_no}
+            timestamp={bill?.created_at ?? admission.admitted_at}
+            rightSlot={bill ? <Badge variant="outline" className="capitalize">{bill.status}</Badge> : null}
+          />
+          <div className="grid grid-cols-2 gap-6 py-3 border-b text-xs">
+            <div>
+              <div className="text-muted-foreground uppercase tracking-wider mb-1">Patient</div>
+              <div className="font-medium">{admission.patients?.full_name}</div>
+              <div>{admission.patients?.uhid} · {admission.patients?.mobile}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-muted-foreground uppercase tracking-wider mb-1">Admission</div>
+              <div>#{admission.admission_no} · {days} day(s)</div>
+              <div>{admission.wards?.name ?? "—"} / Bed {admission.beds?.bed_number ?? "—"}</div>
+              <div>Dr. {admission.doctors?.name ?? "—"}</div>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between mb-4 no-print">
           <div>
             <h3 className="font-semibold">IPD bill summary</h3>
             {bill && <div className="text-xs text-muted-foreground mt-0.5">Invoice <span className="font-mono">{bill.bill_no}</span> · <Badge variant="outline" className="capitalize">{bill.status}</Badge></div>}
