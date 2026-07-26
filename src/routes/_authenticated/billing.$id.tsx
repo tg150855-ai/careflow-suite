@@ -163,6 +163,7 @@ function BillView() {
             </div>
           </div>
         )}
+        <PrintFooter />
       </Card>
     </div>
   );
