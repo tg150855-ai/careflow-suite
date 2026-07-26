@@ -92,7 +92,13 @@ function BillView() {
 
       <Card className="p-8 print:shadow-none print:border-0">
         <PrintHeader
-          title="OPD Consultation Bill"
+          title={
+            bill.status === "paid" && payments.length > 0
+              ? "Payment Receipt cum Bill"
+              : (bill as any).bill_type === "ipd" || String(bill.bill_no ?? "").toUpperCase().startsWith("IPD")
+                ? "IPD Hospital Bill"
+                : "OPD Consultation Bill"
+          }
           documentNo={bill.bill_no}
           timestamp={bill.created_at}
           rightSlot={<Badge variant={bill.status === "paid" ? "secondary" : "outline"} className="capitalize">{bill.status}</Badge>}
