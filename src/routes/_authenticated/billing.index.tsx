@@ -13,6 +13,7 @@ import { format, startOfDay, startOfMonth, subMonths } from "date-fns";
 import { inr } from "@/lib/format";
 import { motion } from "framer-motion";
 import { shareOnWhatsApp } from "@/lib/share";
+import { useHospitalProfile } from "@/components/print-header";
 
 export const Route = createFileRoute("/_authenticated/billing/")({ component: BillingDashboard });
 
