@@ -172,6 +172,7 @@ function PrintRx() {
           <div className="text-[10px] text-gray-500">Doctor signature</div>
         </div>
       </footer>
+      <PrintFooter />
 
       <style>{`@media print { .no-print { display: none !important; } @page { margin: 12mm; } }`}</style>
     </div>
