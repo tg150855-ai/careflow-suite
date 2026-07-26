@@ -121,6 +121,7 @@ function LabOrderView() {
         </table>
 
         {o.notes && <div className="border-t pt-4 text-sm"><div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Notes</div><div>{o.notes}</div></div>}
+        <PrintFooter />
       </Card>
     </div>
   );
