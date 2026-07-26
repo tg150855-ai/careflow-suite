@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { Printer, MessageCircle } from "lucide-react";
-import { PrintHeader } from "@/components/print-header";
+import { PrintHeader, PrintFooter } from "@/components/print-header";
 
 export const Route = createFileRoute("/prescriptions/$id/print")({ component: PrintRx });
 
