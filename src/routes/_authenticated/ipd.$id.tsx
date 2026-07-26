@@ -1048,6 +1048,7 @@ function BillingTab({ admission, days }: { admission: any; days: number }) {
           )}
         </Card>
       )}
+      <div className="hidden print:block"><PrintFooter /></div>
     </div>
   );
 }
