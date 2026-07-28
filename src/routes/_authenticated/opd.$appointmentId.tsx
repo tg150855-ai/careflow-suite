@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { format, differenceInYears } from "date-fns";
 import { DoctorDictate, parseMedicationLine, splitDictationToLines } from "@/components/doctor-dictate";
+import { PrescriptionComposer, type ComposerContext } from "@/components/opd/prescription-composer";
 
 export const Route = createFileRoute("/_authenticated/opd/$appointmentId")({ component: Consultation });
 
