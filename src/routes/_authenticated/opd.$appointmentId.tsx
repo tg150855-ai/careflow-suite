@@ -114,6 +114,8 @@ function Consultation() {
   const [consultationFee, setConsultationFee] = useState<number>(500);
   const [saving, setSaving] = useState(false);
   const startedAtRef = useRef(Date.now());
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerCtx, setComposerCtx] = useState<ComposerContext | null>(null);
 
   useEffect(() => {
     if (appt?.doctors?.consultation_fee != null) setConsultationFee(Number(appt.doctors.consultation_fee));
