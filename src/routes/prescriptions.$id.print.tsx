@@ -64,8 +64,21 @@ function PrintRx() {
     vit.spo2 && `SpO₂ ${vit.spo2}`, vit.weight && `Wt ${vit.weight}kg`,
   ].filter(Boolean).join(" · ");
 
+  const tpl = (data as any).tpl ?? {};
+  const advice = (data.rx as any).notes ?? v.notes ?? "";
+  const handwriting = (data.rx as any).handwriting_png;
+  const signature = (data.rx as any).signature_png;
+
   return (
-    <div className="min-h-screen bg-white text-black p-10 max-w-3xl mx-auto font-sans">
+    <div
+      className="min-h-screen bg-white text-black p-10 max-w-3xl mx-auto font-sans relative"
+      style={{ fontFamily: tpl.font_family || undefined, fontSize: tpl.font_size ? `${tpl.font_size}px` : undefined }}
+    >
+      {tpl.watermark && (
+        <div aria-hidden className="pointer-events-none fixed inset-0 flex items-center justify-center print:absolute" style={{ opacity: 0.06, fontSize: 120, transform: "rotate(-30deg)", fontWeight: 800 }}>
+          {tpl.watermark}
+        </div>
+      )}
       <div className="no-print flex justify-end gap-2 mb-4">
         <Button variant="outline" onClick={whatsApp}><MessageCircle className="size-4 mr-2" />WhatsApp</Button>
         <Button onClick={() => window.print()}><Printer className="size-4 mr-2" />Print</Button>
@@ -82,6 +95,7 @@ function PrintRx() {
         }
       />
 
+      {tpl.header && <div className="mt-2 text-[11px] whitespace-pre-line text-gray-700">{tpl.header}</div>}
 
       <h1 className="sr-only">Medical Prescription for {v.patients?.full_name}</h1>
 
@@ -104,6 +118,13 @@ function PrintRx() {
         <section className="py-3 border-b text-sm">
           <h2 className="text-xs uppercase text-gray-500 mb-1">Chief complaints</h2>
           <div>{v.chief_complaints}</div>
+        </section>
+      )}
+
+      {v.clinical_findings && (
+        <section className="py-3 border-b text-sm">
+          <h2 className="text-xs uppercase text-gray-500 mb-1">Clinical findings</h2>
+          <div>{v.clinical_findings}</div>
         </section>
       )}
 
@@ -153,10 +174,17 @@ function PrintRx() {
         </section>
       )}
 
-      {v.notes && (
+      {advice && (
         <section className="py-3 border-b text-sm">
           <h2 className="text-xs uppercase text-gray-500 mb-1">Advice</h2>
-          <div>{v.notes}</div>
+          <div className="whitespace-pre-line">{advice}</div>
+        </section>
+      )}
+
+      {handwriting && (
+        <section className="py-3 border-b">
+          <h2 className="text-xs uppercase text-gray-500 mb-1">Handwritten notes</h2>
+          <img src={handwriting} alt="Handwritten notes" className="max-w-full border rounded" />
         </section>
       )}
 
@@ -169,10 +197,15 @@ function PrintRx() {
           </div>
         </div>
         <div className="text-right">
+          {signature && <img src={signature} alt="Signature" className="ml-auto max-h-16 mb-1" />}
           <div className="border-t border-black pt-1 px-6 inline-block">{v.doctors?.name}</div>
           <div className="text-[10px] text-gray-500">Doctor signature</div>
         </div>
       </footer>
+
+      {tpl.footer && <div className="mt-4 text-[11px] whitespace-pre-line text-gray-700">{tpl.footer}</div>}
+      {tpl.footer_disclaimer && <div className="mt-2 text-[10px] italic text-gray-500">{tpl.footer_disclaimer}</div>}
+
       <PrintFooter />
 
       <style>{`@media print { .no-print { display: none !important; } @page { margin: 12mm; } }`}</style>
