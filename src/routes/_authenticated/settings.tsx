@@ -119,8 +119,16 @@ function SettingsPage() {
             fields={[
               { key: "header", label: "Header text", type: "textarea" },
               { key: "footer", label: "Footer text", type: "textarea" },
+              { key: "footer_disclaimer", label: "Footer disclaimer", type: "textarea" },
               { key: "watermark", label: "Watermark text", type: "text" },
-              { key: "signature_url", label: "Digital signature URL", type: "text" },
+              { key: "signature_url", label: "Digital signature image URL", type: "text" },
+              { key: "auto_apply_signature", label: "Auto-apply signature (1 = yes, 0 = no)", type: "number" },
+              { key: "enable_whatsapp", label: "Enable WhatsApp share (1 = yes, 0 = no)", type: "number" },
+              { key: "font_family", label: "Font family (e.g. Inter, Georgia)", type: "text" },
+              { key: "font_size", label: "Base font size (px)", type: "number" },
+              { key: "paper_size", label: "Paper size (A4/A5)", type: "text" },
+              { key: "margins_mm", label: "Page margin (mm)", type: "number" },
+              { key: "number_format", label: "Prescription number format", type: "text" },
             ]}
             onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
         </TabsContent>

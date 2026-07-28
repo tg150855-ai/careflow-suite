@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { format, differenceInYears } from "date-fns";
 import { DoctorDictate, parseMedicationLine, splitDictationToLines } from "@/components/doctor-dictate";
+import { PrescriptionComposer, type ComposerContext } from "@/components/opd/prescription-composer";
 
 export const Route = createFileRoute("/_authenticated/opd/$appointmentId")({ component: Consultation });
 
@@ -113,6 +114,8 @@ function Consultation() {
   const [consultationFee, setConsultationFee] = useState<number>(500);
   const [saving, setSaving] = useState(false);
   const startedAtRef = useRef(Date.now());
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerCtx, setComposerCtx] = useState<ComposerContext | null>(null);
 
   useEffect(() => {
     if (appt?.doctors?.consultation_fee != null) setConsultationFee(Number(appt.doctors.consultation_fee));
@@ -194,7 +197,7 @@ function Consultation() {
   }, [existingBill?.bill?.id]); // eslint-disable-line
 
   // -------------- save --------------
-  async function save(opts: { print?: boolean; bill?: boolean } = {}) {
+  async function save(opts: { print?: boolean; bill?: boolean; compose?: boolean } = {}) {
     if (!appt) return;
     setSaving(true);
     try {
@@ -325,9 +328,31 @@ function Consultation() {
       qc.invalidateQueries();
       toast.success("Consultation saved · invoice auto-generated");
 
-      if (opts.print) window.open(`/prescriptions/${rx.id}/print`, "_blank");
+      if (opts.compose) {
+        setComposerCtx({
+          prescriptionId: rx.id,
+          patient,
+          doctor: (appt as any).doctors,
+          visit: {
+            id: visitId!,
+            chief_complaints: chief || null,
+            diagnosis: diagnosis || null,
+            clinical_findings: findings || null,
+            notes: notes || null,
+            follow_up_date: followUp || null,
+            vitals,
+          },
+          medicines: validItems.map((it) => ({
+            name: it.medicine_name, strength: it.strength, route: it.route, frequency: it.frequency,
+            food: it.food_instruction, duration: it.duration_days, quantity: it.quantity, instructions: it.instructions,
+          })),
+          investigations: investigations.filter(i => i.name.trim()).map(i => `${i.name}${i.priority !== "Routine" ? ` [${i.priority}]` : ""}`),
+          procedures: procedures.filter(p => p.name.trim()).map(p => p.name),
+        });
+        setComposerOpen(true);
+      } else if (opts.print) window.open(`/prescriptions/${rx.id}/print`, "_blank");
       if (opts.bill) navigate({ to: "/opd/billing" });
-      else if (!opts.print) navigate({ to: "/opd" });
+      else if (!opts.print && !opts.compose) navigate({ to: "/opd" });
     } catch (err: any) {
       console.error("[consultation save]", err);
       toast.error(err.message ?? "Save failed");
@@ -600,9 +625,11 @@ function Consultation() {
           <Button variant="outline" onClick={shareWhatsApp}><MessageCircle className="size-4 mr-2" />WhatsApp</Button>
           <Button variant="outline" onClick={() => save({ print: true })} disabled={saving}><Printer className="size-4 mr-2" />Save & print Rx</Button>
           <Button variant="outline" onClick={() => save({ bill: true })} disabled={saving}><Receipt className="size-4 mr-2" />Save & collect</Button>
-          <Button onClick={() => save()} disabled={saving} size="lg"><Save className="size-4 mr-2" />Save consultation</Button>
+          <Button onClick={() => save({ compose: true })} disabled={saving} size="lg"><Save className="size-4 mr-2" />Complete consultation</Button>
         </div>
       </div>
+
+      <PrescriptionComposer open={composerOpen} onOpenChange={setComposerOpen} ctx={composerCtx} onSubmitted={() => qc.invalidateQueries()} />
     </div>
   );
 
