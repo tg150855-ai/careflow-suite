@@ -219,7 +219,10 @@ export function PrescriptionComposer({ open, onOpenChange, ctx, onSubmitted }: P
                     <button type="button" onClick={() => setPenColor("#111827")} className={`size-5 rounded-full border-2 ${penColor === "#111827" ? "ring-2 ring-offset-1 ring-primary" : ""}`} style={{ background: "#111827" }} aria-label="Black pen" />
                     <button type="button" onClick={() => setPenColor("#1d4ed8")} className={`size-5 rounded-full border-2 ${penColor === "#1d4ed8" ? "ring-2 ring-offset-1 ring-primary" : ""}`} style={{ background: "#1d4ed8" }} aria-label="Blue pen" />
                     <div className="flex items-center gap-1 w-28"><Slider min={1} max={6} step={1} value={[penWidth]} onValueChange={(v) => setPenWidth(v[0])} /></div>
-                    <Button type="button" size="sm" variant="ghost" onClick={() => padRef.current?.undo()}><Undo2 className="size-3.5 mr-1" />Undo</Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => {
+                      const pad = padRef.current; if (!pad) return;
+                      const data = pad.toData(); if (data.length) { data.pop(); pad.fromData(data); }
+                    }}><Undo2 className="size-3.5 mr-1" />Undo</Button>
                     <Button type="button" size="sm" variant="ghost" onClick={() => padRef.current?.clear()}><Eraser className="size-3.5 mr-1" />Clear</Button>
                   </div>
                 </div>
