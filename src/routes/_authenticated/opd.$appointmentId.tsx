@@ -625,9 +625,11 @@ function Consultation() {
           <Button variant="outline" onClick={shareWhatsApp}><MessageCircle className="size-4 mr-2" />WhatsApp</Button>
           <Button variant="outline" onClick={() => save({ print: true })} disabled={saving}><Printer className="size-4 mr-2" />Save & print Rx</Button>
           <Button variant="outline" onClick={() => save({ bill: true })} disabled={saving}><Receipt className="size-4 mr-2" />Save & collect</Button>
-          <Button onClick={() => save()} disabled={saving} size="lg"><Save className="size-4 mr-2" />Save consultation</Button>
+          <Button onClick={() => save({ compose: true })} disabled={saving} size="lg"><Save className="size-4 mr-2" />Complete consultation</Button>
         </div>
       </div>
+
+      <PrescriptionComposer open={composerOpen} onOpenChange={setComposerOpen} ctx={composerCtx} onSubmitted={() => qc.invalidateQueries()} />
     </div>
   );
 
