@@ -197,7 +197,7 @@ function Consultation() {
   }, [existingBill?.bill?.id]); // eslint-disable-line
 
   // -------------- save --------------
-  async function save(opts: { print?: boolean; bill?: boolean } = {}) {
+  async function save(opts: { print?: boolean; bill?: boolean; compose?: boolean } = {}) {
     if (!appt) return;
     setSaving(true);
     try {
