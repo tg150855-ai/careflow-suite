@@ -328,9 +328,31 @@ function Consultation() {
       qc.invalidateQueries();
       toast.success("Consultation saved · invoice auto-generated");
 
-      if (opts.print) window.open(`/prescriptions/${rx.id}/print`, "_blank");
+      if (opts.compose) {
+        setComposerCtx({
+          prescriptionId: rx.id,
+          patient,
+          doctor: (appt as any).doctors,
+          visit: {
+            id: visitId!,
+            chief_complaints: chief || null,
+            diagnosis: diagnosis || null,
+            clinical_findings: findings || null,
+            notes: notes || null,
+            follow_up_date: followUp || null,
+            vitals,
+          },
+          medicines: validItems.map((it) => ({
+            name: it.medicine_name, strength: it.strength, route: it.route, frequency: it.frequency,
+            food: it.food_instruction, duration: it.duration_days, quantity: it.quantity, instructions: it.instructions,
+          })),
+          investigations: investigations.filter(i => i.name.trim()).map(i => `${i.name}${i.priority !== "Routine" ? ` [${i.priority}]` : ""}`),
+          procedures: procedures.filter(p => p.name.trim()).map(p => p.name),
+        });
+        setComposerOpen(true);
+      } else if (opts.print) window.open(`/prescriptions/${rx.id}/print`, "_blank");
       if (opts.bill) navigate({ to: "/opd/billing" });
-      else if (!opts.print) navigate({ to: "/opd" });
+      else if (!opts.print && !opts.compose) navigate({ to: "/opd" });
     } catch (err: any) {
       console.error("[consultation save]", err);
       toast.error(err.message ?? "Save failed");
