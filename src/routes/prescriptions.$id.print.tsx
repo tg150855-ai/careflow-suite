@@ -22,11 +22,12 @@ function PrintRx() {
   const { data } = useQuery({
     queryKey: ["rx-print", id],
     queryFn: async () => {
-      const { data: rx } = await supabase.from("prescriptions").select("id, created_at, opd_visit_id").eq("id", id).single();
+      const { data: rx } = await supabase.from("prescriptions").select("id, created_at, opd_visit_id, handwriting_png, signature_png, notes").eq("id", id).single();
       if (!rx) return null;
-      const [visitRes, itemsRes] = await Promise.all([
+      const [visitRes, itemsRes, tplRes] = await Promise.all([
         supabase.from("opd_visits").select("*, patients(full_name, uhid, gender, dob, mobile, address_line, city), doctors(name, specialization)").eq("id", rx.opd_visit_id).single(),
         supabase.from("prescription_items").select("*").eq("prescription_id", id).order("position"),
+        (supabase as any).from("hospital_settings").select("prescription").eq("id", "00000000-0000-0000-0000-000000000001").maybeSingle(),
       ]);
       const { data: bill } = await supabase.from("bills").select("id, bill_no, total").eq("opd_visit_id", rx.opd_visit_id).maybeSingle();
       let investigations: any[] = []; let procedures: any[] = [];
@@ -35,7 +36,7 @@ function PrintRx() {
         investigations = (bi ?? []).filter((i: any) => i.category === "Lab");
         procedures = (bi ?? []).filter((i: any) => i.category === "Procedure");
       }
-      return { rx, visit: visitRes.data, items: itemsRes.data ?? [], investigations, procedures, bill };
+      return { rx, visit: visitRes.data, items: itemsRes.data ?? [], investigations, procedures, bill, tpl: (tplRes.data?.prescription ?? {}) as any };
     },
   });
 
