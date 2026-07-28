@@ -5493,18 +5493,27 @@ export type Database = {
       prescriptions: {
         Row: {
           created_at: string
+          handwriting_png: string | null
           id: string
+          notes: string | null
           opd_visit_id: string
+          signature_png: string | null
         }
         Insert: {
           created_at?: string
+          handwriting_png?: string | null
           id?: string
+          notes?: string | null
           opd_visit_id: string
+          signature_png?: string | null
         }
         Update: {
           created_at?: string
+          handwriting_png?: string | null
           id?: string
+          notes?: string | null
           opd_visit_id?: string
+          signature_png?: string | null
         }
         Relationships: [
           {
