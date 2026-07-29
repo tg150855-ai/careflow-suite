@@ -42,6 +42,7 @@ type Props = {
 };
 
 export function PrescriptionComposer({ open, onOpenChange, ctx, onSubmitted }: Props) {
+  const navigate = useNavigate();
   const { data: hospital } = useHospitalProfile();
   const { data: tpl } = useQuery({
     queryKey: ["hospital-settings", "prescription-tpl"],
