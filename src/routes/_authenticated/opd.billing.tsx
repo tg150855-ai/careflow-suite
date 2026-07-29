@@ -153,8 +153,8 @@ function BillingPage() {
         <div className="flex items-center gap-2">
           <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center"><Receipt className="size-4 text-primary" /></div>
           <div>
-            <h1 className="text-lg font-semibold tracking-tight">OPD billing</h1>
-            <p className="text-xs text-muted-foreground">Generate invoices · record payments</p>
+            <h1 className="text-lg font-semibold tracking-tight">OPD Visit Bills — Same-day consultation</h1>
+            <p className="text-xs text-muted-foreground">OPD consultation charges only · For IPD / Radiology / Pharmacy use Centralized Billing</p>
           </div>
         </div>
         <div className="ml-auto relative">
