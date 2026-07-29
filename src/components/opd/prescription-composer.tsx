@@ -79,7 +79,7 @@ export function PrescriptionComposer({ open, onOpenChange, ctx, onSubmitted }: P
   const vit = ctx?.visit?.vitals ?? {};
   const autoApplySig = tpl?.auto_apply_signature && tpl?.signature_url;
 
-  async function submit(action: "save" | "print" | "whatsapp" | "download") {
+  async function submit(action: "save" | "print" | "whatsapp" | "download" | "billing") {
     if (!ctx) return;
     setSaving(true);
     try {
@@ -111,6 +111,11 @@ export function PrescriptionComposer({ open, onOpenChange, ctx, onSubmitted }: P
         if (!phone) return toast.info("WhatsApp not configured — patient has no mobile.");
         const msg = `Dear ${ctx.patient?.full_name},\n\nYour prescription from ${hospital?.hospital_name ?? "our hospital"} is ready.\n${url}\n\nThank you. Get well soon.`;
         shareOnWhatsApp(msg, undefined, phone);
+      } else if (action === "billing" || action === "save") {
+        // Auto-navigate to OPD Billing for the same-day consult bill.
+        onOpenChange(false);
+        if (ctx.billId) navigate({ to: "/billing/$id", params: { id: ctx.billId } });
+        else navigate({ to: "/opd/billing", search: { patientId: ctx.patient?.id } as any });
       }
     } catch (e: any) {
       toast.error(e?.message ?? "Save failed");
