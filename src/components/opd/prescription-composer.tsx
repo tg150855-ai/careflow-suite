@@ -279,7 +279,10 @@ export function PrescriptionComposer({ open, onOpenChange, ctx, onSubmitted }: P
             <Separator />
             <Button className="w-full" onClick={() => submit("save")} disabled={saving}>
               {saving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Save className="size-4 mr-2" />}
-              Submit prescription
+              Submit &amp; go to Billing
+            </Button>
+            <Button variant="secondary" className="w-full" onClick={() => submit("billing")} disabled={saving}>
+              <Receipt className="size-4 mr-2" />Save &amp; proceed to Bill
             </Button>
             <Button variant="outline" className="w-full" onClick={() => submit("print")} disabled={saving}>
               <Printer className="size-4 mr-2" />Print A4
