@@ -179,6 +179,7 @@ function NewPatientPanel({ onRegistered }: { onRegistered: () => void }) {
         submitLabel="Save patient"
         actions={[
           { value: "appointment", label: "Save & book appointment", variant: "outline" },
+          { value: "queue", label: "Save & add to OPD queue", variant: "outline" },
           ...(canConsult
             ? [{ value: "consult" as const, label: "Save & start consultation", variant: "outline" as const }]
             : []),
