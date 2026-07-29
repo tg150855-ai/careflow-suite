@@ -348,6 +348,7 @@ function Consultation() {
           })),
           investigations: investigations.filter(i => i.name.trim()).map(i => `${i.name}${i.priority !== "Routine" ? ` [${i.priority}]` : ""}`),
           procedures: procedures.filter(p => p.name.trim()).map(p => p.name),
+          billId: billId ?? null,
         });
         setComposerOpen(true);
       } else if (opts.print) window.open(`/prescriptions/${rx.id}/print`, "_blank");

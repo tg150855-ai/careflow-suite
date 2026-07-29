@@ -67,8 +67,8 @@ function BillingCenter() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Centralized Billing</h1>
-        <p className="text-sm text-muted-foreground">Search a patient by UHID, name, mobile, or IPD admission number to view consolidated charges across every department.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Centralized Billing — All departments</h1>
+        <p className="text-sm text-muted-foreground">IPD, Pharmacy, Lab, Radiology and package charges consolidated per patient. For same-day OPD consultation bills use OPD Billing.</p>
       </div>
 
       <Card>

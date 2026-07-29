@@ -5,18 +5,23 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { logAudit } from "@/lib/audit";
+import { ensureOpdAppointment } from "@/lib/opd-queue";
 import { PatientForm, type PatientSubmission } from "@/components/patient-form";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Search, UserPlus, Phone, IdCard, CalendarPlus, PlayCircle,
-  Stethoscope, Loader2, ChevronRight, History,
+  Stethoscope, Loader2, ChevronRight, History, ListChecks, Download,
+  MessageCircle, Printer, Eye, ArrowRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { exportXlsx } from "@/lib/export";
+import { shareOnWhatsApp } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/opd/registration")({
   component: OpdRegistration,
@@ -33,6 +38,9 @@ function OpdRegistration() {
         <TabsTrigger value="existing" className="gap-2">
           <Search className="size-4" /> Existing Patient
         </TabsTrigger>
+        <TabsTrigger value="list" className="gap-2">
+          <ListChecks className="size-4" /> OPD List
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="new" className="m-0">
@@ -41,6 +49,10 @@ function OpdRegistration() {
 
       <TabsContent value="existing" className="m-0">
         <ExistingPatientPanel />
+      </TabsContent>
+
+      <TabsContent value="list" className="m-0">
+        <OpdListPanel />
       </TabsContent>
     </Tabs>
   );
@@ -121,8 +133,22 @@ function NewPatientPanel({ onRegistered }: { onRegistered: () => void }) {
       case "appointment":
         navigate({ to: "/appointments", search: { patientId: data.id } as any });
         return;
+      case "queue":
+        try {
+          const { appointmentId } = await ensureOpdAppointment({ patientId: data.id, createdBy: user?.id });
+          toast.success("Added to OPD waiting queue");
+          navigate({ to: "/opd/consultation", search: { appt: appointmentId } as any });
+        } catch (e: any) {
+          toast.error(e?.message ?? "Could not add to queue");
+        }
+        return;
       case "consult":
-        navigate({ to: "/opd", search: { patientId: data.id } as any });
+        try {
+          const { appointmentId } = await ensureOpdAppointment({ patientId: data.id, createdBy: user?.id });
+          navigate({ to: "/opd/$appointmentId", params: { appointmentId } });
+        } catch (e: any) {
+          toast.error(e?.message ?? "Could not start consultation");
+        }
         return;
       case "another":
         onRegistered();
@@ -153,6 +179,7 @@ function NewPatientPanel({ onRegistered }: { onRegistered: () => void }) {
         submitLabel="Save patient"
         actions={[
           { value: "appointment", label: "Save & book appointment", variant: "outline" },
+          { value: "queue", label: "Save & add to OPD queue", variant: "outline" },
           ...(canConsult
             ? [{ value: "consult" as const, label: "Save & start consultation", variant: "outline" as const }]
             : []),
@@ -350,33 +377,258 @@ function PatientDetail({ patient }: { patient: any }) {
         </div>
       )}
 
-      <div className="grid sm:grid-cols-2 gap-3">
-        <Button asChild>
-          <Link to="/appointments" search={{ patientId: patient.id } as any}>
-            <CalendarPlus className="size-4" /> Book OPD appointment
-          </Link>
-        </Button>
-        <Button asChild variant="secondary">
-          <Link to="/opd" search={{ patientId: patient.id } as any}>
-            <PlayCircle className="size-4" /> Add to OPD queue
-          </Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link to="/patients/$id" params={{ id: patient.id }}>
-            <Stethoscope className="size-4" /> Open patient record
-          </Link>
-        </Button>
-        <Button asChild variant="ghost">
-          <Link to="/patients/$id" params={{ id: patient.id }}>
-            Edit details
-          </Link>
-        </Button>
-      </div>
+      <PatientDetailActions patient={patient} />
 
       <div className="pt-2 border-t">
         <PatientAttachments patientId={patient.id} patient={patient} defaultDepartment="OPD" />
       </div>
     </Card>
+  );
+}
+
+function PatientDetailActions({ patient }: { patient: any }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+
+  async function addToQueue() {
+    setBusy(true);
+    try {
+      const { appointmentId } = await ensureOpdAppointment({ patientId: patient.id, createdBy: user?.id });
+      toast.success("Added to OPD waiting queue");
+      navigate({ to: "/opd/consultation", search: { appt: appointmentId } as any });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not add to queue");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="grid sm:grid-cols-2 gap-3">
+      <Button asChild>
+        <Link to="/appointments" search={{ patientId: patient.id } as any}>
+          <CalendarPlus className="size-4" /> Book OPD appointment
+        </Link>
+      </Button>
+      <Button variant="secondary" onClick={addToQueue} disabled={busy}>
+        <PlayCircle className="size-4" /> {busy ? "Adding…" : "Add to OPD queue"}
+      </Button>
+      <Button asChild variant="outline">
+        <Link to="/patients/$id" params={{ id: patient.id }}>
+          <Stethoscope className="size-4" /> Open patient record
+        </Link>
+      </Button>
+      <Button asChild variant="ghost">
+        <Link to="/patients/$id" params={{ id: patient.id }}>
+          Edit details
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
+/* ─────────────────────── OPD list (with From-To filter + export) ─────────────────────── */
+
+function toIsoDayStart(s: string) { const d = new Date(s); d.setHours(0, 0, 0, 0); return d.toISOString(); }
+function toIsoDayEnd(s: string) { const d = new Date(s); d.setHours(23, 59, 59, 999); return d.toISOString(); }
+function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
+
+type QuickRange = "today" | "yesterday" | "week" | "month" | "custom";
+
+function OpdListPanel() {
+  const [from, setFrom] = useState(todayStr());
+  const [to, setTo] = useState(todayStr());
+  const [quick, setQuick] = useState<QuickRange>("today");
+  const [search, setSearch] = useState("");
+
+  function applyQuick(q: QuickRange) {
+    setQuick(q);
+    const now = new Date();
+    if (q === "today") { const t = todayStr(); setFrom(t); setTo(t); }
+    else if (q === "yesterday") {
+      const y = new Date(now); y.setDate(y.getDate() - 1);
+      const s = format(y, "yyyy-MM-dd"); setFrom(s); setTo(s);
+    } else if (q === "week") {
+      const s = new Date(now); s.setDate(s.getDate() - 6);
+      setFrom(format(s, "yyyy-MM-dd")); setTo(todayStr());
+    } else if (q === "month") {
+      const s = new Date(now.getFullYear(), now.getMonth(), 1);
+      setFrom(format(s, "yyyy-MM-dd")); setTo(todayStr());
+    }
+  }
+
+  const { data: rows = [], isFetching, refetch } = useQuery({
+    queryKey: ["opd-list-panel", from, to],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("appointments")
+        .select("id, token_no, scheduled_at, status, patient_id, doctor_id, patients(id, uhid, full_name, mobile, gender, dob), doctors(name), bills(id, bill_no, total, pending, status)")
+        .gte("scheduled_at", toIsoDayStart(from))
+        .lte("scheduled_at", toIsoDayEnd(to))
+        .order("scheduled_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return rows;
+    return rows.filter((r: any) =>
+      r.patients?.full_name?.toLowerCase().includes(s) ||
+      r.patients?.uhid?.toLowerCase().includes(s) ||
+      r.patients?.mobile?.toLowerCase().includes(s) ||
+      r.doctors?.name?.toLowerCase().includes(s));
+  }, [rows, search]);
+
+  const summary = useMemo(() => {
+    const total = filtered.length;
+    let billed = 0, pending = 0;
+    for (const r of filtered) {
+      const bill = (r.bills?.[0] ?? r.bills) as any;
+      if (bill) {
+        if (Number(bill.pending ?? 0) === 0 && Number(bill.total ?? 0) > 0) billed++;
+        else pending++;
+      } else pending++;
+    }
+    return { total, billed, pending };
+  }, [filtered]);
+
+  function ageYears(dob?: string | null) {
+    if (!dob) return "—";
+    try { return String(new Date().getFullYear() - new Date(dob).getFullYear()); } catch { return "—"; }
+  }
+  function billStatusLabel(r: any) {
+    const bill = (r.bills?.[0] ?? r.bills) as any;
+    if (!bill) return "No bill";
+    return bill.status === "paid" ? "Paid" : bill.status === "partial" ? "Partial" : "Pending";
+  }
+  function consultationStatusLabel(r: any) {
+    return r.status === "completed" ? "Completed"
+      : r.status === "in_consultation" ? "In consult"
+      : r.status === "cancelled" ? "Cancelled" : "Waiting";
+  }
+
+  function onExport() {
+    const rowsOut = filtered.map((r: any) => ({
+      Token: r.token_no ?? "—",
+      Patient: r.patients?.full_name ?? "—",
+      UHID: r.patients?.uhid ?? "—",
+      Mobile: r.patients?.mobile ?? "—",
+      "Age/Gender": `${ageYears(r.patients?.dob)}/${r.patients?.gender ?? "—"}`,
+      Doctor: r.doctors?.name ?? "—",
+      "Visit Date/Time": format(new Date(r.scheduled_at), "dd MMM yyyy HH:mm"),
+      Consultation: consultationStatusLabel(r),
+      Billing: billStatusLabel(r),
+    }));
+    exportXlsx(rowsOut, `OPD_Patients_${from}_to_${to}`);
+  }
+
+  function whatsapp(r: any) {
+    const phone = r.patients?.mobile;
+    if (!phone) return toast.info("Patient has no mobile number");
+    shareOnWhatsApp(`Dear ${r.patients?.full_name}, this is a message from your OPD visit on ${format(new Date(r.scheduled_at), "dd MMM yyyy")}.`, undefined, phone);
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-4 space-y-3">
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <div className="text-[10px] uppercase text-muted-foreground mb-1">From</div>
+            <Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setQuick("custom"); }} className="h-9 w-[150px]" />
+          </div>
+          <div>
+            <div className="text-[10px] uppercase text-muted-foreground mb-1">To</div>
+            <Input type="date" value={to} onChange={(e) => { setTo(e.target.value); setQuick("custom"); }} className="h-9 w-[150px]" />
+          </div>
+          <Button size="sm" onClick={() => refetch()} disabled={isFetching}>Apply</Button>
+          <Button size="sm" variant="ghost" onClick={() => { applyQuick("today"); }}>Reset</Button>
+          <div className="mx-2 h-6 w-px bg-border" />
+          {(["today", "yesterday", "week", "month"] as QuickRange[]).map((q) => (
+            <Button key={q} size="sm" variant={quick === q ? "default" : "outline"} onClick={() => applyQuick(q)}>
+              {q === "today" ? "Today" : q === "yesterday" ? "Yesterday" : q === "week" ? "This Week" : "This Month"}
+            </Button>
+          ))}
+          <div className="ml-auto flex items-center gap-2">
+            <div className="relative">
+              <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name / UHID / mobile / doctor" className="h-9 pl-8 w-[260px]" />
+            </div>
+            <Button size="sm" variant="outline" onClick={onExport}><Download className="size-3.5 mr-1" />Export</Button>
+          </div>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Showing <b>{summary.total}</b> patient{summary.total === 1 ? "" : "s"} from <b>{from}</b> to <b>{to}</b> · Billed: <b>{summary.billed}</b> · Pending: <b>{summary.pending}</b>
+        </div>
+      </Card>
+
+      <Card className="p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-surface-muted/60 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="text-left px-3 py-2">Token</th>
+                <th className="text-left px-3 py-2">Patient</th>
+                <th className="text-left px-3 py-2">UHID</th>
+                <th className="text-left px-3 py-2">Mobile</th>
+                <th className="text-left px-3 py-2">Age/Sex</th>
+                <th className="text-left px-3 py-2">Doctor</th>
+                <th className="text-left px-3 py-2">Visit</th>
+                <th className="text-left px-3 py-2">Consult</th>
+                <th className="text-left px-3 py-2">Billing</th>
+                <th className="text-right px-3 py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filtered.length === 0 && (
+                <tr><td colSpan={10} className="text-center py-10 text-muted-foreground text-sm">
+                  {isFetching ? "Loading…" : "No OPD patients in this date range."}
+                </td></tr>
+              )}
+              {filtered.map((r: any) => {
+                const bill = (r.bills?.[0] ?? r.bills) as any;
+                const consultLabel = consultationStatusLabel(r);
+                const billLabel = billStatusLabel(r);
+                return (
+                  <tr key={r.id} className="hover:bg-muted/40">
+                    <td className="px-3 py-2 font-mono text-xs">#{r.token_no ?? "—"}</td>
+                    <td className="px-3 py-2 font-medium truncate max-w-[200px]">{r.patients?.full_name ?? "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{r.patients?.uhid ?? "—"}</td>
+                    <td className="px-3 py-2">{r.patients?.mobile ?? "—"}</td>
+                    <td className="px-3 py-2 capitalize">{ageYears(r.patients?.dob)}/{r.patients?.gender ?? "—"}</td>
+                    <td className="px-3 py-2 truncate max-w-[160px]">{r.doctors?.name ?? "—"}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs">{format(new Date(r.scheduled_at), "dd MMM HH:mm")}</td>
+                    <td className="px-3 py-2"><Badge variant={consultLabel === "Completed" ? "default" : "secondary"} className="text-[10px]">{consultLabel}</Badge></td>
+                    <td className="px-3 py-2"><Badge variant={billLabel === "Paid" ? "default" : billLabel === "Partial" ? "secondary" : "outline"} className="text-[10px]">{billLabel}</Badge></td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-0.5 justify-end">
+                        <Button asChild size="icon" variant="ghost" className="size-7" title="Open consultation">
+                          <Link to="/opd/$appointmentId" params={{ appointmentId: r.id }}><Eye className="size-3.5" /></Link>
+                        </Button>
+                        {bill?.id && (
+                          <Button asChild size="icon" variant="ghost" className="size-7" title="Print bill">
+                            <a href={`/billing/${bill.id}`} target="_blank" rel="noreferrer"><Printer className="size-3.5" /></a>
+                          </Button>
+                        )}
+                        <Button size="icon" variant="ghost" className="size-7" title="WhatsApp patient" onClick={() => whatsapp(r)}>
+                          <MessageCircle className="size-3.5" />
+                        </Button>
+                        <Button asChild size="icon" variant="ghost" className="size-7" title="Open patient record">
+                          <Link to="/patients/$id" params={{ id: r.patient_id }}><ArrowRight className="size-3.5" /></Link>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
   );
 }
 

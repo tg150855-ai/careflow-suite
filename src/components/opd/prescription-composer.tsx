@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { PrintHeader, PrintFooter, useHospitalProfile } from "@/components/print-header";
 import { format } from "date-fns";
-import { Printer, Download, MessageCircle, Save, Eraser, Undo2, X, Loader2 } from "lucide-react";
+import { Printer, Download, MessageCircle, Save, Eraser, Undo2, X, Loader2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { shareOnWhatsApp } from "@/lib/share";
 
@@ -30,6 +31,7 @@ export type ComposerContext = {
   medicines: Array<{ name: string; strength?: string; route?: string; frequency?: string; food?: string; duration?: string; quantity?: string; instructions?: string }>;
   investigations: string[];
   procedures: string[];
+  billId?: string | null;
 };
 
 type Props = {
@@ -40,6 +42,7 @@ type Props = {
 };
 
 export function PrescriptionComposer({ open, onOpenChange, ctx, onSubmitted }: Props) {
+  const navigate = useNavigate();
   const { data: hospital } = useHospitalProfile();
   const { data: tpl } = useQuery({
     queryKey: ["hospital-settings", "prescription-tpl"],
@@ -76,7 +79,7 @@ export function PrescriptionComposer({ open, onOpenChange, ctx, onSubmitted }: P
   const vit = ctx?.visit?.vitals ?? {};
   const autoApplySig = tpl?.auto_apply_signature && tpl?.signature_url;
 
-  async function submit(action: "save" | "print" | "whatsapp" | "download") {
+  async function submit(action: "save" | "print" | "whatsapp" | "download" | "billing") {
     if (!ctx) return;
     setSaving(true);
     try {
@@ -108,6 +111,11 @@ export function PrescriptionComposer({ open, onOpenChange, ctx, onSubmitted }: P
         if (!phone) return toast.info("WhatsApp not configured — patient has no mobile.");
         const msg = `Dear ${ctx.patient?.full_name},\n\nYour prescription from ${hospital?.hospital_name ?? "our hospital"} is ready.\n${url}\n\nThank you. Get well soon.`;
         shareOnWhatsApp(msg, undefined, phone);
+      } else if (action === "billing" || action === "save") {
+        // Auto-navigate to OPD Billing for the same-day consult bill.
+        onOpenChange(false);
+        if (ctx.billId) navigate({ to: "/billing/$id", params: { id: ctx.billId } });
+        else navigate({ to: "/opd/billing", search: { patientId: ctx.patient?.id } as any });
       }
     } catch (e: any) {
       toast.error(e?.message ?? "Save failed");
@@ -271,7 +279,10 @@ export function PrescriptionComposer({ open, onOpenChange, ctx, onSubmitted }: P
             <Separator />
             <Button className="w-full" onClick={() => submit("save")} disabled={saving}>
               {saving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Save className="size-4 mr-2" />}
-              Submit prescription
+              Submit &amp; go to Billing
+            </Button>
+            <Button variant="secondary" className="w-full" onClick={() => submit("billing")} disabled={saving}>
+              <Receipt className="size-4 mr-2" />Save &amp; proceed to Bill
             </Button>
             <Button variant="outline" className="w-full" onClick={() => submit("print")} disabled={saving}>
               <Printer className="size-4 mr-2" />Print A4
