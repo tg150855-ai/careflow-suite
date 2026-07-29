@@ -133,8 +133,22 @@ function NewPatientPanel({ onRegistered }: { onRegistered: () => void }) {
       case "appointment":
         navigate({ to: "/appointments", search: { patientId: data.id } as any });
         return;
+      case "queue":
+        try {
+          const { appointmentId } = await ensureOpdAppointment({ patientId: data.id, createdBy: user?.id });
+          toast.success("Added to OPD waiting queue");
+          navigate({ to: "/opd/consultation", search: { appt: appointmentId } as any });
+        } catch (e: any) {
+          toast.error(e?.message ?? "Could not add to queue");
+        }
+        return;
       case "consult":
-        navigate({ to: "/opd", search: { patientId: data.id } as any });
+        try {
+          const { appointmentId } = await ensureOpdAppointment({ patientId: data.id, createdBy: user?.id });
+          navigate({ to: "/opd/$appointmentId", params: { appointmentId } });
+        } catch (e: any) {
+          toast.error(e?.message ?? "Could not start consultation");
+        }
         return;
       case "another":
         onRegistered();
