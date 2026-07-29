@@ -523,7 +523,7 @@ function OpdListPanel() {
       Consultation: consultationStatusLabel(r),
       Billing: billStatusLabel(r),
     }));
-    exportXlsx(`OPD_Patients_${from}_to_${to}`, rowsOut);
+    exportXlsx(rowsOut, `OPD_Patients_${from}_to_${to}`);
   }
 
   function whatsapp(r: any) {
