@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { PrintHeader, PrintFooter, useHospitalProfile } from "@/components/print-header";
 import { format } from "date-fns";
-import { Printer, Download, MessageCircle, Save, Eraser, Undo2, X, Loader2 } from "lucide-react";
+import { Printer, Download, MessageCircle, Save, Eraser, Undo2, X, Loader2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { shareOnWhatsApp } from "@/lib/share";
 
