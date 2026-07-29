@@ -31,6 +31,7 @@ export type ComposerContext = {
   medicines: Array<{ name: string; strength?: string; route?: string; frequency?: string; food?: string; duration?: string; quantity?: string; instructions?: string }>;
   investigations: string[];
   procedures: string[];
+  billId?: string | null;
 };
 
 type Props = {
