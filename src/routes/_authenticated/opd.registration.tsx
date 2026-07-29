@@ -378,6 +378,10 @@ function PatientDetail({ patient }: { patient: any }) {
       )}
 
       <PatientDetailActions patient={patient} />
+
+      <div className="pt-2 border-t">
+        <PatientAttachments patientId={patient.id} patient={patient} defaultDepartment="OPD" />
+      </div>
     </Card>
   );
 }
