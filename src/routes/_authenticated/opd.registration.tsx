@@ -5,18 +5,23 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { logAudit } from "@/lib/audit";
+import { ensureOpdAppointment } from "@/lib/opd-queue";
 import { PatientForm, type PatientSubmission } from "@/components/patient-form";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Search, UserPlus, Phone, IdCard, CalendarPlus, PlayCircle,
-  Stethoscope, Loader2, ChevronRight, History,
+  Stethoscope, Loader2, ChevronRight, History, ListChecks, Download,
+  MessageCircle, Printer, Eye, ArrowRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { exportXlsx } from "@/lib/export";
+import { shareOnWhatsApp } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/opd/registration")({
   component: OpdRegistration,
@@ -33,6 +38,9 @@ function OpdRegistration() {
         <TabsTrigger value="existing" className="gap-2">
           <Search className="size-4" /> Existing Patient
         </TabsTrigger>
+        <TabsTrigger value="list" className="gap-2">
+          <ListChecks className="size-4" /> OPD List
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="new" className="m-0">
@@ -41,6 +49,10 @@ function OpdRegistration() {
 
       <TabsContent value="existing" className="m-0">
         <ExistingPatientPanel />
+      </TabsContent>
+
+      <TabsContent value="list" className="m-0">
+        <OpdListPanel />
       </TabsContent>
     </Tabs>
   );
