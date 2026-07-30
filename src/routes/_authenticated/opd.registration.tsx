@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Search, UserPlus, Phone, IdCard, CalendarPlus, PlayCircle,
   Stethoscope, Loader2, ChevronRight, History, ListChecks, Download,
-  MessageCircle, Printer, Eye, ArrowRight,
+  MessageCircle, Printer, Eye, ArrowRight, Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { PatientAttachments } from "@/components/patient-attachments";
