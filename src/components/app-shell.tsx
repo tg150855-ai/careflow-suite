@@ -39,7 +39,6 @@ const GROUPS: NavGroup[] = [
       { to: "/opd", labelKey: "nav.items.opd", icon: Stethoscope },
       { to: "/ipd", labelKey: "nav.items.ipd", icon: BedDouble },
       { to: "/discharge", labelKey: "nav.items.discharge", icon: LogOut },
-      { to: "/billing-center", labelKey: "nav.items.billing_center", icon: FileBarChart },
       { to: "/ot", labelKey: "nav.items.ot", icon: Scissors },
       { to: "/nurse-station", labelKey: "nav.items.nurse_station", icon: HeartPulse },
       { to: "/icu", labelKey: "nav.items.icu", icon: HeartPulse },
