@@ -14,6 +14,8 @@ import { inr } from "@/lib/format";
 import { motion } from "framer-motion";
 import { shareOnWhatsApp } from "@/lib/share";
 import { useHospitalProfile } from "@/components/print-header";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BillingCenterContent } from "@/routes/_authenticated/billing-center";
 
 export const Route = createFileRoute("/_authenticated/billing/")({ component: BillingDashboard });
 
