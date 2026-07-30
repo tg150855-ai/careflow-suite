@@ -26,6 +26,12 @@ export const Route = createFileRoute("/_authenticated/billing-center")({
 
 function BillingCenter() {
   const { patient: patientParam } = Route.useSearch();
+  return <BillingCenterContent initialPatient={patientParam} />;
+}
+
+/** Patient-wise, all-department billing ledger. Reused inside the unified Billing module. */
+export function BillingCenterContent({ initialPatient }: { initialPatient?: string }) {
+  const patientParam = initialPatient;
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(patientParam ?? null);
 
@@ -33,6 +39,7 @@ function BillingCenter() {
   if (patientParam && patientParam !== selectedId) {
     setSelectedId(patientParam);
   }
+
 
   const searchRes = useQuery({
     queryKey: ["billing-center-search", query],

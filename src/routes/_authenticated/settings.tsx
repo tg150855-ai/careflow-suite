@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { BrandLogo } from "@/components/brand";
 import { LANGUAGES, applyLanguage, type AppLanguage } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MODULE_PRESETS, MODULE_REGISTRY, enabledKeysFrom } from "@/lib/modules";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
@@ -348,68 +349,77 @@ function BrandingTab({ settings, canEdit, onSaved }: { settings: Settings; canEd
   );
 }
 
-// ---------- Departments ----------
-const DEFAULT_DEPTS = ["OPD", "IPD", "ICU", "OT", "Pharmacy", "Laboratory", "Radiology"];
-
+// ---------- Departments / Module management ----------
 function DepartmentsTab({ settings, canEdit, onSaved }: { settings: Settings; canEdit: boolean; onSaved: () => void }) {
-  const initial: { name: string; enabled: boolean }[] =
-    Array.isArray(settings.departments) && settings.departments.length
-      ? settings.departments
-      : DEFAULT_DEPTS.map((name) => ({ name, enabled: true }));
-  const [depts, setDepts] = useState(initial);
-  const [newName, setNewName] = useState("");
+  const [enabled, setEnabled] = useState<Set<string>>(() => enabledKeysFrom(settings.departments) as Set<string>);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setEnabled(enabledKeysFrom(settings.departments) as Set<string>); }, [settings.departments]);
+
+  function toggle(key: string) {
+    setEnabled((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
 
   async function save() {
     setSaving(true);
-    const { error } = await (supabase as any).from("hospital_settings").update({ departments: depts }).eq("id", SETTINGS_ID);
+    const departments = MODULE_REGISTRY.map((m) => ({ key: m.key, name: m.name, enabled: enabled.has(m.key) }));
+    const { error } = await (supabase as any).from("hospital_settings").update({ departments }).eq("id", SETTINGS_ID);
     setSaving(false);
     if (error) return toast.error(error.message);
-    await logAudit({ action: "update", entity: "hospital_settings.departments", entityId: SETTINGS_ID, after: { departments: depts } });
-    toast.success("Departments saved");
+    await logAudit({ action: "update", entity: "hospital_settings.departments", entityId: SETTINGS_ID, after: { departments } });
+    toast.success("Modules saved");
     onSaved();
   }
 
   return (
-    <Card className="p-6 space-y-4">
-      <div className="space-y-2">
-        {depts.map((d, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <Input value={d.name} disabled={!canEdit}
-              onChange={(e) => setDepts(depts.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x))} />
-            <Button type="button" size="sm" variant={d.enabled ? "default" : "outline"} disabled={!canEdit}
-              onClick={() => setDepts(depts.map((x, idx) => idx === i ? { ...x, enabled: !x.enabled } : x))}>
-              {d.enabled ? "Enabled" : "Disabled"}
+    <Card className="p-6 space-y-5">
+      <div>
+        <div className="font-medium">Module access templates</div>
+        <div className="text-xs text-muted-foreground">Apply a preset, then fine-tune below.</div>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {MODULE_PRESETS.map((p) => (
+            <Button key={p.key} type="button" size="sm" variant="outline" disabled={!canEdit}
+              onClick={() => setEnabled(new Set(p.modules))} title={p.description}>
+              {p.name}
             </Button>
-            {canEdit && (
-              <Button type="button" size="icon" variant="ghost" onClick={() => setDepts(depts.filter((_, idx) => idx !== i))}>
-                <Trash2 className="size-4" />
-              </Button>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+
+      <Separator />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        {MODULE_REGISTRY.map((m) => {
+          const on = enabled.has(m.key);
+          return (
+            <button key={m.key} type="button" disabled={!canEdit} onClick={() => toggle(m.key)}
+              className={`flex items-center justify-between gap-2 rounded-xl border px-3 h-11 text-sm text-left transition-colors ${on ? "border-primary/40 bg-primary/5" : "opacity-60"}`}>
+              <span className="truncate">{m.name}</span>
+              <span className={`text-[11px] font-medium ${on ? "text-primary" : "text-muted-foreground"}`}>{on ? "Enabled" : "Disabled"}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Disabled modules are hidden from the sidebar and their pages are blocked for every user. Existing data is never deleted.
+      </p>
+
       {canEdit && (
-        <>
-          <Separator />
-          <div className="flex gap-2">
-            <Input placeholder="New department name" value={newName} onChange={(e) => setNewName(e.target.value)} />
-            <Button type="button" variant="outline" onClick={() => {
-              if (!newName.trim()) return;
-              setDepts([...depts, { name: newName.trim(), enabled: true }]);
-              setNewName("");
-            }}>Add</Button>
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={save} disabled={saving}>
-              {saving && <Loader2 className="size-4 mr-2 animate-spin" />}Save departments
-            </Button>
-          </div>
-        </>
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving}>
+            {saving && <Loader2 className="size-4 mr-2 animate-spin" />}Save modules
+          </Button>
+        </div>
       )}
     </Card>
   );
 }
+
 
 // ---------- JSON Tab (prescription / billing / printers / messaging / security) ----------
 function JsonTab({ field, label, settings, canEdit, fields, onSaved }: {

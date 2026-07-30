@@ -14,6 +14,8 @@ import { inr } from "@/lib/format";
 import { motion } from "framer-motion";
 import { shareOnWhatsApp } from "@/lib/share";
 import { useHospitalProfile } from "@/components/print-header";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BillingCenterContent } from "@/routes/_authenticated/billing-center";
 
 export const Route = createFileRoute("/_authenticated/billing/")({ component: BillingDashboard });
 
@@ -65,8 +67,8 @@ function BillingDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Billing</h1>
-          <p className="text-muted-foreground mt-1">Invoices, payments and revenue overview</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Hospital Billing</h1>
+          <p className="text-muted-foreground mt-1">One billing system for OPD, IPD, Emergency, Pharmacy, Lab, Radiology and OT</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button asChild variant="outline"><Link to="/billing/packages"><Package className="size-4 mr-2" />Packages</Link></Button>
@@ -75,7 +77,19 @@ function BillingDashboard() {
         </div>
       </div>
 
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Overview & pending</TabsTrigger>
+          <TabsTrigger value="patient">Patient ledger (all departments)</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="patient" className="mt-5">
+          <BillingCenterContent />
+        </TabsContent>
+
+        <TabsContent value="overview" className="mt-5 space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
         {cards.map((c, i) => (
           <motion.div key={c.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <Card className="p-6">
@@ -127,7 +141,10 @@ function BillingDashboard() {
       </div>
 
       <PendingBillsSection />
+        </TabsContent>
+      </Tabs>
     </div>
+
   );
 }
 

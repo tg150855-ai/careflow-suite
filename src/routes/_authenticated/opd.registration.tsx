@@ -16,12 +16,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Search, UserPlus, Phone, IdCard, CalendarPlus, PlayCircle,
   Stethoscope, Loader2, ChevronRight, History, ListChecks, Download,
-  MessageCircle, Printer, Eye, ArrowRight,
+  MessageCircle, Printer, Eye, ArrowRight, Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { PatientAttachments } from "@/components/patient-attachments";
 import { exportXlsx } from "@/lib/export";
 import { shareOnWhatsApp } from "@/lib/share";
+import { useIsSuperAdmin } from "@/lib/use-super-admin";
 
 export const Route = createFileRoute("/_authenticated/opd/registration")({
   component: OpdRegistration,
@@ -441,6 +442,9 @@ function OpdListPanel() {
   const [to, setTo] = useState(todayStr());
   const [quick, setQuick] = useState<QuickRange>("today");
   const [search, setSearch] = useState("");
+  const [doctorId, setDoctorId] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const isAdmin = useIsSuperAdmin();
 
   function applyQuick(q: QuickRange) {
     setQuick(q);
@@ -473,15 +477,35 @@ function OpdListPanel() {
     },
   });
 
+  const doctorOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of rows as any[]) if (r.doctor_id && r.doctors?.name) map.set(r.doctor_id, r.doctors.name);
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return rows;
-    return rows.filter((r: any) =>
-      r.patients?.full_name?.toLowerCase().includes(s) ||
-      r.patients?.uhid?.toLowerCase().includes(s) ||
-      r.patients?.mobile?.toLowerCase().includes(s) ||
-      r.doctors?.name?.toLowerCase().includes(s));
-  }, [rows, search]);
+    return (rows as any[]).filter((r) => {
+      if (doctorId !== "all" && r.doctor_id !== doctorId) return false;
+      if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (!s) return true;
+      return (
+        r.patients?.full_name?.toLowerCase().includes(s) ||
+        r.patients?.uhid?.toLowerCase().includes(s) ||
+        r.patients?.mobile?.toLowerCase().includes(s) ||
+        r.doctors?.name?.toLowerCase().includes(s));
+    });
+  }, [rows, search, doctorId, statusFilter]);
+
+  async function removeVisit(r: any) {
+    if (!window.confirm(`Delete OPD visit of ${r.patients?.full_name ?? "patient"}? This cannot be undone.`)) return;
+    const { error } = await (supabase as any).from("appointments").delete().eq("id", r.id);
+    if (error) return toast.error(error.message);
+    await logAudit({ action: "delete", entity: "appointments", entityId: r.id, before: r });
+    toast.success("OPD visit deleted");
+    refetch();
+  }
+
 
   const summary = useMemo(() => {
     const total = filtered.length;
@@ -552,7 +576,25 @@ function OpdListPanel() {
               {q === "today" ? "Today" : q === "yesterday" ? "Yesterday" : q === "week" ? "This Week" : "This Month"}
             </Button>
           ))}
+          <Select value={doctorId} onValueChange={setDoctorId}>
+            <SelectTrigger className="h-9 w-[180px]"><SelectValue placeholder="All doctors" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All doctors</SelectItem>
+              {doctorOptions.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="All statuses" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="waiting">Waiting</SelectItem>
+              <SelectItem value="in_consultation">In consultation</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="ml-auto flex items-center gap-2">
+
             <div className="relative">
               <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name / UHID / mobile / doctor" className="h-9 pl-8 w-[260px]" />
@@ -619,7 +661,13 @@ function OpdListPanel() {
                         <Button asChild size="icon" variant="ghost" className="size-7" title="Open patient record">
                           <Link to="/patients/$id" params={{ id: r.patient_id }}><ArrowRight className="size-3.5" /></Link>
                         </Button>
+                        {isAdmin && (
+                          <Button size="icon" variant="ghost" className="size-7 text-destructive" title="Delete OPD visit" onClick={() => removeVisit(r)}>
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        )}
                       </div>
+
                     </td>
                   </tr>
                 );

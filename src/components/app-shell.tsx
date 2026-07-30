@@ -25,6 +25,7 @@ import { GlobalSearch } from "@/components/global-search";
 import { NotificationBell } from "@/components/notification-bell";
 import { BRAND, BrandLogo, BrandMark } from "@/components/brand";
 import { useTranslation } from "react-i18next";
+import { useEnabledModules } from "@/lib/use-enabled-modules";
 
 type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
 type NavGroup = { key: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[]; items: NavItem[] };
@@ -38,7 +39,6 @@ const GROUPS: NavGroup[] = [
       { to: "/opd", labelKey: "nav.items.opd", icon: Stethoscope },
       { to: "/ipd", labelKey: "nav.items.ipd", icon: BedDouble },
       { to: "/discharge", labelKey: "nav.items.discharge", icon: LogOut },
-      { to: "/billing-center", labelKey: "nav.items.billing_center", icon: FileBarChart },
       { to: "/ot", labelKey: "nav.items.ot", icon: Scissors },
       { to: "/nurse-station", labelKey: "nav.items.nurse_station", icon: HeartPulse },
       { to: "/icu", labelKey: "nav.items.icu", icon: HeartPulse },
@@ -121,8 +121,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 
 
+  const { isPathEnabled } = useEnabledModules();
+
   const visibleGroups = GROUPS
-    .map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || i.roles.some(hasRole)) }))
+    .map((g) => ({ ...g, items: g.items.filter((i) => (!i.roles || i.roles.some(hasRole)) && isPathEnabled(i.to)) }))
     .filter((g) => (!g.roles || g.roles.some(hasRole)) && g.items.length > 0);
 
   // auto-open group containing active route; persist user toggles
