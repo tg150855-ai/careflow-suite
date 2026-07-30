@@ -25,6 +25,7 @@ import { GlobalSearch } from "@/components/global-search";
 import { NotificationBell } from "@/components/notification-bell";
 import { BRAND, BrandLogo, BrandMark } from "@/components/brand";
 import { useTranslation } from "react-i18next";
+import { useEnabledModules } from "@/lib/use-enabled-modules";
 
 type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
 type NavGroup = { key: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[]; items: NavItem[] };
