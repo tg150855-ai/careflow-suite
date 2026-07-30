@@ -121,8 +121,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 
 
+  const { isPathEnabled } = useEnabledModules();
+
   const visibleGroups = GROUPS
-    .map((g) => ({ ...g, items: g.items.filter((i) => !i.roles || i.roles.some(hasRole)) }))
+    .map((g) => ({ ...g, items: g.items.filter((i) => (!i.roles || i.roles.some(hasRole)) && isPathEnabled(i.to)) }))
     .filter((g) => (!g.roles || g.roles.some(hasRole)) && g.items.length > 0);
 
   // auto-open group containing active route; persist user toggles
