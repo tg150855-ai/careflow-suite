@@ -441,6 +441,9 @@ function OpdListPanel() {
   const [to, setTo] = useState(todayStr());
   const [quick, setQuick] = useState<QuickRange>("today");
   const [search, setSearch] = useState("");
+  const [doctorId, setDoctorId] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const isAdmin = useIsSuperAdmin();
 
   function applyQuick(q: QuickRange) {
     setQuick(q);
