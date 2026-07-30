@@ -661,7 +661,13 @@ function OpdListPanel() {
                         <Button asChild size="icon" variant="ghost" className="size-7" title="Open patient record">
                           <Link to="/patients/$id" params={{ id: r.patient_id }}><ArrowRight className="size-3.5" /></Link>
                         </Button>
+                        {isAdmin && (
+                          <Button size="icon" variant="ghost" className="size-7 text-destructive" title="Delete OPD visit" onClick={() => removeVisit(r)}>
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        )}
                       </div>
+
                     </td>
                   </tr>
                 );
