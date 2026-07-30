@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { BrandLogo } from "@/components/brand";
 import { LANGUAGES, applyLanguage, type AppLanguage } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MODULE_PRESETS, MODULE_REGISTRY, enabledKeysFrom } from "@/lib/modules";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
