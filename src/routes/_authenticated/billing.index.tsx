@@ -139,7 +139,10 @@ function BillingDashboard() {
       </div>
 
       <PendingBillsSection />
+        </TabsContent>
+      </Tabs>
     </div>
+
   );
 }
 
