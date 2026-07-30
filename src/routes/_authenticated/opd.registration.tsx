@@ -473,15 +473,35 @@ function OpdListPanel() {
     },
   });
 
+  const doctorOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of rows as any[]) if (r.doctor_id && r.doctors?.name) map.set(r.doctor_id, r.doctors.name);
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
-    if (!s) return rows;
-    return rows.filter((r: any) =>
-      r.patients?.full_name?.toLowerCase().includes(s) ||
-      r.patients?.uhid?.toLowerCase().includes(s) ||
-      r.patients?.mobile?.toLowerCase().includes(s) ||
-      r.doctors?.name?.toLowerCase().includes(s));
-  }, [rows, search]);
+    return (rows as any[]).filter((r) => {
+      if (doctorId !== "all" && r.doctor_id !== doctorId) return false;
+      if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (!s) return true;
+      return (
+        r.patients?.full_name?.toLowerCase().includes(s) ||
+        r.patients?.uhid?.toLowerCase().includes(s) ||
+        r.patients?.mobile?.toLowerCase().includes(s) ||
+        r.doctors?.name?.toLowerCase().includes(s));
+    });
+  }, [rows, search, doctorId, statusFilter]);
+
+  async function removeVisit(r: any) {
+    if (!window.confirm(`Delete OPD visit of ${r.patients?.full_name ?? "patient"}? This cannot be undone.`)) return;
+    const { error } = await (supabase as any).from("appointments").delete().eq("id", r.id);
+    if (error) return toast.error(error.message);
+    await logAudit({ action: "delete", entity: "appointments", entityId: r.id, before: r });
+    toast.success("OPD visit deleted");
+    refetch();
+  }
+
 
   const summary = useMemo(() => {
     const total = filtered.length;
