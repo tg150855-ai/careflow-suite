@@ -576,7 +576,25 @@ function OpdListPanel() {
               {q === "today" ? "Today" : q === "yesterday" ? "Yesterday" : q === "week" ? "This Week" : "This Month"}
             </Button>
           ))}
+          <Select value={doctorId} onValueChange={setDoctorId}>
+            <SelectTrigger className="h-9 w-[180px]"><SelectValue placeholder="All doctors" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All doctors</SelectItem>
+              {doctorOptions.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="All statuses" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="waiting">Waiting</SelectItem>
+              <SelectItem value="in_consultation">In consultation</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="ml-auto flex items-center gap-2">
+
             <div className="relative">
               <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name / UHID / mobile / doctor" className="h-9 pl-8 w-[260px]" />
