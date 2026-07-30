@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { PatientAttachments } from "@/components/patient-attachments";
 import { exportXlsx } from "@/lib/export";
 import { shareOnWhatsApp } from "@/lib/share";
+import { useIsSuperAdmin } from "@/lib/use-super-admin";
 
 export const Route = createFileRoute("/_authenticated/opd/registration")({
   component: OpdRegistration,
