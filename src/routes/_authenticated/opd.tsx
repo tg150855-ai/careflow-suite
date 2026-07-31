@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { OpdSubNav } from "@/components/opd-sub-nav";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_authenticated/opd")({ component: OpdLayout });
 
@@ -40,6 +41,7 @@ function endOfToday() {
 }
 
 function OpdDashboard() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const today = startOfToday();
   const endToday = endOfToday();
@@ -143,14 +145,14 @@ function OpdDashboard() {
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-        <StatCard label="Patients today" value={appts.length} icon={Users} tone="default" />
-        <StatCard label="Waiting" value={waiting.length} icon={Clock} tone="warning" />
-        <StatCard label="In consultation" value={inProgress.length} icon={Activity} tone="info" />
-        <StatCard label="Completed" value={completed.length} icon={CheckCircle2} tone="success" />
-        <StatCard label="Billing today" value={`₹${totalBilling.toLocaleString("en-IN")}`} icon={IndianRupee} tone="default" />
-        <StatCard label="Pending payments" value={`₹${pendingPayments.toLocaleString("en-IN")}`} icon={AlertCircle} tone={pendingPayments > 0 ? "warning" : "default"} />
-        <StatCard label="Scheduled" value={scheduled} icon={Stethoscope} tone="default" />
-        <StatCard label="Walk-ins" value={walkIns} icon={UserPlus} tone="default" />
+        <StatCard label={t('opd.patientsToday')} value={appts.length} icon={Users} tone="default" />
+        <StatCard label={t('opd.waiting')} value={waiting.length} icon={Clock} tone="warning" />
+        <StatCard label={t('opd.inConsultation')} value={inProgress.length} icon={Activity} tone="info" />
+        <StatCard label={t('opd.completed')} value={completed.length} icon={CheckCircle2} tone="success" />
+        <StatCard label={t('opd.billingToday')} value={`₹${totalBilling.toLocaleString("en-IN")}`} icon={IndianRupee} tone="default" />
+        <StatCard label={t('opd.pendingPayments')} value={`₹${pendingPayments.toLocaleString("en-IN")}`} icon={AlertCircle} tone={pendingPayments > 0 ? "warning" : "default"} />
+        <StatCard label={t('opd.scheduled')} value={scheduled} icon={Stethoscope} tone="default" />
+        <StatCard label={t('opd.walkIns')} value={walkIns} icon={UserPlus} tone="default" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -158,7 +160,7 @@ function OpdDashboard() {
         <Card className="lg:col-span-2 p-0 overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b border-border">
             <div>
-              <h2 className="text-lg font-semibold">Live OPD Queue</h2>
+              <h2 className="text-lg font-semibold">{t('opd.liveQueue')}</h2>
               <p className="text-xs text-muted-foreground">{waiting.length + inProgress.length} patients in queue</p>
             </div>
             <Button asChild size="sm" variant="ghost"><Link to="/opd/appointments">View all</Link></Button>
@@ -199,7 +201,7 @@ function OpdDashboard() {
         {/* Doctor-wise split */}
         <Card className="p-0 overflow-hidden">
           <div className="p-4 border-b border-border">
-            <h2 className="text-lg font-semibold">Doctor-wise queue</h2>
+            <h2 className="text-lg font-semibold">{t('opd.doctorQueue')}</h2>
             <p className="text-xs text-muted-foreground">Active patients per doctor</p>
           </div>
           {doctorRows.length === 0 ? (
