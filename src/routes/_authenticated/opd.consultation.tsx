@@ -400,11 +400,66 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
         if (e3) throw e3;
       }
 
+      // vitals snapshot into the vitals table (persisted, not just JSON on the visit)
+      if (Object.values(vitals).some((v) => v)) {
+        const bp = String(vitals.bp ?? "").split("/");
+        const { error: vErr } = await supabase.from("vitals").insert({
+          patient_id: appt.patient_id,
+          recorded_at: new Date().toISOString(),
+          systolic: bp[0] ? Number(bp[0]) || null : null,
+          diastolic: bp[1] ? Number(bp[1]) || null : null,
+          pulse: vitals.pulse ? Number(vitals.pulse) || null : null,
+          temperature: vitals.temp ? Number(vitals.temp) || null : null,
+          oxygen: vitals.spo2 ? Number(vitals.spo2) || null : null,
+          weight: vitals.weight ? Number(vitals.weight) || null : null,
+          recorded_by: userId,
+        });
+        if (vErr) toast.warning(`Vitals not saved: ${vErr.message}`);
+      }
+
+      // auto-generate / refresh the OPD bill for this visit
+      const { data: existingBillRow } = await supabase
+        .from("bills").select("id, paid").eq("opd_visit_id", visitId).maybeSingle();
+      const consultationFee = 500;
+      const billItems = [
+        {
+          category: "Consultation",
+          description: `Consultation - ${appt.doctors?.name ?? "Doctor"}`,
+          quantity: 1, unit_price: consultationFee, amount: consultationFee, position: 0,
+        },
+      ];
+      const total = billItems.reduce((s, i) => s + Number(i.amount), 0);
+      const paidAmt = Number(existingBillRow?.paid ?? 0);
+      const pending = Math.max(0, total - paidAmt);
+      const billStatus: "draft" | "partial" | "paid" =
+        paidAmt >= total && total > 0 ? "paid" : paidAmt > 0 ? "partial" : "draft";
+      if (existingBillRow?.id) {
+        const { error: bErr } = await supabase.from("bills").update({
+          patient_id: appt.patient_id, doctor_id: appt.doctor_id, opd_visit_id: visitId,
+          subtotal: total, total, pending, status: billStatus,
+        }).eq("id", existingBillRow.id);
+        if (bErr) toast.warning(`Bill not updated: ${bErr.message}`);
+      } else {
+        const { data: createdBill, error: bErr } = await supabase.from("bills").insert({
+          patient_id: appt.patient_id, doctor_id: appt.doctor_id, opd_visit_id: visitId,
+          subtotal: total, discount: 0, gst: 0, total, paid: 0, pending: total,
+          status: "draft", created_by: userId,
+        }).select("id").single();
+        if (bErr) toast.warning(`Bill not generated: ${bErr.message}`);
+        else if (createdBill?.id) {
+          const { error: biErr } = await supabase.from("bill_items")
+            .insert(billItems.map((b) => ({ ...b, bill_id: createdBill.id })));
+          if (biErr) toast.warning(`Bill items not saved: ${biErr.message}`);
+        }
+      }
+
       const { error: apptError } = await supabase.from("appointments").update({ status: "completed" as any }).eq("id", appt.id);
       if (apptError) throw apptError;
-      toast.success("Consultation saved");
+      qc.invalidateQueries();
+      toast.success("Consultation saved · invoice generated");
       if (opts.print) window.open(`/prescriptions/${rx.id}/print`, "_blank");
       onSaved();
+
     } catch (err: any) {
       toast.error(err.message ?? "Save failed");
     } finally {
