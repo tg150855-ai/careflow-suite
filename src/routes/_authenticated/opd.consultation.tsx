@@ -244,7 +244,9 @@ function ConsultationPage() {
 }
 
 function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: string; onSaved: () => void }) {
+  const qc = useQueryClient();
   const p = appt.patients;
+
   const [running, setRunning] = useState(true);
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef<number>(Date.now());
