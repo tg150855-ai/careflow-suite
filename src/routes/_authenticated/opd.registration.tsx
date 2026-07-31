@@ -441,7 +441,13 @@ function OpdListPanel() {
   const [from, setFrom] = useState(todayStr());
   const [to, setTo] = useState(todayStr());
   const [quick, setQuick] = useState<QuickRange>("today");
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
   const [doctorId, setDoctorId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const isAdmin = useIsSuperAdmin();
