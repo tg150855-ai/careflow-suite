@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Search, UserPlus, Phone, IdCard, CalendarPlus, PlayCircle,
   Stethoscope, Loader2, ChevronRight, History, ListChecks, Download,
-  MessageCircle, Printer, Eye, ArrowRight, Trash2,
+  MessageCircle, Printer, Eye, ArrowRight, Trash2, Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import { PatientAttachments } from "@/components/patient-attachments";
@@ -441,7 +441,13 @@ function OpdListPanel() {
   const [from, setFrom] = useState(todayStr());
   const [to, setTo] = useState(todayStr());
   const [quick, setQuick] = useState<QuickRange>("today");
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
   const [doctorId, setDoctorId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const isAdmin = useIsSuperAdmin();
@@ -597,7 +603,7 @@ function OpdListPanel() {
 
             <div className="relative">
               <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name / UHID / mobile / doctor" className="h-9 pl-8 w-[260px]" />
+              <Input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Name / UHID / mobile / doctor" className="h-9 pl-8 w-[260px]" />
             </div>
             <Button size="sm" variant="outline" onClick={onExport}><Download className="size-3.5 mr-1" />Export</Button>
           </div>
@@ -658,7 +664,11 @@ function OpdListPanel() {
                         <Button size="icon" variant="ghost" className="size-7" title="WhatsApp patient" onClick={() => whatsapp(r)}>
                           <MessageCircle className="size-3.5" />
                         </Button>
+                        <Button asChild size="icon" variant="ghost" className="size-7" title="Edit patient details">
+                          <Link to="/patients/$id" params={{ id: r.patient_id }}><Pencil className="size-3.5" /></Link>
+                        </Button>
                         <Button asChild size="icon" variant="ghost" className="size-7" title="Open patient record">
+
                           <Link to="/patients/$id" params={{ id: r.patient_id }}><ArrowRight className="size-3.5" /></Link>
                         </Button>
                         {isAdmin && (

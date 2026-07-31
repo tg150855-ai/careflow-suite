@@ -1,5 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { extraEn, extraHi, extraMr } from "./i18n-extra";
+
 
 export type AppLanguage = "en" | "hi" | "mr";
 
@@ -189,12 +191,22 @@ export function setStoredLanguage(lang: AppLanguage) {
   try { localStorage.setItem(LS_KEY, lang); } catch { /* noop */ }
 }
 
+function deepMerge<T extends Record<string, any>>(base: T, extra: Record<string, any>): T {
+  const out: any = { ...base };
+  for (const [k, v] of Object.entries(extra)) {
+    out[k] = v && typeof v === "object" && !Array.isArray(v)
+      ? deepMerge(out[k] ?? {}, v)
+      : v;
+  }
+  return out;
+}
+
 if (!i18n.isInitialized) {
   i18n.use(initReactI18next).init({
     resources: {
-      en: { translation: en },
-      hi: { translation: hi },
-      mr: { translation: mr },
+      en: { translation: deepMerge(en, extraEn) },
+      hi: { translation: deepMerge(hi, extraHi) },
+      mr: { translation: deepMerge(mr, extraMr) },
     },
     lng: getStoredLanguage(),
     fallbackLng: "en",
@@ -202,6 +214,7 @@ if (!i18n.isInitialized) {
     returnNull: false,
   });
 }
+
 
 export async function applyLanguage(lang: AppLanguage) {
   setStoredLanguage(lang);

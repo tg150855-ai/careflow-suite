@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth-context";
 import { PatientAttachments } from "@/components/patient-attachments";
 import { toast } from "sonner";
 import { differenceInMinutes, format, formatDistanceToNow } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_authenticated/opd/consultation")({ component: ConsultationPage });
 
@@ -27,6 +28,7 @@ function startOfDayIso() { const d = new Date(); d.setHours(0,0,0,0); return d.t
 function endOfDayIso() { const d = new Date(); d.setHours(23,59,59,999); return d.toISOString(); }
 
 function ConsultationPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const qc = useQueryClient();
   const [doctorFilter, setDoctorFilter] = useState<string>("all");
@@ -206,7 +208,7 @@ function ConsultationPage() {
               <div className="size-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
                 <User className="size-5 text-muted-foreground" />
               </div>
-              <h2 className="text-base font-semibold">Select a patient to start</h2>
+              <h2 className="text-base font-semibold">{t('opd.selectPatient')}</h2>
               <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
                 Pick a patient from the queue. A consultation timer starts automatically when you begin.
               </p>
@@ -217,7 +219,7 @@ function ConsultationPage() {
         {/* Today's completed */}
         <Card className="p-4 xl:col-span-3 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Saved today</h2>
+            <h2 className="text-sm font-semibold">{t('opd.savedToday')}</h2>
             <Badge variant="secondary" className="rounded-full">{completed.length}</Badge>
           </div>
           {completed.length === 0 ? (
@@ -244,7 +246,10 @@ function ConsultationPage() {
 }
 
 function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: string; onSaved: () => void }) {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
   const p = appt.patients;
+
   const [running, setRunning] = useState(true);
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef<number>(Date.now());
@@ -400,11 +405,66 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
         if (e3) throw e3;
       }
 
+      // vitals snapshot into the vitals table (persisted, not just JSON on the visit)
+      if (Object.values(vitals).some((v) => v)) {
+        const bp = String(vitals.bp ?? "").split("/");
+        const { error: vErr } = await supabase.from("vitals").insert({
+          patient_id: appt.patient_id,
+          recorded_at: new Date().toISOString(),
+          systolic: bp[0] ? Number(bp[0]) || null : null,
+          diastolic: bp[1] ? Number(bp[1]) || null : null,
+          pulse: vitals.pulse ? Number(vitals.pulse) || null : null,
+          temperature: vitals.temp ? Number(vitals.temp) || null : null,
+          oxygen: vitals.spo2 ? Number(vitals.spo2) || null : null,
+          weight: vitals.weight ? Number(vitals.weight) || null : null,
+          recorded_by: userId,
+        });
+        if (vErr) toast.warning(`Vitals not saved: ${vErr.message}`);
+      }
+
+      // auto-generate / refresh the OPD bill for this visit
+      const { data: existingBillRow } = await supabase
+        .from("bills").select("id, paid").eq("opd_visit_id", visitId).maybeSingle();
+      const consultationFee = 500;
+      const billItems = [
+        {
+          category: "Consultation",
+          description: `Consultation - ${appt.doctors?.name ?? "Doctor"}`,
+          quantity: 1, unit_price: consultationFee, amount: consultationFee, position: 0,
+        },
+      ];
+      const total = billItems.reduce((s, i) => s + Number(i.amount), 0);
+      const paidAmt = Number(existingBillRow?.paid ?? 0);
+      const pending = Math.max(0, total - paidAmt);
+      const billStatus: "draft" | "partial" | "paid" =
+        paidAmt >= total && total > 0 ? "paid" : paidAmt > 0 ? "partial" : "draft";
+      if (existingBillRow?.id) {
+        const { error: bErr } = await supabase.from("bills").update({
+          patient_id: appt.patient_id, doctor_id: appt.doctor_id, opd_visit_id: visitId,
+          subtotal: total, total, pending, status: billStatus,
+        }).eq("id", existingBillRow.id);
+        if (bErr) toast.warning(`Bill not updated: ${bErr.message}`);
+      } else {
+        const { data: createdBill, error: bErr } = await supabase.from("bills").insert({
+          patient_id: appt.patient_id, doctor_id: appt.doctor_id, opd_visit_id: visitId,
+          subtotal: total, discount: 0, gst: 0, total, paid: 0, pending: total,
+          status: "draft", created_by: userId,
+        }).select("id").single();
+        if (bErr) toast.warning(`Bill not generated: ${bErr.message}`);
+        else if (createdBill?.id) {
+          const { error: biErr } = await supabase.from("bill_items")
+            .insert(billItems.map((b) => ({ ...b, bill_id: createdBill.id })));
+          if (biErr) toast.warning(`Bill items not saved: ${biErr.message}`);
+        }
+      }
+
       const { error: apptError } = await supabase.from("appointments").update({ status: "completed" as any }).eq("id", appt.id);
       if (apptError) throw apptError;
-      toast.success("Consultation saved");
+      qc.invalidateQueries();
+      toast.success("Consultation saved · invoice generated");
       if (opts.print) window.open(`/prescriptions/${rx.id}/print`, "_blank");
       onSaved();
+
     } catch (err: any) {
       toast.error(err.message ?? "Save failed");
     } finally {
@@ -465,7 +525,7 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
 
       {/* Vitals */}
       <div>
-        <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Vitals</Label>
+        <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">{t('opd.vitals')}</Label>
         <div className="grid grid-cols-5 gap-2 mt-1.5">
           <VitalInput label="BP" value={vitals.bp} onChange={(v) => setVitals({ ...vitals, bp: v })} placeholder="120/80" />
           <VitalInput label="Pulse" value={vitals.pulse} onChange={(v) => setVitals({ ...vitals, pulse: v })} placeholder="72" />
