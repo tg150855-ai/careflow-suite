@@ -603,7 +603,7 @@ function OpdListPanel() {
 
             <div className="relative">
               <Search className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name / UHID / mobile / doctor" className="h-9 pl-8 w-[260px]" />
+              <Input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Name / UHID / mobile / doctor" className="h-9 pl-8 w-[260px]" />
             </div>
             <Button size="sm" variant="outline" onClick={onExport}><Download className="size-3.5 mr-1" />Export</Button>
           </div>
