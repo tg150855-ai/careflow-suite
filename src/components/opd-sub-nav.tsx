@@ -26,8 +26,8 @@ export function OpdSubNav() {
 
           return (
             <Link
-              key={t.to}
-              to={t.to}
+              key={t2.to}
+              to={t2.to}
               className={cn(
                 "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
                 active
@@ -36,7 +36,8 @@ export function OpdSubNav() {
               )}
             >
               <Icon className="size-4" />
-              {t.label}
+              {t(t2.labelKey)}
+
             </Link>
           );
         })}
