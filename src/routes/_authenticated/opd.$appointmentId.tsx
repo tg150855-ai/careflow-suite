@@ -197,7 +197,7 @@ function Consultation() {
   }, [existingBill?.bill?.id]); // eslint-disable-line
 
   // -------------- save --------------
-  async function save(opts: { print?: boolean; bill?: boolean; compose?: boolean } = {}) {
+  async function save(opts: { print?: boolean; bill?: boolean; compose?: boolean; download?: boolean; whatsapp?: boolean; rx?: { handwriting: string | null; signature: string | null; advice: string } } = {}) {
     if (!appt) return;
     setSaving(true);
     try {
