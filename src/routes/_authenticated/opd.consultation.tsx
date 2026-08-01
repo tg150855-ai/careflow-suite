@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { MedicineAutocomplete } from "@/components/opd/medicine-autocomplete";
 import { toast } from "sonner";
 import { differenceInMinutes, format, formatDistanceToNow } from "date-fns";
 import { useTranslation } from "react-i18next";
