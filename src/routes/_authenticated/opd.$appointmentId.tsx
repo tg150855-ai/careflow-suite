@@ -270,6 +270,17 @@ function Consultation() {
         if (e3) throw e3;
       }
 
+      // 3b. inline prescription extras (handwriting / signature / Rx-only advice)
+      if (opts.rx) {
+        const { error: rxErr } = await (supabase as any).from("prescriptions").update({
+          handwriting_png: opts.rx.handwriting,
+          signature_png: opts.rx.signature,
+          notes: opts.rx.advice || null,
+        }).eq("id", rx.id);
+        if (rxErr) toast.warning(`Prescription notes not saved: ${rxErr.message}`);
+      }
+
+
       // 4. AUTO-BILL — consultation + investigations + procedures + meds
       const { data: existingBillRow } = await supabase.from("bills").select("id, paid, status, bill_no").eq("opd_visit_id", visitId).maybeSingle();
       const billItems: any[] = [];
