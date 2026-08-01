@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { MedicineAutocomplete } from "@/components/opd/medicine-autocomplete";
 import { toast } from "sonner";
 import { differenceInMinutes, format, formatDistanceToNow } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -559,7 +560,17 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
         <div className="space-y-2">
           {items.map((it, i) => (
             <div key={i} className="rounded-lg border p-2.5 grid grid-cols-12 gap-2 items-center">
-              <Input value={it.medicine_name} onChange={(e) => updateItem(i, "medicine_name", e.target.value)} placeholder="Medicine name" className="h-9 text-sm col-span-5" />
+              <MedicineAutocomplete
+                className="col-span-5"
+                value={it.medicine_name}
+                onChange={(v) => updateItem(i, "medicine_name", v)}
+                onSelect={(s) => setItems((arr) => arr.map((row, x) => x === i ? {
+                  ...row,
+                  medicine_name: s.name,
+                  dosage: s.frequency || row.dosage,
+                  food_instruction: s.food || row.food_instruction,
+                } : row))}
+              />
               <Input value={it.dosage} onChange={(e) => updateItem(i, "dosage", e.target.value)} placeholder="1-0-1" className="h-9 text-sm col-span-2" />
               <Input value={it.food_instruction} onChange={(e) => updateItem(i, "food_instruction", e.target.value)} placeholder="After food" className="h-9 text-sm col-span-3" />
               <Input value={it.duration_days} onChange={(e) => updateItem(i, "duration_days", e.target.value)} placeholder="Days" type="number" className="h-9 text-sm col-span-1" />

@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { format, differenceInYears } from "date-fns";
 import { DoctorDictate, parseMedicationLine, splitDictationToLines } from "@/components/doctor-dictate";
 import { PrescriptionComposer, type ComposerContext } from "@/components/opd/prescription-composer";
+import { PrescriptionInline, type InlineRxAction, type InlineRxPayload } from "@/components/opd/prescription-inline";
+import { MedicineAutocomplete } from "@/components/opd/medicine-autocomplete";
 
 export const Route = createFileRoute("/_authenticated/opd/$appointmentId")({ component: Consultation });
 
@@ -197,7 +199,7 @@ function Consultation() {
   }, [existingBill?.bill?.id]); // eslint-disable-line
 
   // -------------- save --------------
-  async function save(opts: { print?: boolean; bill?: boolean; compose?: boolean } = {}) {
+  async function save(opts: { print?: boolean; bill?: boolean; compose?: boolean; download?: boolean; whatsapp?: boolean; rx?: { handwriting: string | null; signature: string | null; advice: string } } = {}) {
     if (!appt) return;
     setSaving(true);
     try {
@@ -269,6 +271,17 @@ function Consultation() {
         })));
         if (e3) throw e3;
       }
+
+      // 3b. inline prescription extras (handwriting / signature / Rx-only advice)
+      if (opts.rx) {
+        const { error: rxErr } = await (supabase as any).from("prescriptions").update({
+          handwriting_png: opts.rx.handwriting,
+          signature_png: opts.rx.signature,
+          notes: opts.rx.advice || null,
+        }).eq("id", rx.id);
+        if (rxErr) toast.warning(`Prescription notes not saved: ${rxErr.message}`);
+      }
+
 
       // 4. AUTO-BILL — consultation + investigations + procedures + meds
       const { data: existingBillRow } = await supabase.from("bills").select("id, paid, status, bill_no").eq("opd_visit_id", visitId).maybeSingle();
@@ -351,9 +364,15 @@ function Consultation() {
           billId: billId ?? null,
         });
         setComposerOpen(true);
-      } else if (opts.print) window.open(`/prescriptions/${rx.id}/print`, "_blank");
+      } else if (opts.print || opts.download) window.open(`/prescriptions/${rx.id}/print`, "_blank");
+      else if (opts.whatsapp) {
+        const mobile = ((appt as any)?.patients?.mobile ?? "").replace(/\D/g, "");
+        const url = `${window.location.origin}/prescriptions/${rx.id}/print`;
+        const msg = `Hello ${(appt as any).patients?.full_name}, your prescription from Dr ${(appt as any).doctors?.name} is ready: ${url}`;
+        window.open(`https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`, "_blank");
+      }
       if (opts.bill) navigate({ to: "/opd/billing" });
-      else if (!opts.print && !opts.compose) navigate({ to: "/opd" });
+      else if (!opts.print && !opts.compose && !opts.download && !opts.whatsapp) navigate({ to: "/opd" });
     } catch (err: any) {
       console.error("[consultation save]", err);
       toast.error(err.message ?? "Save failed");
@@ -496,7 +515,21 @@ function Consultation() {
               {items.map((it, i) => (
                 <div key={i} className="rounded-xl border p-3 space-y-2 bg-surface-muted/40">
                   <div className="grid grid-cols-12 gap-2">
-                    <Input value={it.medicine_name} onChange={(e) => updateItem(i, "medicine_name", e.target.value)} placeholder="Medicine name" className="h-9 text-sm col-span-6" />
+                    <MedicineAutocomplete
+                      className="col-span-6"
+                      value={it.medicine_name}
+                      onChange={(v) => updateItem(i, "medicine_name", v)}
+                      onSelect={(s) => setItems(items.map((row, x) => x === i ? {
+                        ...row,
+                        medicine_name: s.name,
+                        strength: s.strength || row.strength,
+                        route: s.route || row.route,
+                        frequency: s.frequency || row.frequency,
+                        food_instruction: s.food || row.food_instruction,
+                        instructions: s.instructions || row.instructions,
+                        duration_days: "",
+                      } : row))}
+                    />
                     <Input value={it.strength} onChange={(e) => updateItem(i, "strength", e.target.value)} placeholder="Strength (500mg)" className="h-9 text-sm col-span-3" />
                     <Select value={it.route} onValueChange={(v) => updateItem(i, "route", v)}>
                       <SelectTrigger className="h-9 text-sm col-span-2"><SelectValue /></SelectTrigger>
@@ -589,7 +622,31 @@ function Consultation() {
               </div>
             )}
           </Card>
+
+          {/* Digital prescription — inline, auto-synced with the sections above */}
+          <PrescriptionInline
+            ctx={{
+              patient,
+              doctor: (appt as any).doctors,
+              visit: {
+                chief_complaints: chief || null,
+                diagnosis: diagnosis || null,
+                clinical_findings: findings || null,
+                follow_up_date: followUp || null,
+                vitals,
+              },
+              medicines: items.filter((i) => i.medicine_name.trim()).map((it) => ({
+                name: it.medicine_name, strength: it.strength, route: it.route, frequency: it.frequency,
+                food: it.food_instruction, duration: it.duration_days, quantity: it.quantity, instructions: it.instructions,
+              })),
+              investigations: investigations.filter((i) => i.name.trim()).map((i) => `${i.name}${i.priority !== "Routine" ? ` [${i.priority}]` : ""}`),
+              procedures: procedures.filter((p) => p.name.trim()).map((p) => p.name),
+            }}
+            saving={saving}
+            onAction={handleInlineRx}
+          />
         </div>
+
 
         {/* Right: billing preview */}
         <div className="xl:col-span-3 space-y-4">
@@ -633,6 +690,14 @@ function Consultation() {
       <PrescriptionComposer open={composerOpen} onOpenChange={setComposerOpen} ctx={composerCtx} onSubmitted={() => qc.invalidateQueries()} />
     </div>
   );
+
+  function handleInlineRx(action: InlineRxAction, payload: InlineRxPayload) {
+    const rx = { handwriting: payload.handwriting, signature: payload.signature, advice: payload.advice };
+    if (action === "print") return void save({ rx, print: true });
+    if (action === "download") return void save({ rx, download: true });
+    if (action === "whatsapp") return void save({ rx, whatsapp: true });
+    return void save({ rx, bill: true });
+  }
 
   function updateItem(i: number, k: keyof RxItem, v: string) {
     setItems(items.map((it, x) => x === i ? { ...it, [k]: v } : it));

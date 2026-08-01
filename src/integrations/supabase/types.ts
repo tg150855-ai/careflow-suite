@@ -378,11 +378,18 @@ export type Database = {
       ambulances: {
         Row: {
           active: boolean
+          attendant_name: string | null
+          capacity: number | null
           created_at: string
           driver_name: string | null
           driver_phone: string | null
           equipment: string | null
           id: string
+          insurance_expiry: string | null
+          insurance_no: string | null
+          last_service_date: string | null
+          next_service_due: string | null
+          notes: string | null
           status: Database["public"]["Enums"]["ambulance_status"]
           updated_at: string
           vehicle_number: string
@@ -390,11 +397,18 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          attendant_name?: string | null
+          capacity?: number | null
           created_at?: string
           driver_name?: string | null
           driver_phone?: string | null
           equipment?: string | null
           id?: string
+          insurance_expiry?: string | null
+          insurance_no?: string | null
+          last_service_date?: string | null
+          next_service_due?: string | null
+          notes?: string | null
           status?: Database["public"]["Enums"]["ambulance_status"]
           updated_at?: string
           vehicle_number: string
@@ -402,11 +416,18 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          attendant_name?: string | null
+          capacity?: number | null
           created_at?: string
           driver_name?: string | null
           driver_phone?: string | null
           equipment?: string | null
           id?: string
+          insurance_expiry?: string | null
+          insurance_no?: string | null
+          last_service_date?: string | null
+          next_service_due?: string | null
+          notes?: string | null
           status?: Database["public"]["Enums"]["ambulance_status"]
           updated_at?: string
           vehicle_number?: string
