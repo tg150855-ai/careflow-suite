@@ -362,9 +362,15 @@ function Consultation() {
           billId: billId ?? null,
         });
         setComposerOpen(true);
-      } else if (opts.print) window.open(`/prescriptions/${rx.id}/print`, "_blank");
+      } else if (opts.print || opts.download) window.open(`/prescriptions/${rx.id}/print`, "_blank");
+      else if (opts.whatsapp) {
+        const mobile = ((appt as any)?.patients?.mobile ?? "").replace(/\D/g, "");
+        const url = `${window.location.origin}/prescriptions/${rx.id}/print`;
+        const msg = `Hello ${(appt as any).patients?.full_name}, your prescription from Dr ${(appt as any).doctors?.name} is ready: ${url}`;
+        window.open(`https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`, "_blank");
+      }
       if (opts.bill) navigate({ to: "/opd/billing" });
-      else if (!opts.print && !opts.compose) navigate({ to: "/opd" });
+      else if (!opts.print && !opts.compose && !opts.download && !opts.whatsapp) navigate({ to: "/opd" });
     } catch (err: any) {
       console.error("[consultation save]", err);
       toast.error(err.message ?? "Save failed");
