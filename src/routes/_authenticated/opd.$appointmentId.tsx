@@ -515,7 +515,21 @@ function Consultation() {
               {items.map((it, i) => (
                 <div key={i} className="rounded-xl border p-3 space-y-2 bg-surface-muted/40">
                   <div className="grid grid-cols-12 gap-2">
-                    <Input value={it.medicine_name} onChange={(e) => updateItem(i, "medicine_name", e.target.value)} placeholder="Medicine name" className="h-9 text-sm col-span-6" />
+                    <MedicineAutocomplete
+                      className="col-span-6"
+                      value={it.medicine_name}
+                      onChange={(v) => updateItem(i, "medicine_name", v)}
+                      onSelect={(s) => setItems(items.map((row, x) => x === i ? {
+                        ...row,
+                        medicine_name: s.name,
+                        strength: s.strength || row.strength,
+                        route: s.route || row.route,
+                        frequency: s.frequency || row.frequency,
+                        food_instruction: s.food || row.food_instruction,
+                        instructions: s.instructions || row.instructions,
+                        duration_days: "",
+                      } : row))}
+                    />
                     <Input value={it.strength} onChange={(e) => updateItem(i, "strength", e.target.value)} placeholder="Strength (500mg)" className="h-9 text-sm col-span-3" />
                     <Select value={it.route} onValueChange={(v) => updateItem(i, "route", v)}>
                       <SelectTrigger className="h-9 text-sm col-span-2"><SelectValue /></SelectTrigger>
