@@ -691,6 +691,14 @@ function Consultation() {
     </div>
   );
 
+  function handleInlineRx(action: InlineRxAction, payload: InlineRxPayload) {
+    const rx = { handwriting: payload.handwriting, signature: payload.signature, advice: payload.advice };
+    if (action === "print") return void save({ rx, print: true });
+    if (action === "download") return void save({ rx, download: true });
+    if (action === "whatsapp") return void save({ rx, whatsapp: true });
+    return void save({ rx, bill: true });
+  }
+
   function updateItem(i: number, k: keyof RxItem, v: string) {
     setItems(items.map((it, x) => x === i ? { ...it, [k]: v } : it));
   }
