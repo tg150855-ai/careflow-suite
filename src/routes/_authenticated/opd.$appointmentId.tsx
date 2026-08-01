@@ -622,7 +622,31 @@ function Consultation() {
               </div>
             )}
           </Card>
+
+          {/* Digital prescription — inline, auto-synced with the sections above */}
+          <PrescriptionInline
+            ctx={{
+              patient,
+              doctor: (appt as any).doctors,
+              visit: {
+                chief_complaints: chief || null,
+                diagnosis: diagnosis || null,
+                clinical_findings: findings || null,
+                follow_up_date: followUp || null,
+                vitals,
+              },
+              medicines: items.filter((i) => i.medicine_name.trim()).map((it) => ({
+                name: it.medicine_name, strength: it.strength, route: it.route, frequency: it.frequency,
+                food: it.food_instruction, duration: it.duration_days, quantity: it.quantity, instructions: it.instructions,
+              })),
+              investigations: investigations.filter((i) => i.name.trim()).map((i) => `${i.name}${i.priority !== "Routine" ? ` [${i.priority}]` : ""}`),
+              procedures: procedures.filter((p) => p.name.trim()).map((p) => p.name),
+            }}
+            saving={saving}
+            onAction={handleInlineRx}
+          />
         </div>
+
 
         {/* Right: billing preview */}
         <div className="xl:col-span-3 space-y-4">
