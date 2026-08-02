@@ -195,4 +195,11 @@
   .print-header { display: table-header-group; }
   .print-footer { display: table-footer-group; }
   a { color: inherit; text-decoration: none; }
+  /* Digital prescription pages */
+  .rx-page { box-shadow: none !important; border: none !important; padding: 0 !important; min-height: auto !important; max-width: 100% !important; page-break-after: always; break-after: page; }
+  .rx-page:last-child { page-break-after: auto; break-after: auto; }
+  .rx-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .medicine-row { page-break-inside: avoid; break-inside: avoid; }
+  .prescription-print-area { background: white !important; padding: 0 !important; }
 }
+
