@@ -362,26 +362,30 @@ export function PrescriptionInline({
           ))}
         </div>
 
-        {/* Sticky actions */}
-        <div className="xl:col-span-3 no-print">
-          <div className="xl:sticky xl:top-4 flex flex-col gap-2">
-            <Button onClick={() => fire("billing")} disabled={saving}>
+        {/* Sticky action bar */}
+        <div className="no-print sticky bottom-0 z-20 -mx-1 px-1 py-2 bg-background/95 backdrop-blur border-t">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button className="flex-1 min-w-[180px]" onClick={() => fire("billing")} disabled={saving}>
               {saving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Save className="size-4 mr-2" />}Submit &amp; go to Billing
             </Button>
-            <Button variant="secondary" onClick={() => fire("bill")} disabled={saving}><Receipt className="size-4 mr-2" />Save &amp; proceed to Bill</Button>
+            <Button variant="secondary" onClick={() => fire("bill")} disabled={saving}><Receipt className="size-4 mr-2" />Save &amp; Bill</Button>
             <Button variant="outline" onClick={() => fire("print")} disabled={saving}><Printer className="size-4 mr-2" />Print A4</Button>
-            <Button variant="outline" onClick={() => fire("download")} disabled={saving}><Download className="size-4 mr-2" />Download PDF</Button>
-            <Button variant="outline" onClick={() => fire("whatsapp")} disabled={saving}><MessageCircle className="size-4 mr-2" />WhatsApp patient</Button>
+            <Button variant="outline" onClick={() => fire("download")} disabled={saving}><Download className="size-4 mr-2" />PDF</Button>
+            <Button variant="outline" onClick={() => fire("whatsapp")} disabled={saving}><MessageCircle className="size-4 mr-2" />WhatsApp</Button>
             <Button variant="ghost" onClick={() => setExtraPages((ps) => [...ps, { id: Date.now(), text: "" }])}>
               <Plus className="size-4 mr-2" />Add Page
             </Button>
-            <div className="text-[11px] text-muted-foreground text-center pt-1">{totalPages} page{totalPages > 1 ? "s" : ""}</div>
+            <span className="text-[11px] text-muted-foreground ml-auto">{totalPages} page{totalPages > 1 ? "s" : ""}</span>
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
+
+  if (bare) return body;
+  return <Card className="p-5">{body}</Card>;
 }
+
 
 function ContinuationPage({
   pageStyle, index, header, footer, text, onText, onRemove,
