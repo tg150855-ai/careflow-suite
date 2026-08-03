@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useHospitalProfile } from "@/components/print-header";
 import { format, differenceInCalendarDays } from "date-fns";
-import { Printer, Download, MessageCircle, Save, Eraser, Undo2, Receipt, Loader2, FileSignature, Plus, X } from "lucide-react";
+import { Printer, Download, MessageCircle, Save, Eraser, Undo2, Redo2, Receipt, Loader2, FileSignature, Plus, X } from "lucide-react";
 
 export type InlineRxAction = "billing" | "bill" | "print" | "download" | "whatsapp";
 export type InlineRxPayload = { handwriting: string | null; signature: string | null; advice: string };
@@ -50,11 +50,15 @@ export function PrescriptionInline({
   ctx,
   saving,
   onAction,
+  bare,
 }: {
   ctx: InlineRxContext;
   saving?: boolean;
   onAction: (action: InlineRxAction, payload: InlineRxPayload) => void;
+  /** render without the outer Card (used inside the prescription modal/drawer) */
+  bare?: boolean;
 }) {
+
   const { data: tpl } = useQuery({
     queryKey: ["hospital-settings", "prescription-tpl"],
     staleTime: 5 * 60 * 1000,
@@ -71,6 +75,7 @@ export function PrescriptionInline({
 
   const padRef = useRef<SignatureCanvas | null>(null);
   const sigRef = useRef<SignatureCanvas | null>(null);
+  const redoRef = useRef<any[]>([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0].value);
   const [penWidth, setPenWidth] = useState(PEN_SIZES[1].value);
   const [erasing, setErasing] = useState(false);
@@ -159,19 +164,20 @@ export function PrescriptionInline({
     fontSize: tpl?.font_size ? `${tpl.font_size}px` : "13px",
   };
 
-  return (
-    <Card className="p-5 space-y-4">
+  const body = (
+    <div className="space-y-4">
       <div className="flex items-center gap-2 no-print">
         <FileSignature className="size-4 text-primary" />
         <h2 className="font-semibold text-sm">Digital prescription</h2>
-        <span className="text-xs text-muted-foreground">· auto-synced from the sections above</span>
+        <span className="text-xs text-muted-foreground hidden sm:inline">· auto-synced from the sections above</span>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+      <div className="space-y-4">
         {/* A4 pages */}
-        <div className="xl:col-span-9 bg-muted/30 rounded-xl p-4 overflow-x-auto prescription-print-area space-y-6">
+        <div className="bg-muted/30 rounded-xl p-2 sm:p-4 overflow-x-auto prescription-print-area space-y-6 rx-scale-wrap">
           {/* PAGE 1 */}
           <div className="rx-page bg-white text-black shadow-md border mx-auto relative" style={pageStyle}>
+
             {tpl?.watermark && (
               <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ opacity: 0.06, fontSize: 96, transform: "rotate(-30deg)", fontWeight: 800 }}>
                 {tpl.watermark}
@@ -329,9 +335,15 @@ export function PrescriptionInline({
                 </Button>
                 <Button type="button" size="sm" variant="ghost" onClick={() => {
                   const pad = padRef.current; if (!pad) return;
-                  const data = pad.toData(); if (data.length) { data.pop(); pad.fromData(data); }
+                  const data = pad.toData(); if (data.length) { redoRef.current.push(data.pop()); pad.fromData(data); }
                 }}><Undo2 className="size-3.5 mr-1" />Undo</Button>
-                <Button type="button" size="sm" variant="ghost" onClick={() => padRef.current?.clear()}>Clear</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => {
+                  const pad = padRef.current; if (!pad) return;
+                  const stroke = redoRef.current.pop(); if (!stroke) return;
+                  pad.fromData([...pad.toData(), stroke]);
+                }}><Redo2 className="size-3.5 mr-1" />Redo</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => { redoRef.current = []; padRef.current?.clear(); }}>Clear</Button>
+
               </div>
             </div>
             <div className="border rounded-lg bg-white" style={{ touchAction: "none" }}>
@@ -361,26 +373,30 @@ export function PrescriptionInline({
           ))}
         </div>
 
-        {/* Sticky actions */}
-        <div className="xl:col-span-3 no-print">
-          <div className="xl:sticky xl:top-4 flex flex-col gap-2">
-            <Button onClick={() => fire("billing")} disabled={saving}>
+        {/* Sticky action bar */}
+        <div className="no-print sticky bottom-0 z-20 -mx-1 px-1 py-2 bg-background/95 backdrop-blur border-t">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button className="flex-1 min-w-[180px]" onClick={() => fire("billing")} disabled={saving}>
               {saving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Save className="size-4 mr-2" />}Submit &amp; go to Billing
             </Button>
-            <Button variant="secondary" onClick={() => fire("bill")} disabled={saving}><Receipt className="size-4 mr-2" />Save &amp; proceed to Bill</Button>
+            <Button variant="secondary" onClick={() => fire("bill")} disabled={saving}><Receipt className="size-4 mr-2" />Save &amp; Bill</Button>
             <Button variant="outline" onClick={() => fire("print")} disabled={saving}><Printer className="size-4 mr-2" />Print A4</Button>
-            <Button variant="outline" onClick={() => fire("download")} disabled={saving}><Download className="size-4 mr-2" />Download PDF</Button>
-            <Button variant="outline" onClick={() => fire("whatsapp")} disabled={saving}><MessageCircle className="size-4 mr-2" />WhatsApp patient</Button>
+            <Button variant="outline" onClick={() => fire("download")} disabled={saving}><Download className="size-4 mr-2" />PDF</Button>
+            <Button variant="outline" onClick={() => fire("whatsapp")} disabled={saving}><MessageCircle className="size-4 mr-2" />WhatsApp</Button>
             <Button variant="ghost" onClick={() => setExtraPages((ps) => [...ps, { id: Date.now(), text: "" }])}>
               <Plus className="size-4 mr-2" />Add Page
             </Button>
-            <div className="text-[11px] text-muted-foreground text-center pt-1">{totalPages} page{totalPages > 1 ? "s" : ""}</div>
+            <span className="text-[11px] text-muted-foreground ml-auto">{totalPages} page{totalPages > 1 ? "s" : ""}</span>
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
+
+  if (bare) return body;
+  return <Card className="p-5">{body}</Card>;
 }
+
 
 function ContinuationPage({
   pageStyle, index, header, footer, text, onText, onRemove,

@@ -203,3 +203,18 @@
   .prescription-print-area { background: white !important; padding: 0 !important; }
 }
 
+
+/* Digital prescription — responsive A4 preview scaling (screen only) */
+@media screen and (max-width: 1280px) {
+  .rx-scale-wrap .rx-page { zoom: 0.85; }
+}
+@media screen and (max-width: 1024px) {
+  .rx-scale-wrap .rx-page { zoom: 0.7; }
+}
+@media screen and (max-width: 767px) {
+  .rx-scale-wrap { padding-left: 0; padding-right: 0; }
+  .rx-scale-wrap .rx-page { zoom: 0.45; }
+}
+@media print {
+  .rx-scale-wrap .rx-page { zoom: 1 !important; }
+}
