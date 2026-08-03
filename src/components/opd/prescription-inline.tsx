@@ -50,11 +50,15 @@ export function PrescriptionInline({
   ctx,
   saving,
   onAction,
+  bare,
 }: {
   ctx: InlineRxContext;
   saving?: boolean;
   onAction: (action: InlineRxAction, payload: InlineRxPayload) => void;
+  /** render without the outer Card (used inside the prescription modal/drawer) */
+  bare?: boolean;
 }) {
+
   const { data: tpl } = useQuery({
     queryKey: ["hospital-settings", "prescription-tpl"],
     staleTime: 5 * 60 * 1000,
