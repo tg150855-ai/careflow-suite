@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft, Plus, Trash2, Save, Printer, FlaskConical, Stethoscope, Pill,
-  Receipt, MessageCircle, History, Activity,
+  Receipt, MessageCircle, History, Activity, FileSignature,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -18,7 +18,8 @@ import { toast } from "sonner";
 import { format, differenceInYears } from "date-fns";
 import { DoctorDictate, parseMedicationLine, splitDictationToLines } from "@/components/doctor-dictate";
 import { PrescriptionComposer, type ComposerContext } from "@/components/opd/prescription-composer";
-import { PrescriptionInline, type InlineRxAction, type InlineRxPayload } from "@/components/opd/prescription-inline";
+import type { InlineRxAction, InlineRxPayload } from "@/components/opd/prescription-inline";
+import { PrescriptionSheet } from "@/components/opd/prescription-sheet";
 import { MedicineAutocomplete } from "@/components/opd/medicine-autocomplete";
 
 export const Route = createFileRoute("/_authenticated/opd/$appointmentId")({ component: Consultation });
@@ -390,6 +391,25 @@ function Consultation() {
     window.open(`https://wa.me/${mobile ?? ""}?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
+  const [rxOpen, setRxOpen] = useState(false);
+  const rxCtx = useMemo(() => ({
+    patient: (appt as any)?.patients,
+    doctor: (appt as any)?.doctors,
+    visit: {
+      chief_complaints: chief || null,
+      diagnosis: diagnosis || null,
+      clinical_findings: findings || null,
+      follow_up_date: followUp || null,
+      vitals,
+    },
+    medicines: items.filter((i) => i.medicine_name.trim()).map((it) => ({
+      name: it.medicine_name, strength: it.strength, route: it.route, frequency: it.frequency,
+      food: it.food_instruction, duration: it.duration_days, quantity: it.quantity, instructions: it.instructions,
+    })),
+    investigations: investigations.filter((i) => i.name.trim()).map((i) => `${i.name}${i.priority !== "Routine" ? ` [${i.priority}]` : ""}`),
+    procedures: procedures.filter((p) => p.name.trim()).map((p) => p.name),
+  }), [appt, chief, diagnosis, findings, followUp, vitals, items, investigations, procedures]);
+
   // -------------- totals preview --------------
   const billPreview = useMemo(() => {
     const inv = investigations.filter(i => i.name.trim()).reduce((s, i) => s + (Number(i.price) || 0), 0);
@@ -403,7 +423,7 @@ function Consultation() {
 
   return (
     <div className="space-y-5 pb-24">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Button asChild variant="ghost" size="icon"><Link to="/opd"><ArrowLeft className="size-4" /></Link></Button>
         <div className="flex-1">
           <h1 className="text-xl font-semibold tracking-tight">
@@ -413,6 +433,9 @@ function Consultation() {
             {ageOf(patient?.dob)} · <span className="capitalize">{patient?.gender}</span> · {patient?.mobile} · {(appt as any).doctors?.name} · token {(appt as any).token_no ?? "—"} · {format(new Date(appt.scheduled_at), "dd MMM yyyy HH:mm")}
           </p>
         </div>
+        <Button variant="outline" onClick={() => setRxOpen(true)} className="shrink-0">
+          <FileSignature className="size-4 mr-2" />Digital Prescription
+        </Button>
         {existingBill?.bill?.bill_no && (
           <Badge variant="outline" className="font-mono text-[10px]"><Receipt className="size-3 mr-1" />{existingBill.bill.bill_no}</Badge>
         )}
