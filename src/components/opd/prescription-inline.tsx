@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useHospitalProfile } from "@/components/print-header";
 import { format, differenceInCalendarDays } from "date-fns";
-import { Printer, Download, MessageCircle, Save, Eraser, Undo2, Receipt, Loader2, FileSignature, Plus, X } from "lucide-react";
+import { Printer, Download, MessageCircle, Save, Eraser, Undo2, Redo2, Receipt, Loader2, FileSignature, Plus, X } from "lucide-react";
 
 export type InlineRxAction = "billing" | "bill" | "print" | "download" | "whatsapp";
 export type InlineRxPayload = { handwriting: string | null; signature: string | null; advice: string };
@@ -75,6 +75,7 @@ export function PrescriptionInline({
 
   const padRef = useRef<SignatureCanvas | null>(null);
   const sigRef = useRef<SignatureCanvas | null>(null);
+  const redoRef = useRef<any[]>([]);
   const [penColor, setPenColor] = useState(PEN_COLORS[0].value);
   const [penWidth, setPenWidth] = useState(PEN_SIZES[1].value);
   const [erasing, setErasing] = useState(false);
