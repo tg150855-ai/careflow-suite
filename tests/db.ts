@@ -26,9 +26,6 @@ export function asUser(uid: string, query: string, setup = ""): string[] {
     setup,
     "SET LOCAL ROLE authenticated;",
     `SELECT set_config('request.jwt.claims', '${claims}', true);`,
-    "\\o /dev/null",
-    "SELECT 1;",
-    "\\o",
     query,
     "ROLLBACK;",
   ]
