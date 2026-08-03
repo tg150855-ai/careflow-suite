@@ -159,19 +159,20 @@ export function PrescriptionInline({
     fontSize: tpl?.font_size ? `${tpl.font_size}px` : "13px",
   };
 
-  return (
-    <Card className="p-5 space-y-4">
+  const body = (
+    <div className="space-y-4">
       <div className="flex items-center gap-2 no-print">
         <FileSignature className="size-4 text-primary" />
         <h2 className="font-semibold text-sm">Digital prescription</h2>
-        <span className="text-xs text-muted-foreground">· auto-synced from the sections above</span>
+        <span className="text-xs text-muted-foreground hidden sm:inline">· auto-synced from the sections above</span>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+      <div className="space-y-4">
         {/* A4 pages */}
-        <div className="xl:col-span-9 bg-muted/30 rounded-xl p-4 overflow-x-auto prescription-print-area space-y-6">
+        <div className="bg-muted/30 rounded-xl p-2 sm:p-4 overflow-x-auto prescription-print-area space-y-6 rx-scale-wrap">
           {/* PAGE 1 */}
           <div className="rx-page bg-white text-black shadow-md border mx-auto relative" style={pageStyle}>
+
             {tpl?.watermark && (
               <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ opacity: 0.06, fontSize: 96, transform: "rotate(-30deg)", fontWeight: 800 }}>
                 {tpl.watermark}
