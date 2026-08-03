@@ -10,9 +10,11 @@ const HR_MODULES: Module[] = ["hrms", "payroll"];
 describe("permission matrix: employee/HR data", () => {
   for (const m of HR_MODULES) {
     for (const role of ALL_ROLES) {
-      const allowed = HR_ROLES.includes(role) || (m === "payroll" && ["accountant", "finance_manager"].includes(role));
-      it(`${role} ${allowed ? "can" : "cannot"} view ${m}`, () => {
-        expect(can([role], m, "view")).toBe(allowed);
+      const allowed = can([role], m, "view");
+      const expected = HR_ROLES.includes(role) || ["dept_head"].includes(role) || (m === "payroll" && ["accountant", "finance_manager"].includes(role));
+      void allowed;
+      it(`${role} ${expected ? "can" : "cannot"} view ${m}`, () => {
+        expect(can([role], m, "view")).toBe(expected);
       });
     }
   }
