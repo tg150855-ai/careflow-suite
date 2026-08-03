@@ -334,9 +334,15 @@ export function PrescriptionInline({
                 </Button>
                 <Button type="button" size="sm" variant="ghost" onClick={() => {
                   const pad = padRef.current; if (!pad) return;
-                  const data = pad.toData(); if (data.length) { data.pop(); pad.fromData(data); }
+                  const data = pad.toData(); if (data.length) { redoRef.current.push(data.pop()); pad.fromData(data); }
                 }}><Undo2 className="size-3.5 mr-1" />Undo</Button>
-                <Button type="button" size="sm" variant="ghost" onClick={() => padRef.current?.clear()}>Clear</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => {
+                  const pad = padRef.current; if (!pad) return;
+                  const stroke = redoRef.current.pop(); if (!stroke) return;
+                  pad.fromData([...pad.toData(), stroke]);
+                }}><Redo2 className="size-3.5 mr-1" />Redo</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => { redoRef.current = []; padRef.current?.clear(); }}>Clear</Button>
+
               </div>
             </div>
             <div className="border rounded-lg bg-white" style={{ touchAction: "none" }}>
