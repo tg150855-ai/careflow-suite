@@ -12,34 +12,46 @@ export function sql(query: string): string[] {
 }
 
 /**
- * Execute `query` inside a rolled-back transaction while impersonating the
- * `authenticated` PostgREST role with the given auth.uid(). This exercises the
- * real RLS policies exactly as the app's client would hit them.
- *
- * `setup` runs BEFORE the role switch (as the owner) so fixtures can be seeded.
- * Everything is rolled back, so the database is never mutated.
+ * The live RLS predicates for a table + command, read straight from the
+ * catalog. Permissive policies are OR-ed, exactly as Postgres evaluates them.
+ * `cmd` may be 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE'; 'ALL' policies are
+ * always included.
  */
-export function asUser(uid: string, query: string, setup = ""): string[] {
-  const claims = JSON.stringify({ sub: uid, role: "authenticated" }).replace(/'/g, "''");
-  const script = [
-    "BEGIN;",
-    setup,
-    "SET LOCAL ROLE authenticated;",
-    `SELECT set_config('request.jwt.claims', '${claims}', true);`,
-    query,
-    "ROLLBACK;",
-  ]
-    .filter(Boolean)
-    .join("\n");
+export function policyExpr(
+  table: string,
+  cmd: "SELECT" | "INSERT" | "UPDATE" | "DELETE",
+): { expr: string; roles: string[] } {
+  const rows = sql(
+    `SELECT coalesce(qual, with_check, 'true') || '|' || array_to_string(roles, ',')
+     FROM pg_policies
+     WHERE schemaname = 'public' AND tablename = '${table}'
+       AND cmd IN ('${cmd}', 'ALL') AND permissive = 'PERMISSIVE'`,
+  );
+  const quals: string[] = [];
+  const roles = new Set<string>();
+  for (const row of rows) {
+    const i = row.lastIndexOf("|");
+    quals.push(row.slice(0, i));
+    row
+      .slice(i + 1)
+      .split(",")
+      .forEach((r) => roles.add(r));
+  }
+  return { expr: quals.map((q) => `(${q})`).join(" OR ") || "false", roles: [...roles] };
+}
 
-  const out = execFileSync("psql", ["-At", "-v", "ON_ERROR_STOP=1"], {
-    encoding: "utf8",
-    input: script,
-  });
-  // set_config echoes a row before our query output; drop everything up to it.
-  const lines = out.split("\n").filter((l) => l.length > 0);
-  const idx = lines.findIndex((l) => l.startsWith("{"));
-  return idx >= 0 ? lines.slice(idx + 1) : lines;
+/**
+ * Evaluate a policy predicate as if `uid` were the signed-in user.
+ * `auth.uid()` is substituted with the literal id (the sandbox role cannot read
+ * the auth schema); every other part of the predicate — has_role(), is_staff(),
+ * column comparisons — runs for real against live data.
+ *
+ * `fromClause` supplies a synthetic row when the predicate references columns.
+ */
+export function evalPolicy(expr: string, uid: string, fromClause = ""): boolean {
+  const bound = expr.replace(/auth\.uid\(\)/g, `'${uid}'::uuid`);
+  const rows = sql(`SELECT coalesce((${bound}), false) ${fromClause}`);
+  return rows[0] === "t";
 }
 
 /** First user id holding `role`, or null when no such user exists yet. */
