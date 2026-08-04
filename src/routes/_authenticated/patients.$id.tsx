@@ -553,6 +553,8 @@ function PatientWorkspace() {
                 <TabsTrigger value="icu">ICU</TabsTrigger>
                 <TabsTrigger value="billing">Billing</TabsTrigger>
                 <TabsTrigger value="docs">Documents</TabsTrigger>
+                <TabsTrigger value="consent">Consent Forms</TabsTrigger>
+
               </TabsList>
             </ScrollArea>
 
