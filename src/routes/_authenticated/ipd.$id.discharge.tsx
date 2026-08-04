@@ -242,32 +242,36 @@ function DischargeForm() {
       </Card>
 
 
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Take-home medicines</h2>
           <Button variant="outline" size="sm" onClick={() => setMeds([...meds, { id: crypto.randomUUID(), medicine_name: "", dosage: "", duration: "", instructions: "" }])}><Plus className="size-3.5 mr-1" />Add</Button>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {meds.map((m) => (
-            <div key={m.id} className="grid grid-cols-12 gap-2">
-              <Input className="col-span-4" placeholder="Medicine" value={m.medicine_name} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, medicine_name: e.target.value } : x))} />
-              <Input className="col-span-2" placeholder="Dose" value={m.dosage} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, dosage: e.target.value } : x))} />
-              <Input className="col-span-2" placeholder="Duration" value={m.duration} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, duration: e.target.value } : x))} />
-              <Input className="col-span-3" placeholder="Instructions" value={m.instructions} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, instructions: e.target.value } : x))} />
-              <Button variant="ghost" size="icon" className="col-span-1 text-muted-foreground hover:text-destructive" onClick={() => setMeds(meds.filter((x) => x.id !== m.id))}><Trash2 className="size-4" /></Button>
+            <div key={m.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+              <Input className="sm:col-span-4" placeholder="Medicine" value={m.medicine_name} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, medicine_name: e.target.value } : x))} />
+              <Input className="sm:col-span-2" placeholder="Dose" value={m.dosage} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, dosage: e.target.value } : x))} />
+              <Input className="sm:col-span-2" placeholder="Duration" value={m.duration} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, duration: e.target.value } : x))} />
+              <Input className="sm:col-span-3" placeholder="Instructions" value={m.instructions} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, instructions: e.target.value } : x))} />
+              <Button variant="ghost" size="icon" className="sm:col-span-1 justify-self-end text-muted-foreground hover:text-destructive" onClick={() => setMeds(meds.filter((x) => x.id !== m.id))}><Trash2 className="size-4" /></Button>
             </div>
           ))}
           {meds.length === 0 && <div className="text-sm text-muted-foreground text-center py-4">No take-home medicines added.</div>}
         </div>
       </Card>
 
-      <div className="flex justify-end gap-3 flex-wrap">
+      <div className="flex justify-end gap-2 sm:gap-3 flex-wrap">
         <Button variant="outline" asChild><Link to="/ipd/$id" params={{ id }}>Cancel</Link></Button>
         <Button variant="outline" onClick={shareWhatsApp}><Share2 className="size-4 mr-2" />WhatsApp share</Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending || (!isEdit && (billingSummary?.totals.pending ?? pendingTotal) > 0)}>
-          <Download className="size-4 mr-2" />{save.isPending ? "Saving…" : isEdit ? "Update & print" : "Save & print"}
+        <Button variant="secondary" onClick={() => save.mutate({ draft: true })} disabled={save.isPending}>
+          <Save className="size-4 mr-2" />Save draft
+        </Button>
+        <Button onClick={() => save.mutate({ draft: false })} disabled={save.isPending || (!isFinalised && (billingSummary?.totals.pending ?? pendingTotal) > 0)}>
+          <Download className="size-4 mr-2" />{save.isPending ? "Saving…" : isFinalised ? "Update & print" : "Discharge & print"}
         </Button>
       </div>
+
     </div>
   );
 }
