@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { ConsentForms } from "@/components/consent-forms";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
