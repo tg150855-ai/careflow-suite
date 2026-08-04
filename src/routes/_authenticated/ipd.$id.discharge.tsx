@@ -133,20 +133,55 @@ function DischargeForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adm, existingFetched, existing]);
 
+  // ---- local auto-save (browser crash / accidental close protection) ----
+  const LOCAL_KEY = `sbg.discharge.draft.${id}`;
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current || !existingFetched || existing) return;
+    restoredRef.current = true;
+    try {
+      const raw = localStorage.getItem(LOCAL_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      setFinalDx((v) => v || d.finalDx || "");
+      setProcedures((v) => v || d.procedures || "");
+      setCourse((v) => v || d.course || "");
+      setCondition((v) => (v && v !== "Stable" ? v : d.condition || "Stable"));
+      setAdvice((v) => v || d.advice || "");
+      setFollowUpInstr((v) => v || d.followUpInstr || "");
+      setFollowUpDate((v) => v || d.followUpDate || "");
+      if (Array.isArray(d.meds) && d.meds.length) setMeds((m) => (m.length ? m : d.meds));
+      toast.info("Unsaved draft restored from this browser");
+    } catch { /* ignore */ }
+  }, [existingFetched, existing, LOCAL_KEY]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(LOCAL_KEY, JSON.stringify({ finalDx, procedures, course, condition, advice, followUpInstr, followUpDate, meds }));
+      } catch { /* ignore */ }
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [finalDx, procedures, course, condition, advice, followUpInstr, followUpDate, meds, LOCAL_KEY]);
+
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [finalised, setFinalised] = useState(false);
+
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({ draft }: { draft: boolean }) => {
+      const dsIdExisting = savedId ?? existing?.ds?.id ?? null;
       const payload = {
         admission_id: id,
         final_diagnosis: finalDx || null, procedures_performed: procedures || null,
         hospital_course: course || null, condition_at_discharge: condition || null,
         follow_up_instructions: followUpInstr || null, follow_up_date: followUpDate || null,
-        advice: advice || null, created_by: user?.id ?? null,
-      };
+        advice: advice || null, created_by: user?.id ?? null, is_draft: draft,
+      } as any;
       let dsId: string;
-      if (existing?.ds?.id) {
-        const { error } = await supabase.from("discharge_summaries").update(payload).eq("id", existing.ds.id);
+      if (dsIdExisting) {
+        const { error } = await supabase.from("discharge_summaries").update(payload).eq("id", dsIdExisting);
         if (error) throw error;
-        dsId = existing.ds.id;
+        dsId = dsIdExisting;
         await supabase.from("discharge_medications").delete().eq("discharge_id", dsId);
       } else {
         const { data: ds, error } = await supabase.from("discharge_summaries").insert(payload).select("id").single();
@@ -154,21 +189,53 @@ function DischargeForm() {
         dsId = ds.id;
       }
       if (meds.length > 0) {
-        const { error: e2 } = await supabase.from("discharge_medications").insert(meds.map((m, idx) => ({
+        const { error: e2 } = await supabase.from("discharge_medications").insert(meds.filter((m) => m.medicine_name.trim()).map((m, idx) => ({
           discharge_id: dsId, medicine_name: m.medicine_name, dosage: m.dosage || null,
           duration: m.duration || null, instructions: m.instructions || null, position: idx,
         })));
         if (e2) throw e2;
       }
-      if (!existing?.ds?.id) {
-        await supabase.from("admissions").update({ status: "discharged", discharged_at: new Date().toISOString() }).eq("id", id);
-        if (adm?.bed_id) await supabase.from("beds").update({ status: "cleaning" }).eq("id", adm.bed_id);
+      if (!draft) {
+        if (adm?.status !== "discharged") {
+          await supabase.from("admissions").update({ status: "discharged", discharged_at: new Date().toISOString() }).eq("id", id);
+          if (adm?.bed_id) await supabase.from("beds").update({ status: "cleaning" }).eq("id", adm.bed_id);
+        }
+        // File the summary under the patient's documents so it appears in
+        // Document Management / patient history automatically.
+        try {
+          await archiveDischargeDocument({
+            patientId: adm!.patient_id,
+            admissionNo: adm?.admission_no,
+            patientName: (adm as any)?.patients?.full_name,
+            uhid: (adm as any)?.patients?.uhid,
+            doctorName: (adm as any)?.doctors?.name,
+            dischargeId: dsId,
+            fields: {
+              "Final diagnosis": finalDx, "Procedures performed": procedures, "Hospital course": course,
+              "Condition at discharge": condition, "Follow-up instructions": followUpInstr,
+              "Follow-up date": followUpDate, "Advice on discharge": advice,
+            },
+            meds,
+            uploadedBy: user?.id ?? null,
+            uploadedByName: user?.email ?? null,
+          });
+        } catch (e: any) {
+          toast.warning(`Summary saved, but filing to patient documents failed: ${e.message ?? e}`);
+        }
       }
-      return { id: dsId };
+      return { id: dsId, draft };
     },
-    onSuccess: (ds) => { toast.success(existing?.ds?.id ? "Discharge summary updated" : "Patient discharged"); navigate({ to: "/discharge/$id/print", params: { id: ds.id } }); },
+    onSuccess: ({ id: dsId, draft }) => {
+      setSavedId(dsId);
+      if (draft) { toast.success("Draft saved"); return; }
+      setFinalised(true);
+      try { localStorage.removeItem(LOCAL_KEY); } catch { /* ignore */ }
+      toast.success("Discharge summary generated");
+      navigate({ to: "/discharge/$id/print", params: { id: dsId } });
+    },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   if (!adm) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
 
