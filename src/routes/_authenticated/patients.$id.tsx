@@ -593,7 +593,12 @@ function PatientWorkspace() {
               />
             </TabsContent>
             <TabsContent value="docs" className="mt-4">
+            <TabsContent value="consent" className="mt-4">
+              <ConsentForms patientId={id} patient={patient} />
+            </TabsContent>
+            <TabsContent value="docs" className="mt-4">
               <div className="space-y-6">
+
                 <PatientAttachments patientId={id} patient={patient} defaultDepartment="General" />
                 {(bundle?.docs?.length ?? 0) > 0 && (
                   <div className="space-y-2">
