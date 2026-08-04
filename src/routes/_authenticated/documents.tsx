@@ -13,6 +13,9 @@ import {
 import { Files, Search, Upload, FileText, Building2, Users as UsersIcon, CalendarClock, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConsentForms } from "@/components/consent-forms";
+
 
 export const Route = createFileRoute("/_authenticated/documents")({ component: DocumentsPage });
 
