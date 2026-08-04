@@ -592,8 +592,8 @@ function PatientWorkspace() {
                 claims={bundle?.claims ?? []}
               />
             </TabsContent>
-            <TabsContent value="docs" className="mt-4">
             <TabsContent value="consent" className="mt-4">
+
               <ConsentForms patientId={id} patient={patient} />
             </TabsContent>
             <TabsContent value="docs" className="mt-4">
