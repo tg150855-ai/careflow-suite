@@ -254,6 +254,8 @@ function DischargeForm() {
   };
 
   const isEdit = !!existing?.ds?.id;
+  const isFinalised = finalised || (!!existing?.ds?.id && !(existing?.ds as any)?.is_draft);
+
 
   return (
     <div className="space-y-6 max-w-5xl">
