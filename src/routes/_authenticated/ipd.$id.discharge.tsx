@@ -82,11 +82,14 @@ function DischargeForm() {
   const autofill = useMutation({
     mutationFn: async () => {
       if (!adm) throw new Error("Loading…");
-      const [rounds, surgeries, labs, prescriptions] = await Promise.all([
+      const [rounds, surgeries, labs, prescriptions, radiology, nursing, vitals] = await Promise.all([
         supabase.from("doctor_rounds").select("progress_notes, updated_diagnosis, follow_up_orders, clinical_findings, rounded_at").eq("admission_id", id).order("rounded_at"),
         supabase.from("surgeries").select("procedure_name, performed_at, notes").eq("patient_id", adm.patient_id).order("performed_at"),
         supabase.from("lab_orders").select("order_no, lab_results(test_name, result_value, unit, flag)").or(`admission_id.eq.${id},patient_id.eq.${adm.patient_id}`),
         supabase.from("prescriptions").select("id, created_at, opd_visit_id, prescription_items(medicine_name, dosage, timing, food_instruction, duration_days)").eq("opd_visit_id", "00000000-0000-0000-0000-000000000000"),
+        (supabase as any).from("radiology_orders").select("test_name, created_at, radiology_reports(impression)").eq("patient_id", adm.patient_id).order("created_at"),
+        (supabase as any).from("nursing_notes").select("note, created_at").eq("admission_id", id).order("created_at"),
+        (supabase as any).from("vitals").select("*").eq("admission_id", id).order("recorded_at", { ascending: false }).limit(1),
       ]);
 
       const dxFromRounds = (rounds.data ?? []).map((r: any) => r.updated_diagnosis).filter(Boolean).join("\n");
@@ -97,8 +100,27 @@ function DischargeForm() {
 
       const courseText = (rounds.data ?? []).map((r: any) => `${new Date(r.rounded_at).toLocaleDateString()}: ${r.progress_notes ?? r.clinical_findings ?? ""}`).filter((x: string) => x.trim().length > 12).join("\n");
       const abnormal = (labs.data ?? []).flatMap((o: any) => (o.lab_results ?? []).filter((r: any) => r.flag).map((r: any) => `${r.test_name}: ${r.result_value} ${r.unit ?? ""} [${r.flag}]`)).slice(0, 8).join("\n");
-      const merged = [courseText, abnormal && `\nNotable labs:\n${abnormal}`].filter(Boolean).join("");
+      const imaging = ((radiology.data ?? []) as any[])
+        .map((o: any) => {
+          const imp = (o.radiology_reports ?? []).map((r: any) => r.impression).filter(Boolean).join("; ");
+          return imp ? `${o.test_name}: ${imp}` : "";
+        })
+        .filter(Boolean).slice(0, 6).join("\n");
+      const nursingText = ((nursing.data ?? []) as any[]).map((n: any) => n.note).filter(Boolean).slice(-5).join("\n");
+      const v = ((vitals.data ?? []) as any[])[0];
+      const vitalsLine = v
+        ? ["BP " + [v.bp_systolic, v.bp_diastolic].filter(Boolean).join("/"), v.pulse && `Pulse ${v.pulse}`, v.temperature && `Temp ${v.temperature}`, v.spo2 && `SpO2 ${v.spo2}%`]
+            .filter((x: any) => x && String(x).trim() && x !== "BP ").join(" · ")
+        : "";
+      const merged = [
+        courseText,
+        vitalsLine && `\nLatest vitals: ${vitalsLine}`,
+        abnormal && `\nNotable labs:\n${abnormal}`,
+        imaging && `\nImaging:\n${imaging}`,
+        nursingText && `\nNursing notes:\n${nursingText}`,
+      ].filter(Boolean).join("");
       if (merged && !course) setCourse(merged);
+
 
       const followUp = (rounds.data ?? []).map((r: any) => r.follow_up_orders).filter(Boolean).join("\n");
       if (followUp && !followUpInstr) setFollowUpInstr(followUp);
