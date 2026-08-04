@@ -186,7 +186,10 @@ function DocumentsPage() {
             </div>
           )}
         </Card>
+        </TabsContent>
+        </Tabs>
       )}
+
     </div>
   );
 }
