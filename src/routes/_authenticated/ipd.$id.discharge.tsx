@@ -5,16 +5,18 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Sparkles, Share2, Download, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Sparkles, Share2, Download, AlertTriangle, Save } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { getPatientBillingSummary } from "@/lib/billing-aggregator";
+import { DictateTextarea, MicButton } from "@/components/dictate-textarea";
+import { archiveDischargeDocument } from "@/lib/discharge-doc";
 
 export const Route = createFileRoute("/_authenticated/ipd/$id/discharge")({ component: DischargeForm });
 
 type Med = { id: string; medicine_name: string; dosage: string; duration: string; instructions: string };
+
 
 function DischargeForm() {
   const { id } = Route.useParams();
