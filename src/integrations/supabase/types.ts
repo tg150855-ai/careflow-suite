@@ -1473,45 +1473,92 @@ export type Database = {
       }
       consent_forms: {
         Row: {
+          admission_id: string | null
           content: string | null
           created_at: string
+          created_by: string | null
+          department: string | null
+          diagnosis: string | null
+          doctor_id: string | null
+          doctor_signature: string | null
           form_type: string
           id: string
           patient_id: string
+          patient_signature: string | null
           procedure: string | null
           signature_data: string | null
           signed: boolean | null
           signed_at: string | null
+          status: string
+          storage_path: string | null
           updated_at: string
           witness_name: string | null
+          witness_relation: string | null
+          witness_signature: string | null
         }
         Insert: {
+          admission_id?: string | null
           content?: string | null
           created_at?: string
+          created_by?: string | null
+          department?: string | null
+          diagnosis?: string | null
+          doctor_id?: string | null
+          doctor_signature?: string | null
           form_type: string
           id?: string
           patient_id: string
+          patient_signature?: string | null
           procedure?: string | null
           signature_data?: string | null
           signed?: boolean | null
           signed_at?: string | null
+          status?: string
+          storage_path?: string | null
           updated_at?: string
           witness_name?: string | null
+          witness_relation?: string | null
+          witness_signature?: string | null
         }
         Update: {
+          admission_id?: string | null
           content?: string | null
           created_at?: string
+          created_by?: string | null
+          department?: string | null
+          diagnosis?: string | null
+          doctor_id?: string | null
+          doctor_signature?: string | null
           form_type?: string
           id?: string
           patient_id?: string
+          patient_signature?: string | null
           procedure?: string | null
           signature_data?: string | null
           signed?: boolean | null
           signed_at?: string | null
+          status?: string
+          storage_path?: string | null
           updated_at?: string
           witness_name?: string | null
+          witness_relation?: string | null
+          witness_signature?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "consent_forms_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consent_forms_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "consent_forms_patient_id_fkey"
             columns: ["patient_id"]
@@ -1922,6 +1969,7 @@ export type Database = {
           follow_up_instructions: string | null
           hospital_course: string | null
           id: string
+          is_draft: boolean
           procedures_performed: string | null
           updated_at: string
         }
@@ -1937,6 +1985,7 @@ export type Database = {
           follow_up_instructions?: string | null
           hospital_course?: string | null
           id?: string
+          is_draft?: boolean
           procedures_performed?: string | null
           updated_at?: string
         }
@@ -1952,6 +2001,7 @@ export type Database = {
           follow_up_instructions?: string | null
           hospital_course?: string | null
           id?: string
+          is_draft?: boolean
           procedures_performed?: string | null
           updated_at?: string
         }

@@ -5,16 +5,18 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Sparkles, Share2, Download, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Sparkles, Share2, Download, AlertTriangle, Save } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { getPatientBillingSummary } from "@/lib/billing-aggregator";
+import { DictateTextarea, MicButton } from "@/components/dictate-textarea";
+import { archiveDischargeDocument } from "@/lib/discharge-doc";
 
 export const Route = createFileRoute("/_authenticated/ipd/$id/discharge")({ component: DischargeForm });
 
 type Med = { id: string; medicine_name: string; dosage: string; duration: string; instructions: string };
+
 
 function DischargeForm() {
   const { id } = Route.useParams();
@@ -80,11 +82,14 @@ function DischargeForm() {
   const autofill = useMutation({
     mutationFn: async () => {
       if (!adm) throw new Error("Loading…");
-      const [rounds, surgeries, labs, prescriptions] = await Promise.all([
+      const [rounds, surgeries, labs, prescriptions, radiology, nursing, vitals] = await Promise.all([
         supabase.from("doctor_rounds").select("progress_notes, updated_diagnosis, follow_up_orders, clinical_findings, rounded_at").eq("admission_id", id).order("rounded_at"),
         supabase.from("surgeries").select("procedure_name, performed_at, notes").eq("patient_id", adm.patient_id).order("performed_at"),
         supabase.from("lab_orders").select("order_no, lab_results(test_name, result_value, unit, flag)").or(`admission_id.eq.${id},patient_id.eq.${adm.patient_id}`),
         supabase.from("prescriptions").select("id, created_at, opd_visit_id, prescription_items(medicine_name, dosage, timing, food_instruction, duration_days)").eq("opd_visit_id", "00000000-0000-0000-0000-000000000000"),
+        (supabase as any).from("radiology_orders").select("test_name, created_at, radiology_reports(impression)").eq("patient_id", adm.patient_id).order("created_at"),
+        (supabase as any).from("nursing_notes").select("note, created_at").eq("admission_id", id).order("created_at"),
+        (supabase as any).from("vitals").select("*").eq("admission_id", id).order("recorded_at", { ascending: false }).limit(1),
       ]);
 
       const dxFromRounds = (rounds.data ?? []).map((r: any) => r.updated_diagnosis).filter(Boolean).join("\n");
@@ -95,8 +100,27 @@ function DischargeForm() {
 
       const courseText = (rounds.data ?? []).map((r: any) => `${new Date(r.rounded_at).toLocaleDateString()}: ${r.progress_notes ?? r.clinical_findings ?? ""}`).filter((x: string) => x.trim().length > 12).join("\n");
       const abnormal = (labs.data ?? []).flatMap((o: any) => (o.lab_results ?? []).filter((r: any) => r.flag).map((r: any) => `${r.test_name}: ${r.result_value} ${r.unit ?? ""} [${r.flag}]`)).slice(0, 8).join("\n");
-      const merged = [courseText, abnormal && `\nNotable labs:\n${abnormal}`].filter(Boolean).join("");
+      const imaging = ((radiology.data ?? []) as any[])
+        .map((o: any) => {
+          const imp = (o.radiology_reports ?? []).map((r: any) => r.impression).filter(Boolean).join("; ");
+          return imp ? `${o.test_name}: ${imp}` : "";
+        })
+        .filter(Boolean).slice(0, 6).join("\n");
+      const nursingText = ((nursing.data ?? []) as any[]).map((n: any) => n.note).filter(Boolean).slice(-5).join("\n");
+      const v = ((vitals.data ?? []) as any[])[0];
+      const vitalsLine = v
+        ? ["BP " + [v.bp_systolic, v.bp_diastolic].filter(Boolean).join("/"), v.pulse && `Pulse ${v.pulse}`, v.temperature && `Temp ${v.temperature}`, v.spo2 && `SpO2 ${v.spo2}%`]
+            .filter((x: any) => x && String(x).trim() && x !== "BP ").join(" · ")
+        : "";
+      const merged = [
+        courseText,
+        vitalsLine && `\nLatest vitals: ${vitalsLine}`,
+        abnormal && `\nNotable labs:\n${abnormal}`,
+        imaging && `\nImaging:\n${imaging}`,
+        nursingText && `\nNursing notes:\n${nursingText}`,
+      ].filter(Boolean).join("");
       if (merged && !course) setCourse(merged);
+
 
       const followUp = (rounds.data ?? []).map((r: any) => r.follow_up_orders).filter(Boolean).join("\n");
       if (followUp && !followUpInstr) setFollowUpInstr(followUp);
@@ -131,20 +155,55 @@ function DischargeForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adm, existingFetched, existing]);
 
+  // ---- local auto-save (browser crash / accidental close protection) ----
+  const LOCAL_KEY = `sbg.discharge.draft.${id}`;
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current || !existingFetched || existing) return;
+    restoredRef.current = true;
+    try {
+      const raw = localStorage.getItem(LOCAL_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      setFinalDx((v) => v || d.finalDx || "");
+      setProcedures((v) => v || d.procedures || "");
+      setCourse((v) => v || d.course || "");
+      setCondition((v) => (v && v !== "Stable" ? v : d.condition || "Stable"));
+      setAdvice((v) => v || d.advice || "");
+      setFollowUpInstr((v) => v || d.followUpInstr || "");
+      setFollowUpDate((v) => v || d.followUpDate || "");
+      if (Array.isArray(d.meds) && d.meds.length) setMeds((m) => (m.length ? m : d.meds));
+      toast.info("Unsaved draft restored from this browser");
+    } catch { /* ignore */ }
+  }, [existingFetched, existing, LOCAL_KEY]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(LOCAL_KEY, JSON.stringify({ finalDx, procedures, course, condition, advice, followUpInstr, followUpDate, meds }));
+      } catch { /* ignore */ }
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [finalDx, procedures, course, condition, advice, followUpInstr, followUpDate, meds, LOCAL_KEY]);
+
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [finalised, setFinalised] = useState(false);
+
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({ draft }: { draft: boolean }) => {
+      const dsIdExisting = savedId ?? existing?.ds?.id ?? null;
       const payload = {
         admission_id: id,
         final_diagnosis: finalDx || null, procedures_performed: procedures || null,
         hospital_course: course || null, condition_at_discharge: condition || null,
         follow_up_instructions: followUpInstr || null, follow_up_date: followUpDate || null,
-        advice: advice || null, created_by: user?.id ?? null,
-      };
+        advice: advice || null, created_by: user?.id ?? null, is_draft: draft,
+      } as any;
       let dsId: string;
-      if (existing?.ds?.id) {
-        const { error } = await supabase.from("discharge_summaries").update(payload).eq("id", existing.ds.id);
+      if (dsIdExisting) {
+        const { error } = await supabase.from("discharge_summaries").update(payload).eq("id", dsIdExisting);
         if (error) throw error;
-        dsId = existing.ds.id;
+        dsId = dsIdExisting;
         await supabase.from("discharge_medications").delete().eq("discharge_id", dsId);
       } else {
         const { data: ds, error } = await supabase.from("discharge_summaries").insert(payload).select("id").single();
@@ -152,21 +211,53 @@ function DischargeForm() {
         dsId = ds.id;
       }
       if (meds.length > 0) {
-        const { error: e2 } = await supabase.from("discharge_medications").insert(meds.map((m, idx) => ({
+        const { error: e2 } = await supabase.from("discharge_medications").insert(meds.filter((m) => m.medicine_name.trim()).map((m, idx) => ({
           discharge_id: dsId, medicine_name: m.medicine_name, dosage: m.dosage || null,
           duration: m.duration || null, instructions: m.instructions || null, position: idx,
         })));
         if (e2) throw e2;
       }
-      if (!existing?.ds?.id) {
-        await supabase.from("admissions").update({ status: "discharged", discharged_at: new Date().toISOString() }).eq("id", id);
-        if (adm?.bed_id) await supabase.from("beds").update({ status: "cleaning" }).eq("id", adm.bed_id);
+      if (!draft) {
+        if (adm?.status !== "discharged") {
+          await supabase.from("admissions").update({ status: "discharged", discharged_at: new Date().toISOString() }).eq("id", id);
+          if (adm?.bed_id) await supabase.from("beds").update({ status: "cleaning" }).eq("id", adm.bed_id);
+        }
+        // File the summary under the patient's documents so it appears in
+        // Document Management / patient history automatically.
+        try {
+          await archiveDischargeDocument({
+            patientId: adm!.patient_id,
+            admissionNo: adm?.admission_no,
+            patientName: (adm as any)?.patients?.full_name,
+            uhid: (adm as any)?.patients?.uhid,
+            doctorName: (adm as any)?.doctors?.name,
+            dischargeId: dsId,
+            fields: {
+              "Final diagnosis": finalDx, "Procedures performed": procedures, "Hospital course": course,
+              "Condition at discharge": condition, "Follow-up instructions": followUpInstr,
+              "Follow-up date": followUpDate, "Advice on discharge": advice,
+            },
+            meds,
+            uploadedBy: user?.id ?? null,
+            uploadedByName: user?.email ?? null,
+          });
+        } catch (e: any) {
+          toast.warning(`Summary saved, but filing to patient documents failed: ${e.message ?? e}`);
+        }
       }
-      return { id: dsId };
+      return { id: dsId, draft };
     },
-    onSuccess: (ds) => { toast.success(existing?.ds?.id ? "Discharge summary updated" : "Patient discharged"); navigate({ to: "/discharge/$id/print", params: { id: ds.id } }); },
+    onSuccess: ({ id: dsId, draft }) => {
+      setSavedId(dsId);
+      if (draft) { toast.success("Draft saved"); return; }
+      setFinalised(true);
+      try { localStorage.removeItem(LOCAL_KEY); } catch { /* ignore */ }
+      toast.success("Discharge summary generated");
+      navigate({ to: "/discharge/$id/print", params: { id: dsId } });
+    },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   if (!adm) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
 
@@ -185,6 +276,8 @@ function DischargeForm() {
   };
 
   const isEdit = !!existing?.ds?.id;
+  const isFinalised = finalised || (!!existing?.ds?.id && !(existing?.ds as any)?.is_draft);
+
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -218,45 +311,58 @@ function DischargeForm() {
         </Card>
       )}
 
-      <Card className="p-6 space-y-4">
-        <h2 className="font-semibold">Clinical summary</h2>
-        <div className="space-y-1"><Label>Final diagnosis</Label><Textarea rows={2} value={finalDx} onChange={(e) => setFinalDx(e.target.value)} /></div>
-        <div className="space-y-1"><Label>Procedures performed</Label><Textarea rows={2} value={procedures} onChange={(e) => setProcedures(e.target.value)} /></div>
-        <div className="space-y-1"><Label>Hospital course</Label><Textarea rows={3} value={course} onChange={(e) => setCourse(e.target.value)} placeholder="Summary of stay, treatment given, response…" /></div>
+      <Card className="p-4 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h2 className="font-semibold">Clinical summary</h2>
+          <span className="text-[11px] text-muted-foreground">
+            Say “new line”, “comma”, “full stop”, “bullet” while dictating
+          </span>
+        </div>
+        <DictateTextarea label="Final diagnosis" rows={2} value={finalDx} onChange={setFinalDx} />
+        <DictateTextarea label="Procedures performed" rows={2} value={procedures} onChange={setProcedures} />
+        <DictateTextarea label="Hospital course" rows={3} value={course} onChange={setCourse} placeholder="Summary of stay, treatment given, response…" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1"><Label>Condition at discharge</Label><Input value={condition} onChange={(e) => setCondition(e.target.value)} /></div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-2"><Label>Condition at discharge</Label><MicButton size="icon" onAppend={(c) => setCondition((v) => (v ? v + " " + c : c))} /></div>
+            <Input value={condition} onChange={(e) => setCondition(e.target.value)} />
+          </div>
           <div className="space-y-1"><Label>Follow-up date</Label><Input type="date" value={followUpDate} onChange={(e) => setFollowUpDate(e.target.value)} /></div>
         </div>
-        <div className="space-y-1"><Label>Follow-up instructions</Label><Textarea rows={2} value={followUpInstr} onChange={(e) => setFollowUpInstr(e.target.value)} /></div>
-        <div className="space-y-1"><Label>Advice on discharge</Label><Textarea rows={2} value={advice} onChange={(e) => setAdvice(e.target.value)} /></div>
+        <DictateTextarea label="Follow-up instructions" rows={2} value={followUpInstr} onChange={setFollowUpInstr} />
+        <DictateTextarea label="Advice on discharge" rows={2} value={advice} onChange={setAdvice} />
       </Card>
 
-      <Card className="p-6">
+
+      <Card className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">Take-home medicines</h2>
           <Button variant="outline" size="sm" onClick={() => setMeds([...meds, { id: crypto.randomUUID(), medicine_name: "", dosage: "", duration: "", instructions: "" }])}><Plus className="size-3.5 mr-1" />Add</Button>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {meds.map((m) => (
-            <div key={m.id} className="grid grid-cols-12 gap-2">
-              <Input className="col-span-4" placeholder="Medicine" value={m.medicine_name} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, medicine_name: e.target.value } : x))} />
-              <Input className="col-span-2" placeholder="Dose" value={m.dosage} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, dosage: e.target.value } : x))} />
-              <Input className="col-span-2" placeholder="Duration" value={m.duration} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, duration: e.target.value } : x))} />
-              <Input className="col-span-3" placeholder="Instructions" value={m.instructions} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, instructions: e.target.value } : x))} />
-              <Button variant="ghost" size="icon" className="col-span-1 text-muted-foreground hover:text-destructive" onClick={() => setMeds(meds.filter((x) => x.id !== m.id))}><Trash2 className="size-4" /></Button>
+            <div key={m.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+              <Input className="sm:col-span-4" placeholder="Medicine" value={m.medicine_name} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, medicine_name: e.target.value } : x))} />
+              <Input className="sm:col-span-2" placeholder="Dose" value={m.dosage} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, dosage: e.target.value } : x))} />
+              <Input className="sm:col-span-2" placeholder="Duration" value={m.duration} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, duration: e.target.value } : x))} />
+              <Input className="sm:col-span-3" placeholder="Instructions" value={m.instructions} onChange={(e) => setMeds(meds.map((x) => x.id === m.id ? { ...x, instructions: e.target.value } : x))} />
+              <Button variant="ghost" size="icon" className="sm:col-span-1 justify-self-end text-muted-foreground hover:text-destructive" onClick={() => setMeds(meds.filter((x) => x.id !== m.id))}><Trash2 className="size-4" /></Button>
             </div>
           ))}
           {meds.length === 0 && <div className="text-sm text-muted-foreground text-center py-4">No take-home medicines added.</div>}
         </div>
       </Card>
 
-      <div className="flex justify-end gap-3 flex-wrap">
+      <div className="flex justify-end gap-2 sm:gap-3 flex-wrap">
         <Button variant="outline" asChild><Link to="/ipd/$id" params={{ id }}>Cancel</Link></Button>
         <Button variant="outline" onClick={shareWhatsApp}><Share2 className="size-4 mr-2" />WhatsApp share</Button>
-        <Button onClick={() => save.mutate()} disabled={save.isPending || (!isEdit && (billingSummary?.totals.pending ?? pendingTotal) > 0)}>
-          <Download className="size-4 mr-2" />{save.isPending ? "Saving…" : isEdit ? "Update & print" : "Save & print"}
+        <Button variant="secondary" onClick={() => save.mutate({ draft: true })} disabled={save.isPending}>
+          <Save className="size-4 mr-2" />Save draft
+        </Button>
+        <Button onClick={() => save.mutate({ draft: false })} disabled={save.isPending || (!isFinalised && (billingSummary?.totals.pending ?? pendingTotal) > 0)}>
+          <Download className="size-4 mr-2" />{save.isPending ? "Saving…" : isFinalised ? "Update & print" : "Discharge & print"}
         </Button>
       </div>
+
     </div>
   );
 }

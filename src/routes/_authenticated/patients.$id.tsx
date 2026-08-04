@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { ConsentForms } from "@/components/consent-forms";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
@@ -553,6 +555,8 @@ function PatientWorkspace() {
                 <TabsTrigger value="icu">ICU</TabsTrigger>
                 <TabsTrigger value="billing">Billing</TabsTrigger>
                 <TabsTrigger value="docs">Documents</TabsTrigger>
+                <TabsTrigger value="consent">Consent Forms</TabsTrigger>
+
               </TabsList>
             </ScrollArea>
 
@@ -590,8 +594,13 @@ function PatientWorkspace() {
                 claims={bundle?.claims ?? []}
               />
             </TabsContent>
+            <TabsContent value="consent" className="mt-4">
+
+              <ConsentForms patientId={id} patient={patient} />
+            </TabsContent>
             <TabsContent value="docs" className="mt-4">
               <div className="space-y-6">
+
                 <PatientAttachments patientId={id} patient={patient} defaultDepartment="General" />
                 {(bundle?.docs?.length ?? 0) > 0 && (
                   <div className="space-y-2">

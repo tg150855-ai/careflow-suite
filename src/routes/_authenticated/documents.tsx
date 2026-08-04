@@ -13,6 +13,9 @@ import {
 import { Files, Search, Upload, FileText, Building2, Users as UsersIcon, CalendarClock, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConsentForms } from "@/components/consent-forms";
+
 
 export const Route = createFileRoute("/_authenticated/documents")({ component: DocumentsPage });
 
@@ -130,9 +133,28 @@ function DocumentsPage() {
               <div className="text-xs text-muted-foreground">{openPatient.uhid ?? "—"} · {openPatient.mobile ?? "—"}</div>
             </div>
           </div>
-          <PatientAttachments patientId={openPatient.id} patient={openPatient} />
+          <Tabs defaultValue="files">
+            <TabsList>
+              <TabsTrigger value="files">Documents</TabsTrigger>
+              <TabsTrigger value="consent">Consent forms</TabsTrigger>
+            </TabsList>
+            <TabsContent value="files" className="mt-4">
+              <PatientAttachments patientId={openPatient.id} patient={openPatient} />
+            </TabsContent>
+            <TabsContent value="consent" className="mt-4">
+              <ConsentForms patientId={openPatient.id} patient={openPatient} />
+            </TabsContent>
+          </Tabs>
         </Card>
       ) : (
+        <Tabs defaultValue="patients">
+        <TabsList className="mb-4">
+          <TabsTrigger value="patients">Patient documents</TabsTrigger>
+          <TabsTrigger value="consent">Consent forms</TabsTrigger>
+        </TabsList>
+        <TabsContent value="consent"><ConsentForms /></TabsContent>
+        <TabsContent value="patients">
+
         <Card className="p-0 overflow-hidden">
           <div className="p-4 border-b flex items-center gap-2">
             <div className="relative flex-1 max-w-md">
@@ -167,7 +189,10 @@ function DocumentsPage() {
             </div>
           )}
         </Card>
+        </TabsContent>
+        </Tabs>
       )}
+
     </div>
   );
 }
