@@ -220,18 +220,27 @@ function DischargeForm() {
         </Card>
       )}
 
-      <Card className="p-6 space-y-4">
-        <h2 className="font-semibold">Clinical summary</h2>
-        <div className="space-y-1"><Label>Final diagnosis</Label><Textarea rows={2} value={finalDx} onChange={(e) => setFinalDx(e.target.value)} /></div>
-        <div className="space-y-1"><Label>Procedures performed</Label><Textarea rows={2} value={procedures} onChange={(e) => setProcedures(e.target.value)} /></div>
-        <div className="space-y-1"><Label>Hospital course</Label><Textarea rows={3} value={course} onChange={(e) => setCourse(e.target.value)} placeholder="Summary of stay, treatment given, response…" /></div>
+      <Card className="p-4 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h2 className="font-semibold">Clinical summary</h2>
+          <span className="text-[11px] text-muted-foreground">
+            Say “new line”, “comma”, “full stop”, “bullet” while dictating
+          </span>
+        </div>
+        <DictateTextarea label="Final diagnosis" rows={2} value={finalDx} onChange={setFinalDx} />
+        <DictateTextarea label="Procedures performed" rows={2} value={procedures} onChange={setProcedures} />
+        <DictateTextarea label="Hospital course" rows={3} value={course} onChange={setCourse} placeholder="Summary of stay, treatment given, response…" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1"><Label>Condition at discharge</Label><Input value={condition} onChange={(e) => setCondition(e.target.value)} /></div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-2"><Label>Condition at discharge</Label><MicButton size="icon" onAppend={(c) => setCondition((v) => (v ? v + " " + c : c))} /></div>
+            <Input value={condition} onChange={(e) => setCondition(e.target.value)} />
+          </div>
           <div className="space-y-1"><Label>Follow-up date</Label><Input type="date" value={followUpDate} onChange={(e) => setFollowUpDate(e.target.value)} /></div>
         </div>
-        <div className="space-y-1"><Label>Follow-up instructions</Label><Textarea rows={2} value={followUpInstr} onChange={(e) => setFollowUpInstr(e.target.value)} /></div>
-        <div className="space-y-1"><Label>Advice on discharge</Label><Textarea rows={2} value={advice} onChange={(e) => setAdvice(e.target.value)} /></div>
+        <DictateTextarea label="Follow-up instructions" rows={2} value={followUpInstr} onChange={setFollowUpInstr} />
+        <DictateTextarea label="Advice on discharge" rows={2} value={advice} onChange={setAdvice} />
       </Card>
+
 
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
