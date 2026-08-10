@@ -489,6 +489,36 @@ export type Database = {
           },
         ]
       }
+      approval_history: {
+        Row: {
+          action: string
+          created_at: string | null
+          email: string
+          hospital_name: string
+          id: string
+          notes: string | null
+          performed_by: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          email: string
+          hospital_name: string
+          id?: string
+          notes?: string | null
+          performed_by?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          email?: string
+          hospital_name?: string
+          id?: string
+          notes?: string | null
+          performed_by?: string | null
+        }
+        Relationships: []
+      }
       asset_assignments: {
         Row: {
           asset_id: string
@@ -2991,6 +3021,75 @@ export type Database = {
         }
         Relationships: []
       }
+      hospital_registrations: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          email: string
+          enabled_modules: Json | null
+          expiry_date: string | null
+          hospital_name: string
+          hospital_type: string | null
+          id: string
+          max_devices: number | null
+          max_users: number | null
+          mobile_number: string
+          operating_mode: string | null
+          owner_name: string
+          state: string | null
+          status: string
+          subscription_plan: string | null
+          subscription_years: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email: string
+          enabled_modules?: Json | null
+          expiry_date?: string | null
+          hospital_name: string
+          hospital_type?: string | null
+          id?: string
+          max_devices?: number | null
+          max_users?: number | null
+          mobile_number: string
+          operating_mode?: string | null
+          owner_name: string
+          state?: string | null
+          status?: string
+          subscription_plan?: string | null
+          subscription_years?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string
+          enabled_modules?: Json | null
+          expiry_date?: string | null
+          hospital_name?: string
+          hospital_type?: string | null
+          id?: string
+          max_devices?: number | null
+          max_users?: number | null
+          mobile_number?: string
+          operating_mode?: string | null
+          owner_name?: string
+          state?: string | null
+          status?: string
+          subscription_plan?: string | null
+          subscription_years?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       hospital_settings: {
         Row: {
           accent_color: string | null
@@ -3068,6 +3167,119 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      hospital_subscriptions: {
+        Row: {
+          created_at: string | null
+          duration_years: number
+          email: string
+          expiry_date: string
+          hospital_name: string
+          id: string
+          plan_name: string
+          start_date: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration_years?: number
+          email: string
+          expiry_date: string
+          hospital_name: string
+          id?: string
+          plan_name?: string
+          start_date?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          duration_years?: number
+          email?: string
+          expiry_date?: string
+          hospital_name?: string
+          id?: string
+          plan_name?: string
+          start_date?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      hospitals: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          email: string
+          enabled_modules: Json | null
+          expiry_date: string | null
+          hospital_name: string
+          id: string
+          max_devices: number | null
+          max_users: number | null
+          notes: string | null
+          operating_mode: string | null
+          owner_name: string
+          phone: string | null
+          registration_id: string | null
+          state: string | null
+          status: string | null
+          subscription_plan: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email: string
+          enabled_modules?: Json | null
+          expiry_date?: string | null
+          hospital_name: string
+          id?: string
+          max_devices?: number | null
+          max_users?: number | null
+          notes?: string | null
+          operating_mode?: string | null
+          owner_name: string
+          phone?: string | null
+          registration_id?: string | null
+          state?: string | null
+          status?: string | null
+          subscription_plan?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string
+          enabled_modules?: Json | null
+          expiry_date?: string | null
+          hospital_name?: string
+          id?: string
+          max_devices?: number | null
+          max_users?: number | null
+          notes?: string | null
+          operating_mode?: string | null
+          owner_name?: string
+          phone?: string | null
+          registration_id?: string | null
+          state?: string | null
+          status?: string | null
+          subscription_plan?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospitals_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       icu_alerts: {
         Row: {
@@ -5175,6 +5387,7 @@ export type Database = {
           emergency_contact_name: string | null
           full_name: string
           gender: Database["public"]["Enums"]["gender_type"]
+          hospital_id: string | null
           id: string
           mobile: string
           photo_url: string | null
@@ -5198,6 +5411,7 @@ export type Database = {
           emergency_contact_name?: string | null
           full_name: string
           gender: Database["public"]["Enums"]["gender_type"]
+          hospital_id?: string | null
           id?: string
           mobile: string
           photo_url?: string | null
@@ -5221,6 +5435,7 @@ export type Database = {
           emergency_contact_name?: string | null
           full_name?: string
           gender?: Database["public"]["Enums"]["gender_type"]
+          hospital_id?: string | null
           id?: string
           mobile?: string
           photo_url?: string | null
@@ -5229,7 +5444,15 @@ export type Database = {
           uhid?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "patients_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -5639,6 +5862,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approval_status: string | null
           avatar_url: string | null
           created_at: string
           email: string | null
@@ -5647,9 +5871,11 @@ export type Database = {
           login_disabled: boolean
           password_changed: boolean
           phone: string | null
+          subscription_expires_at: string | null
           updated_at: string
         }
         Insert: {
+          approval_status?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -5658,9 +5884,11 @@ export type Database = {
           login_disabled?: boolean
           password_changed?: boolean
           phone?: string | null
+          subscription_expires_at?: string | null
           updated_at?: string
         }
         Update: {
+          approval_status?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -5669,6 +5897,7 @@ export type Database = {
           login_disabled?: boolean
           password_changed?: boolean
           phone?: string | null
+          subscription_expires_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -6880,6 +7109,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      super_admin_audit_logs: {
+        Row: {
+          action: string
+          admin_email: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: string | null
+        }
+        Insert: {
+          action: string
+          admin_email: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+        }
+        Update: {
+          action?: string
+          admin_email?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+        }
+        Relationships: []
+      }
+      super_admins: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean | null
+          role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          is_active?: boolean | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       surgeries: {
         Row: {
