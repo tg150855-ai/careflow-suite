@@ -39,8 +39,11 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/dashboard" });
-  }, [loading, session, navigate]);
+    if (!loading && session) {
+      navigate({ to: roles.includes("super_admin") ? "/super-admin" : "/dashboard" });
+    }
+  }, [loading, session, roles, navigate]);
+
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
