@@ -3210,6 +3210,7 @@ export type Database = {
           city: string | null
           country: string | null
           created_at: string | null
+          created_by: string | null
           email: string
           enabled_modules: Json | null
           expiry_date: string | null
@@ -3219,11 +3220,12 @@ export type Database = {
           max_users: number | null
           notes: string | null
           operating_mode: string | null
-          owner_name: string
+          owner_name: string | null
           phone: string | null
           registration_id: string | null
           state: string | null
           status: string | null
+          status_reason: string | null
           subscription_plan: string | null
           updated_at: string | null
         }
@@ -3232,6 +3234,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string | null
+          created_by?: string | null
           email: string
           enabled_modules?: Json | null
           expiry_date?: string | null
@@ -3241,11 +3244,12 @@ export type Database = {
           max_users?: number | null
           notes?: string | null
           operating_mode?: string | null
-          owner_name: string
+          owner_name?: string | null
           phone?: string | null
           registration_id?: string | null
           state?: string | null
           status?: string | null
+          status_reason?: string | null
           subscription_plan?: string | null
           updated_at?: string | null
         }
@@ -3254,6 +3258,7 @@ export type Database = {
           city?: string | null
           country?: string | null
           created_at?: string | null
+          created_by?: string | null
           email?: string
           enabled_modules?: Json | null
           expiry_date?: string | null
@@ -3263,11 +3268,12 @@ export type Database = {
           max_users?: number | null
           notes?: string | null
           operating_mode?: string | null
-          owner_name?: string
+          owner_name?: string | null
           phone?: string | null
           registration_id?: string | null
           state?: string | null
           status?: string | null
+          status_reason?: string | null
           subscription_plan?: string | null
           updated_at?: string | null
         }
@@ -5867,6 +5873,7 @@ export type Database = {
           created_at: string
           email: string | null
           full_name: string | null
+          hospital_id: string | null
           id: string
           login_disabled: boolean
           password_changed: boolean
@@ -5880,6 +5887,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string | null
+          hospital_id?: string | null
           id: string
           login_disabled?: boolean
           password_changed?: boolean
@@ -5893,6 +5901,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string | null
+          hospital_id?: string | null
           id?: string
           login_disabled?: boolean
           password_changed?: boolean
@@ -5900,7 +5909,15 @@ export type Database = {
           subscription_expires_at?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchase_order_items: {
         Row: {
@@ -7921,6 +7938,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_hospital_id: { Args: never; Returns: string }
       gen_admission_no: { Args: never; Returns: string }
       gen_asset_no: { Args: never; Returns: string }
       gen_bill_no: { Args: never; Returns: string }
@@ -7948,6 +7966,7 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       log_audit_event: {
         Args: {
           _action: string

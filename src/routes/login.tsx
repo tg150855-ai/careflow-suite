@@ -26,17 +26,24 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { session, loading } = useAuth();
+  const { session, loading, roles } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [hospitalName, setHospitalName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/dashboard" });
-  }, [loading, session, navigate]);
+    if (!loading && session) {
+      navigate({ to: roles.includes("super_admin") ? "/super-admin" : "/dashboard" });
+    }
+  }, [loading, session, roles, navigate]);
+
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,17 +59,30 @@ function LoginPage() {
         if (error) throw error;
         toast.success("Welcome back");
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: { full_name: fullName || email },
+        if (hospitalName.trim().length < 2) {
+          toast.error("Enter your hospital name");
+          return;
+        }
+        const { data, error } = await supabase.functions.invoke("hospital-register", {
+          body: {
+            hospital_name: hospitalName.trim(),
+            owner_name: (fullName || email).trim(),
+            email,
+            password,
+            phone: phone || null,
+            city: city || null,
           },
         });
-        if (error) throw error;
-        toast.success("Account created — signing you in...");
+        const failure = (data as { error?: unknown } | null)?.error;
+        if (error || failure) {
+          throw new Error(
+            typeof failure === "string" ? failure : error?.message ?? "Registration failed",
+          );
+        }
+        await supabase.auth.signInWithPassword({ email, password });
+        toast.success("Hospital registered — awaiting super admin approval");
       }
+
     } catch (err) {
       const message = err instanceof Error ? err.message : "Authentication failed";
       toast.error(message);
@@ -165,18 +185,22 @@ function LoginPage() {
 
             <TabsContent value="signup" className="mt-6">
               <form onSubmit={onSubmit} className="space-y-4">
-                <Field id="name" label="Full name" type="text" value={fullName} onChange={setFullName} placeholder="Dr. Anjali Sharma" />
-                <Field id="email2" label="Email" type="email" value={email} onChange={setEmail} placeholder="staff@hospital.com" />
+                <Field id="hospital" label="Hospital name" type="text" value={hospitalName} onChange={setHospitalName} placeholder="Arogya Multispeciality Hospital" />
+                <Field id="name" label="Owner / admin name" type="text" value={fullName} onChange={setFullName} placeholder="Dr. Anjali Sharma" />
+                <Field id="email2" label="Email" type="email" value={email} onChange={setEmail} placeholder="admin@hospital.com" />
+                <Field id="phone2" label="Mobile" type="tel" value={phone} onChange={setPhone} placeholder="+91 90000 00000" />
+                <Field id="city2" label="City" type="text" value={city} onChange={setCity} placeholder="Pune" />
                 <Field id="password2" label="Password" type="password" value={password} onChange={setPassword} placeholder="Min 6 characters" />
                 <Button type="submit" size="lg" className="w-full h-11" disabled={submitting}>
                   {submitting && <Loader2 className="size-4 mr-2 animate-spin" />}
-                  Create account
+                  Register hospital
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">
-                  The first account becomes the hospital administrator.
+                  Your hospital will stay in <span className="font-medium">Pending approval</span> until the platform super admin approves it.
                 </p>
               </form>
             </TabsContent>
+
           </Tabs>
 
           <p className="mt-10 text-xs text-muted-foreground text-center">
