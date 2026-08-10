@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SuperAdminRouteImport } from './routes/super-admin'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HealthCheckRouteImport } from './routes/health-check'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -105,6 +106,11 @@ import { Route as AuthenticatedBillingIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedPharmacySalesNewRouteImport } from './routes/_authenticated/pharmacy.sales.new'
 import { Route as AuthenticatedIpdIdDischargeRouteImport } from './routes/_authenticated/ipd.$id.discharge'
 
+const SuperAdminRoute = SuperAdminRouteImport.update({
+  id: '/super-admin',
+  path: '/super-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -616,6 +622,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/health-check': typeof HealthCheckRoute
   '/login': typeof LoginRoute
+  '/super-admin': typeof SuperAdminRoute
   '/ambulance': typeof AuthenticatedAmbulanceRoute
   '/api-gateway': typeof AuthenticatedApiGatewayRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
@@ -712,6 +719,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/health-check': typeof HealthCheckRoute
   '/login': typeof LoginRoute
+  '/super-admin': typeof SuperAdminRoute
   '/ambulance': typeof AuthenticatedAmbulanceRoute
   '/api-gateway': typeof AuthenticatedApiGatewayRoute
   '/appointments': typeof AuthenticatedAppointmentsRoute
@@ -803,6 +811,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/health-check': typeof HealthCheckRoute
   '/login': typeof LoginRoute
+  '/super-admin': typeof SuperAdminRoute
   '/_authenticated/ambulance': typeof AuthenticatedAmbulanceRoute
   '/_authenticated/api-gateway': typeof AuthenticatedApiGatewayRoute
   '/_authenticated/appointments': typeof AuthenticatedAppointmentsRoute
@@ -901,6 +910,7 @@ export interface FileRouteTypes {
     | '/'
     | '/health-check'
     | '/login'
+    | '/super-admin'
     | '/ambulance'
     | '/api-gateway'
     | '/appointments'
@@ -997,6 +1007,7 @@ export interface FileRouteTypes {
     | '/'
     | '/health-check'
     | '/login'
+    | '/super-admin'
     | '/ambulance'
     | '/api-gateway'
     | '/appointments'
@@ -1087,6 +1098,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/health-check'
     | '/login'
+    | '/super-admin'
     | '/_authenticated/ambulance'
     | '/_authenticated/api-gateway'
     | '/_authenticated/appointments'
@@ -1185,6 +1197,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   HealthCheckRoute: typeof HealthCheckRoute
   LoginRoute: typeof LoginRoute
+  SuperAdminRoute: typeof SuperAdminRoute
   ConsentIdPrintRoute: typeof ConsentIdPrintRoute
   DischargeIdPrintRoute: typeof DischargeIdPrintRoute
   PatientCardIdPrintRoute: typeof PatientCardIdPrintRoute
@@ -1193,6 +1206,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/super-admin': {
+      id: '/super-admin'
+      path: '/super-admin'
+      fullPath: '/super-admin'
+      preLoaderRoute: typeof SuperAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -2148,6 +2168,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   HealthCheckRoute: HealthCheckRoute,
   LoginRoute: LoginRoute,
+  SuperAdminRoute: SuperAdminRoute,
   ConsentIdPrintRoute: ConsentIdPrintRoute,
   DischargeIdPrintRoute: DischargeIdPrintRoute,
   PatientCardIdPrintRoute: PatientCardIdPrintRoute,
