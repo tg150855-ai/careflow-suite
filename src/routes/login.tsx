@@ -165,18 +165,22 @@ function LoginPage() {
 
             <TabsContent value="signup" className="mt-6">
               <form onSubmit={onSubmit} className="space-y-4">
-                <Field id="name" label="Full name" type="text" value={fullName} onChange={setFullName} placeholder="Dr. Anjali Sharma" />
-                <Field id="email2" label="Email" type="email" value={email} onChange={setEmail} placeholder="staff@hospital.com" />
+                <Field id="hospital" label="Hospital name" type="text" value={hospitalName} onChange={setHospitalName} placeholder="Arogya Multispeciality Hospital" />
+                <Field id="name" label="Owner / admin name" type="text" value={fullName} onChange={setFullName} placeholder="Dr. Anjali Sharma" />
+                <Field id="email2" label="Email" type="email" value={email} onChange={setEmail} placeholder="admin@hospital.com" />
+                <Field id="phone2" label="Mobile" type="tel" value={phone} onChange={setPhone} placeholder="+91 90000 00000" />
+                <Field id="city2" label="City" type="text" value={city} onChange={setCity} placeholder="Pune" />
                 <Field id="password2" label="Password" type="password" value={password} onChange={setPassword} placeholder="Min 6 characters" />
                 <Button type="submit" size="lg" className="w-full h-11" disabled={submitting}>
                   {submitting && <Loader2 className="size-4 mr-2 animate-spin" />}
-                  Create account
+                  Register hospital
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">
-                  The first account becomes the hospital administrator.
+                  Your hospital will stay in <span className="font-medium">Pending approval</span> until the platform super admin approves it.
                 </p>
               </form>
             </TabsContent>
+
           </Tabs>
 
           <p className="mt-10 text-xs text-muted-foreground text-center">
