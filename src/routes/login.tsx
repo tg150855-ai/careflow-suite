@@ -56,17 +56,30 @@ function LoginPage() {
         if (error) throw error;
         toast.success("Welcome back");
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: { full_name: fullName || email },
+        if (hospitalName.trim().length < 2) {
+          toast.error("Enter your hospital name");
+          return;
+        }
+        const { data, error } = await supabase.functions.invoke("hospital-register", {
+          body: {
+            hospital_name: hospitalName.trim(),
+            owner_name: (fullName || email).trim(),
+            email,
+            password,
+            phone: phone || null,
+            city: city || null,
           },
         });
-        if (error) throw error;
-        toast.success("Account created — signing you in...");
+        const failure = (data as { error?: unknown } | null)?.error;
+        if (error || failure) {
+          throw new Error(
+            typeof failure === "string" ? failure : error?.message ?? "Registration failed",
+          );
+        }
+        await supabase.auth.signInWithPassword({ email, password });
+        toast.success("Hospital registered — awaiting super admin approval");
       }
+
     } catch (err) {
       const message = err instanceof Error ? err.message : "Authentication failed";
       toast.error(message);
