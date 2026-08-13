@@ -22,6 +22,8 @@ export type HospitalRow = {
   expiry_date: string | null;
   notes: string | null;
   enabled_modules: unknown;
+  allowed_roles?: unknown;
+
   created_at: string | null;
 };
 
