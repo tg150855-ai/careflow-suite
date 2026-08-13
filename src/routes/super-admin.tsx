@@ -447,47 +447,84 @@ function HospitalDialog({ hospital, onClose, onSaved }: { hospital: HospitalRow 
   );
 }
 
+const ROLE_OPTIONS = ["admin", "doctor", "nurse", "receptionist", "pharmacist", "lab_tech", "accountant", "hr_manager", "finance_manager", "dept_head"];
+
 function ModulesDialog({ hospital, onClose, onSaved }: { hospital: HospitalRow; onClose: () => void; onSaved: () => void }) {
   const initial = Array.isArray(hospital.enabled_modules) ? (hospital.enabled_modules as string[]) : [];
+  const initialRoles = Array.isArray(hospital.allowed_roles) ? (hospital.allowed_roles as string[]) : [];
   const [selected, setSelected] = useState<Set<string>>(new Set(initial));
+  const [allowedRoles, setAllowedRoles] = useState<Set<string>>(new Set(initialRoles));
+  const [maxUsers, setMaxUsers] = useState<string>(String(hospital.max_users ?? 25));
   const toggle = (k: ModuleKey) =>
     setSelected((s) => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+  const toggleRole = (r: string) =>
+    setAllowedRoles((s) => { const n = new Set(s); n.has(r) ? n.delete(r) : n.add(r); return n; });
 
   const save = useMutation({
-    mutationFn: () => superAdminOps({ action: "set_modules", hospital_id: hospital.id, modules: [...selected] }),
-    onSuccess: () => { toast.success("Allowed modules updated"); onSaved(); onClose(); },
+    mutationFn: async () => {
+      await superAdminOps({ action: "set_modules", hospital_id: hospital.id, modules: [...selected] });
+      await superAdminOps({
+        action: "update_hospital",
+        hospital_id: hospital.id,
+        hospital: { allowed_roles: [...allowedRoles], max_users: Number(maxUsers) || 25 },
+      });
+    },
+    onSuccess: () => { toast.success("Access updated"); onSaved(); onClose(); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader><DialogTitle>Allowed modules — {hospital.hospital_name}</DialogTitle></DialogHeader>
-        <div className="flex flex-wrap gap-2 pb-2">
-          {MODULE_PRESETS.map((p) => (
-            <Button key={p.key} size="sm" variant="secondary" onClick={() => setSelected(new Set(p.modules))}>{p.name}</Button>
-          ))}
-          <Button size="sm" variant="secondary" onClick={() => setSelected(new Set(ALL_MODULE_KEYS))}>Select all</Button>
-          <Button size="sm" variant="secondary" onClick={() => setSelected(new Set())}>Clear</Button>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto">
-          {MODULE_REGISTRY.map((m) => (
-            <label key={m.key} className="flex items-center gap-2 rounded-md border p-2 text-sm cursor-pointer">
-              <Checkbox checked={selected.has(m.key)} onCheckedChange={() => toggle(m.key)} />
-              {m.name}
-            </label>
-          ))}
+        <DialogHeader><DialogTitle>Access — {hospital.hospital_name}</DialogTitle></DialogHeader>
+        <div className="max-h-[65vh] overflow-y-auto space-y-5 pr-1">
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Login limit</div>
+            <Input type="number" min={1} value={maxUsers} onChange={(e) => setMaxUsers(e.target.value)} className="w-40" />
+            <p className="text-xs text-muted-foreground">Maximum number of logins this hospital can create.</p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Allowed login roles</div>
+            <p className="text-xs text-muted-foreground">Leave all unchecked to allow every role.</p>
+            <div className="grid sm:grid-cols-3 gap-2">
+              {ROLE_OPTIONS.map((r) => (
+                <label key={r} className="flex items-center gap-2 rounded-md border p-2 text-sm cursor-pointer">
+                  <Checkbox checked={allowedRoles.has(r)} onCheckedChange={() => toggleRole(r)} />
+                  {r}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Allowed modules</div>
+            <div className="flex flex-wrap gap-2 pb-1">
+              {MODULE_PRESETS.map((p) => (
+                <Button key={p.key} size="sm" variant="secondary" onClick={() => setSelected(new Set(p.modules))}>{p.name}</Button>
+              ))}
+              <Button size="sm" variant="secondary" onClick={() => setSelected(new Set(ALL_MODULE_KEYS))}>Select all</Button>
+              <Button size="sm" variant="secondary" onClick={() => setSelected(new Set())}>Clear</Button>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {MODULE_REGISTRY.map((m) => (
+                <label key={m.key} className="flex items-center gap-2 rounded-md border p-2 text-sm cursor-pointer">
+                  <Checkbox checked={selected.has(m.key)} onCheckedChange={() => toggle(m.key)} />
+                  {m.name}
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>Save modules</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>Save access</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
 
-const ROLE_OPTIONS = ["admin", "doctor", "nurse", "receptionist", "pharmacist", "lab_tech", "accountant", "hr_manager", "finance_manager", "dept_head"];
 
 function HospitalUsersDialog({ hospital, users, onClose, onSaved }: { hospital: HospitalRow; users: UserRow[]; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({ full_name: "", email: "", password: "", role: "admin" });
