@@ -70,6 +70,30 @@ Deno.serve(async (req) => {
       if (!full_name || !email || !password || !role || !department) return json({ error: "Missing required fields" }, 400);
       if (!ROLES.includes(role)) return json({ error: "Invalid role" }, 400);
 
+      // --- tenant scoping + super-admin limits ---
+      const { data: callerProfile } = await admin
+        .from("profiles").select("hospital_id").eq("id", callerId).maybeSingle();
+      const hospitalId = (callerProfile as { hospital_id?: string | null } | null)?.hospital_id ?? null;
+
+      if (hospitalId) {
+        const { data: hosp } = await admin
+          .from("hospitals").select("max_users, allowed_roles, status").eq("id", hospitalId).maybeSingle();
+        const h = hosp as { max_users?: number | null; allowed_roles?: unknown; status?: string | null } | null;
+        if (h?.status && h.status !== "approved") return json({ error: "Hospital is not approved" }, 403);
+
+        const allowed = Array.isArray(h?.allowed_roles) ? (h!.allowed_roles as string[]) : [];
+        if (allowed.length && !allowed.includes(role)) {
+          return json({ error: `Role "${role}" is not enabled for your hospital by the platform admin` }, 403);
+        }
+
+        const { count } = await admin
+          .from("profiles").select("id", { count: "exact", head: true }).eq("hospital_id", hospitalId);
+        const max = h?.max_users ?? null;
+        if (max != null && (count ?? 0) >= max) {
+          return json({ error: `Login limit reached (${max} users). Contact the platform admin to increase it.` }, 403);
+        }
+      }
+
       const { data: created, error: authErr } = await admin.auth.admin.createUser({
         email, password, email_confirm: true, user_metadata: { full_name },
       });
@@ -78,6 +102,7 @@ Deno.serve(async (req) => {
 
       await admin.from("profiles").upsert({
         id: newId, full_name, email, phone: mobile, password_changed: false, login_disabled: false,
+        hospital_id: hospitalId,
       });
 
       await admin.from("user_roles").delete().eq("user_id", newId);
@@ -88,8 +113,10 @@ Deno.serve(async (req) => {
         user_id: newId, full_name, email, phone: mobile, department,
         designation: designation ?? null, gender: gender ?? null, dob: dob || null,
         address: address ?? null, joining_date: joining_date || null, status: "active",
+        hospital_id: hospitalId,
       }).select("id, employee_no").single();
       if (empErr) return json({ error: empErr.message }, 400);
+
 
       await audit("create", "staff", newId, null, { full_name, email, role, department, employee_no: emp.employee_no });
       return json({ user_id: newId, employee_id: emp.id, employee_no: emp.employee_no });
