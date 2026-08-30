@@ -21,6 +21,9 @@ import { PrescriptionComposer, type ComposerContext } from "@/components/opd/pre
 import type { InlineRxAction, InlineRxPayload } from "@/components/opd/prescription-inline";
 import { PrescriptionSheet } from "@/components/opd/prescription-sheet";
 import { MedicineAutocomplete } from "@/components/opd/medicine-autocomplete";
+import { ConsultationTemplateManager } from "@/components/opd/consultation-template-manager";
+import { PreviousConsultationHistory } from "@/components/opd/previous-consultation-history";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/opd/$appointmentId")({ component: Consultation });
 
@@ -410,6 +413,50 @@ function Consultation() {
     procedures: procedures.filter((p) => p.name.trim()).map((p) => p.name),
   }), [appt, chief, diagnosis, findings, followUp, vitals, items, investigations, procedures]);
 
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
+
+  function applyConsultationTemplate(tpl: any) {
+    if (tpl.chief_complaint) setChief(tpl.chief_complaint);
+    if (tpl.clinical_findings) setFindings(tpl.clinical_findings);
+    if (tpl.diagnosis) setDiagnosis(tpl.diagnosis);
+    if (tpl.advice) setNotes(tpl.advice);
+    if (tpl.follow_up_advice || tpl.follow_up_days) {
+      if (tpl.follow_up_days && !isNaN(Number(tpl.follow_up_days))) {
+        const d = new Date();
+        d.setDate(d.getDate() + Number(tpl.follow_up_days));
+        setFollowUp(format(d, "yyyy-MM-dd"));
+      } else if (tpl.follow_up_advice) {
+        setNotes((prev) => (prev ? `${prev}\n\nFollow-up: ${tpl.follow_up_advice}` : `Follow-up: ${tpl.follow_up_advice}`));
+      }
+    }
+    if (tpl.medicines && tpl.medicines.length > 0) {
+      const rx = tpl.medicines.map((m: any) => ({
+        medicine_name: m.medicine_name ?? "",
+        strength: m.strength ?? "",
+        route: m.route ?? "Oral",
+        frequency: m.frequency || m.dosage || "1-0-1",
+        food_instruction: m.food_instruction || "After meal",
+        duration_days: m.duration_days ? String(m.duration_days) : "5",
+        quantity: m.quantity ?? "",
+        instructions: m.instructions ?? "",
+      }));
+      setItems(rx);
+    }
+    if (tpl.investigations && Array.isArray(tpl.investigations) && tpl.investigations.length > 0) {
+      const inv = tpl.investigations.map((i: any) => {
+        if (typeof i === "string") return { name: i, priority: "Routine" as const, price: "0", notes: "" };
+        return { name: i.name || "", priority: (i.priority as any) || "Routine", price: String(i.price || "0"), notes: i.notes || "" };
+      });
+      setInvestigations(inv);
+    }
+  }
+
+  function handleCopyHistoryMedicines(meds: any[]) {
+    const valid = items.filter((it) => it.medicine_name.trim());
+    setItems([...valid, ...meds]);
+  }
+
   // -------------- totals preview --------------
   const billPreview = useMemo(() => {
     const inv = investigations.filter(i => i.name.trim()).reduce((s, i) => s + (Number(i.price) || 0), 0);
@@ -423,51 +470,65 @@ function Consultation() {
 
   return (
     <div className="space-y-5 pb-24">
-      <div className="flex items-center gap-3 flex-wrap">
-        <Button asChild variant="ghost" size="icon"><Link to="/opd"><ArrowLeft className="size-4" /></Link></Button>
-        <div className="flex-1">
-          <h1 className="text-xl font-semibold tracking-tight">
-            {patient?.full_name} <span className="text-sm text-muted-foreground font-mono ml-1">{patient?.uhid}</span>
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            {ageOf(patient?.dob)} · <span className="capitalize">{patient?.gender}</span> · {patient?.mobile} · {(appt as any).doctors?.name} · token {(appt as any).token_no ?? "—"} · {format(new Date(appt.scheduled_at), "dd MMM yyyy HH:mm")}
-          </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap bg-card p-3.5 rounded-xl border">
+        <div className="flex items-center gap-3 min-w-0">
+          <Button asChild variant="ghost" size="icon"><Link to="/opd"><ArrowLeft className="size-4" /></Link></Button>
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight truncate">
+              {patient?.full_name} <span className="text-sm text-muted-foreground font-mono ml-1">{patient?.uhid}</span>
+            </h1>
+            <p className="text-xs text-muted-foreground truncate">
+              {ageOf(patient?.dob)} · <span className="capitalize">{patient?.gender}</span> · {patient?.mobile} · {(appt as any).doctors?.name} · token {(appt as any).token_no ?? "—"} · {format(new Date(appt.scheduled_at), "dd MMM yyyy HH:mm")}
+            </p>
+          </div>
         </div>
-        <Button variant="outline" onClick={() => setRxOpen(true)} className="shrink-0">
-          <FileSignature className="size-4 mr-2" />Digital Prescription
-        </Button>
-        {existingBill?.bill?.bill_no && (
-          <Badge variant="outline" className="font-mono text-[10px]"><Receipt className="size-3 mr-1" />{existingBill.bill.bill_no}</Badge>
-        )}
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <ConsultationTemplateManager
+            doctorId={appt.doctor_id}
+            userId={user?.id}
+            hospitalId={hospitalId}
+            currentConsultation={{
+              chief,
+              findings,
+              diagnosis,
+              notes,
+              followUp,
+              investigations,
+              medicines: items,
+            }}
+            onApplyTemplate={applyConsultationTemplate}
+          />
+          <Button variant="outline" size="sm" onClick={() => setRxOpen(true)} className="shrink-0 h-8 text-xs">
+            <FileSignature className="size-3.5 mr-1.5" />Digital Rx
+          </Button>
+          {existingBill?.bill?.bill_no && (
+            <Badge variant="outline" className="font-mono text-[10px]"><Receipt className="size-3 mr-1" />{existingBill.bill.bill_no}</Badge>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
         {/* Left: history */}
         <div className="xl:col-span-3 space-y-4">
+          <PreviousConsultationHistory
+            patientId={appt.patient_id}
+            currentAppointmentId={appt.id}
+            hospitalId={hospitalId}
+            onCopyMedicines={handleCopyHistoryMedicines}
+            onCopyAdvice={(adv) => setNotes((prev) => (prev ? `${prev}\n\n${adv}` : adv))}
+            onCopyDiagnosis={(diag, find) => {
+              if (diag) setDiagnosis(diag);
+              if (find) setFindings(find);
+            }}
+          />
+
           <Card className="p-4 space-y-3">
-            <div className="flex items-center gap-2"><History className="size-4 text-primary" /><h2 className="font-semibold text-sm">Patient timeline</h2></div>
+            <div className="flex items-center gap-2"><History className="size-4 text-primary" /><h2 className="font-semibold text-sm">Patient info & alerts</h2></div>
             <div className="space-y-2 text-xs">
               <div><span className="text-muted-foreground">Allergies:</span> {patient?.allergies || "—"}</div>
               <div><span className="text-muted-foreground">Chronic:</span> {patient?.chronic_diseases || "—"}</div>
               <div><span className="text-muted-foreground">Blood:</span> {patient?.blood_group || "—"}</div>
-            </div>
-            <div className="pt-3 border-t">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Previous visits</div>
-              {history.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No previous visits.</p>
-              ) : (
-                <div className="space-y-2.5">
-                  {history.map((v: any) => (
-                    <div key={v.id} className="text-xs border-l-2 border-primary/30 pl-2.5 py-0.5">
-                      <div className="text-muted-foreground">{format(new Date(v.created_at), "dd MMM yyyy")} · {v.doctors?.name}</div>
-                      <div className="font-medium truncate">{v.diagnosis || v.chief_complaints || "Consultation"}</div>
-                      {v.prescriptions?.[0]?.prescription_items?.length > 0 && (
-                        <div className="text-muted-foreground truncate">Rx: {v.prescriptions[0].prescription_items.slice(0,3).map((p: any) => p.medicine_name).join(", ")}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
             {prevBills.length > 0 && (
               <div className="pt-3 border-t">

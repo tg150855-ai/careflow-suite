@@ -33,11 +33,37 @@ export async function ensureOpdAppointment(opts: {
   // Resolve a doctor if none was passed — use any active doctor.
   let doc = doctorId ?? null;
   if (!doc) {
-    const { data: anyDoc } = await supabase
-      .from("doctors").select("id").eq("active", true).order("name").limit(1).maybeSingle();
-    if (anyDoc?.id) doc = anyDoc.id;
+    const { data: docs } = await supabase
+      .from("doctors")
+      .select("id, active")
+      .order("name")
+      .limit(10);
+    const activeDoc = (docs ?? []).find((d: any) => d.active !== false);
+    if (activeDoc?.id) {
+      doc = activeDoc.id;
+    } else if (docs && docs.length > 0) {
+      doc = docs[0].id;
+    }
   }
-  if (!doc) throw new Error("No active doctor available for OPD queue");
+
+  // Fallback: auto-seed duty doctor if none exists in hospital
+  if (!doc) {
+    try {
+      const { data: seeded } = await (supabase as any)
+        .from("doctors")
+        .insert({
+          name: "Duty Doctor (OPD)",
+          specialization: "General Medicine",
+          department: "OPD",
+          active: true,
+        })
+        .select("id")
+        .maybeSingle();
+      if (seeded?.id) doc = seeded.id;
+    } catch {
+      // Ignored if insertion fails
+    }
+  }
 
   const { data, error } = await supabase.from("appointments").insert({
     patient_id: patientId,

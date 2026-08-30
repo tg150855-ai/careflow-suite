@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,39 +23,44 @@ import { PatientAttachments } from "@/components/patient-attachments";
 import { exportXlsx } from "@/lib/export";
 import { shareOnWhatsApp } from "@/lib/share";
 import { useIsSuperAdmin } from "@/lib/use-super-admin";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/opd/registration")({
   component: OpdRegistration,
 });
 
+/* ────────────────────────────── Main Layout ────────────────────────────── */
+
 function OpdRegistration() {
-  const [tab, setTab] = useState("new");
+  const [tab, setTab] = useState<"new" | "existing" | "list">("new");
+
   return (
-    <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="new" className="gap-2">
-          <UserPlus className="size-4" /> New Patient
-        </TabsTrigger>
-        <TabsTrigger value="existing" className="gap-2">
-          <Search className="size-4" /> Existing Patient
-        </TabsTrigger>
-        <TabsTrigger value="list" className="gap-2">
-          <ListChecks className="size-4" /> OPD List
-        </TabsTrigger>
-      </TabsList>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">OPD Registration</h1>
+        <p className="text-sm text-muted-foreground">Register new patients, search existing records, and manage the OPD daily queue.</p>
+      </div>
 
-      <TabsContent value="new" className="m-0">
-        <NewPatientPanel onRegistered={() => setTab("existing")} />
-      </TabsContent>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsTrigger value="new" className="gap-2"><UserPlus className="size-4" /> New Patient</TabsTrigger>
+          <TabsTrigger value="existing" className="gap-2"><Search className="size-4" /> Quick Search</TabsTrigger>
+          <TabsTrigger value="list" className="gap-2"><ListChecks className="size-4" /> OPD List</TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="existing" className="m-0">
-        <ExistingPatientPanel />
-      </TabsContent>
+        <TabsContent value="new" className="mt-4">
+          <NewPatientPanel onRegistered={() => setTab("list")} />
+        </TabsContent>
 
-      <TabsContent value="list" className="m-0">
-        <OpdListPanel />
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="existing" className="mt-4">
+          <ExistingPatientPanel />
+        </TabsContent>
+
+        <TabsContent value="list" className="mt-4">
+          <OpdListPanel />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
 
@@ -63,6 +68,8 @@ function OpdRegistration() {
 
 function NewPatientPanel({ onRegistered }: { onRegistered: () => void }) {
   const { user, hasAnyRole } = useAuth();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const navigate = useNavigate();
   const canConsult = hasAnyRole(["doctor", "admin", "super_admin"]);
 
@@ -96,7 +103,11 @@ function NewPatientPanel({ onRegistered }: { onRegistered: () => void }) {
 
     const { data, error } = await (supabase as any)
       .from("patients")
-      .insert({ ...payload.patient, created_by: user?.id })
+      .insert({
+        ...payload.patient,
+        ...(hospitalId ? { hospital_id: hospitalId } : {}),
+        created_by: user?.id,
+      })
       .select("id, uhid")
       .single();
     if (error) {
@@ -107,12 +118,17 @@ function NewPatientPanel({ onRegistered }: { onRegistered: () => void }) {
     if (payload.insurance) {
       const { error: insErr } = await (supabase as any)
         .from("patient_insurance")
-        .insert({ ...payload.insurance, patient_id: data.id });
+        .insert({
+          ...payload.insurance,
+          ...(hospitalId ? { hospital_id: hospitalId } : {}),
+          patient_id: data.id,
+        });
       if (insErr) toast.warning(`Patient saved, insurance not saved: ${insErr.message}`);
     }
 
     await (supabase as any).from("emr_records").insert({
       patient_id: data.id,
+      ...(hospitalId ? { hospital_id: hospitalId } : {}),
       record_type: "registration",
       title: "Patient registered (OPD)",
       summary: `UHID ${data.uhid} created via OPD registration`,
@@ -128,34 +144,45 @@ function NewPatientPanel({ onRegistered }: { onRegistered: () => void }) {
       after: payload.patient,
     });
 
-    toast.success(`Patient registered · ${data.uhid}`);
+    // Automatically enqueue patient for today's OPD visit so they appear on the OPD list and queue immediately
+    let createdApptId: string | null = null;
+    try {
+      const { appointmentId } = await ensureOpdAppointment({ patientId: data.id, createdBy: user?.id });
+      createdApptId = appointmentId;
+    } catch (e: any) {
+      console.warn("[opd-registration] ensureOpdAppointment fallback:", e?.message);
+    }
+
+    toast.success(`Patient registered & added to OPD queue · ${data.uhid}`);
 
     switch (action) {
       case "appointment":
         navigate({ to: "/appointments", search: { patientId: data.id } as any });
         return;
       case "queue":
-        try {
-          const { appointmentId } = await ensureOpdAppointment({ patientId: data.id, createdBy: user?.id });
-          toast.success("Added to OPD waiting queue");
-          navigate({ to: "/opd/consultation", search: { appt: appointmentId } as any });
-        } catch (e: any) {
-          toast.error(e?.message ?? "Could not add to queue");
+        if (createdApptId) {
+          navigate({ to: "/opd/consultation", search: { appt: createdApptId } as any });
+        } else {
+          onRegistered();
         }
         return;
       case "consult":
-        try {
-          const { appointmentId } = await ensureOpdAppointment({ patientId: data.id, createdBy: user?.id });
-          navigate({ to: "/opd/$appointmentId", params: { appointmentId } });
-        } catch (e: any) {
-          toast.error(e?.message ?? "Could not start consultation");
+        if (createdApptId) {
+          navigate({ to: "/opd/$appointmentId", params: { appointmentId: createdApptId } });
+        } else {
+          navigate({ to: "/patients/$id", params: { id: data.id } });
         }
         return;
       case "another":
         onRegistered();
         return;
       default:
-        navigate({ to: "/patients/$id", params: { id: data.id } });
+        // Default action from OPD registration: switch to OPD List or consultation
+        if (createdApptId) {
+          navigate({ to: "/opd/$appointmentId", params: { appointmentId: createdApptId } });
+        } else {
+          navigate({ to: "/patients/$id", params: { id: data.id } });
+        }
     }
   }
 
@@ -431,13 +458,22 @@ function PatientDetailActions({ patient }: { patient: any }) {
 
 /* ─────────────────────── OPD list (with From-To filter + export) ─────────────────────── */
 
-function toIsoDayStart(s: string) { const d = new Date(s); d.setHours(0, 0, 0, 0); return d.toISOString(); }
-function toIsoDayEnd(s: string) { const d = new Date(s); d.setHours(23, 59, 59, 999); return d.toISOString(); }
+function toIsoDayStart(s: string) {
+  const parts = s.split("-").map(Number);
+  const d = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+  return d.toISOString();
+}
+function toIsoDayEnd(s: string) {
+  const parts = s.split("-").map(Number);
+  const d = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999);
+  return d.toISOString();
+}
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
 
 type QuickRange = "today" | "yesterday" | "week" | "month" | "custom";
 
 function OpdListPanel() {
+  const qc = useQueryClient();
   const [from, setFrom] = useState(todayStr());
   const [to, setTo] = useState(todayStr());
   const [quick, setQuick] = useState<QuickRange>("today");
@@ -451,6 +487,32 @@ function OpdListPanel() {
   const [doctorId, setDoctorId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const isAdmin = useIsSuperAdmin();
+
+  // Realtime subscription for LAN and local updates
+  useEffect(() => {
+    const channel = supabase
+      .channel("opd-list-realtime-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-list-panel"] });
+        qc.invalidateQueries({ queryKey: ["opd-dash-appts"] });
+        qc.invalidateQueries({ queryKey: ["opd-dash-active-queue"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "queue_tokens" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-list-panel"] });
+        qc.invalidateQueries({ queryKey: ["opd-dash-active-queue"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "patients" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-list-panel"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "bills" }, () => {
+        qc.invalidateQueries({ queryKey: ["opd-list-panel"] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   function applyQuick(q: QuickRange) {
     setQuick(q);
@@ -481,6 +543,7 @@ function OpdListPanel() {
       if (error) throw error;
       return data ?? [];
     },
+    refetchInterval: 10000,
   });
 
   const doctorOptions = useMemo(() => {

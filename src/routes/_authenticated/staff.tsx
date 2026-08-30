@@ -15,6 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { createStaff } from "@/lib/staff.functions";
+import { syncEmployeeToDoctor } from "@/lib/doctors";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/staff")({ component: StaffDirectory });
 
@@ -34,6 +36,8 @@ function tempPassword() {
 
 function StaffDirectory() {
   const { hasAnyRole } = useAuth();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const isAdmin = hasAnyRole(["admin", "super_admin"]);
   const qc = useQueryClient();
   const create = createStaff;
@@ -93,9 +97,20 @@ function StaffDirectory() {
             onCreate={async (payload) => {
               try {
                 const res = await create({ data: payload });
+                await syncEmployeeToDoctor({
+                  id: res?.id,
+                  full_name: payload.full_name,
+                  department: payload.department,
+                  designation: payload.designation,
+                  phone: payload.mobile,
+                  email: payload.email,
+                  hospital_id: hospitalId,
+                });
                 toast.success(`Staff created · ${res.employee_no}`);
                 setOpen(false);
                 qc.invalidateQueries({ queryKey: ["staff-directory"] });
+                qc.invalidateQueries({ queryKey: ["doctors-list"] });
+                qc.invalidateQueries({ queryKey: ["opd-appts-doctors"] });
               } catch (e: any) {
                 toast.error(e?.message ?? "Failed to create staff");
               }

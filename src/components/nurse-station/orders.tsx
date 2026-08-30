@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Play, Check, Plus } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { VoiceDictate } from "@/components/voice-dictate";
 import { NS_QK, PRIORITIES, ORDER_STATUS, loadActiveAdmissions } from "./shared";
 
 export function NSOrders() {
@@ -74,7 +75,10 @@ export function NSOrders() {
           </Select>
           <Button onClick={add}><Plus className="size-4 mr-1" /> Add</Button>
         </div>
-        <Input placeholder="Order details (e.g. ECG STAT, NPO after midnight)" value={orderText} onChange={(e) => setOrderText(e.target.value)} />
+        <div className="flex items-center gap-2">
+          <Input placeholder="Order details (e.g. ECG STAT, NPO after midnight, IV fluids 100ml/hr)" value={orderText} onChange={(e) => setOrderText(e.target.value)} />
+          <VoiceDictate onTranscript={(t) => setOrderText((prev) => (prev ? prev + " " : "") + t)} />
+        </div>
       </CardContent></Card>
 
       <Card><CardContent className="p-4">

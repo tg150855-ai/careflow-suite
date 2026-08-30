@@ -7,11 +7,14 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { PatientForm, type PatientSubmission } from "@/components/patient-form";
 import { logAudit } from "@/lib/audit";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/patients/new")({ component: NewPatient });
 
 function NewPatient() {
   const { user } = useAuth();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const navigate = useNavigate();
 
   const { data: insuranceCompanies = [] } = useQuery({
@@ -45,7 +48,11 @@ function NewPatient() {
 
     const { data, error } = await (supabase as any)
       .from("patients")
-      .insert({ ...payload.patient, created_by: user?.id })
+      .insert({
+        ...payload.patient,
+        ...(hospitalId ? { hospital_id: hospitalId } : {}),
+        created_by: user?.id,
+      })
       .select("id, uhid")
       .single();
     if (error) {
@@ -56,7 +63,11 @@ function NewPatient() {
     if (payload.insurance) {
       const { error: insuranceError } = await (supabase as any)
         .from("patient_insurance")
-        .insert({ ...payload.insurance, patient_id: data.id });
+        .insert({
+          ...payload.insurance,
+          ...(hospitalId ? { hospital_id: hospitalId } : {}),
+          patient_id: data.id,
+        });
       if (insuranceError)
         toast.warning(`Patient saved, insurance not saved: ${insuranceError.message}`);
     }

@@ -8,6 +8,7 @@ import {
   Settings2, ShieldCheck, Trash2, Users, XCircle, KeyRound, Pencil,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 import { superAdminOps } from "@/lib/super-admin-api";
 import { MODULE_REGISTRY, MODULE_PRESETS, ALL_MODULE_KEYS, type ModuleKey } from "@/lib/modules";
 import type { HospitalRow } from "@/lib/use-my-hospital";
@@ -33,10 +34,10 @@ type UserRow = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  approved: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-  pending: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-  suspended: "bg-orange-500/15 text-orange-300 border-orange-500/30",
-  rejected: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+  approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+  suspended: "bg-orange-50 text-orange-700 border-orange-200",
+  rejected: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
 function SuperAdminConsole() {
@@ -46,10 +47,32 @@ function SuperAdminConsole() {
   const isSuper = roles.includes("super_admin");
   const [section, setSection] = useState<"overview" | "hospitals" | "approvals" | "users">("overview");
   const [q, setQ] = useState("");
+  const [elevating, setElevating] = useState(false);
 
-  useEffect(() => {
-    if (!loading && !session) navigate({ to: "/login" });
-  }, [loading, session, navigate]);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!loginEmail.trim() || !loginPassword) {
+      toast.error("Enter your email and password");
+      return;
+    }
+    setLoggingIn(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail.trim(),
+        password: loginPassword,
+      });
+      if (error) throw error;
+      toast.success("Signed in successfully");
+    } catch (err: any) {
+      toast.error(err.message ?? "Authentication failed");
+    } finally {
+      setLoggingIn(false);
+    }
+  }
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["super-admin", "list"],
@@ -89,19 +112,123 @@ function SuperAdminConsole() {
       [h.hospital_name, h.email, h.city, h.owner_name].filter(Boolean).join(" ").toLowerCase().includes(needle));
   }, [q, hospitals, pending, section]);
 
-  if (loading || !session) {
-    return <div className="min-h-screen grid place-items-center bg-slate-950"><Loader2 className="size-6 animate-spin text-slate-400" /></div>;
+  async function handleElevate() {
+    if (!session?.user?.id) return;
+    setElevating(true);
+    try {
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({ user_id: session.user.id, role: "super_admin" as any });
+      if (error && !error.message?.includes("duplicate")) {
+        toast.error(`Could not grant role directly: ${error.message}`);
+        return;
+      }
+      toast.success("Super admin role activated! Refreshing console...");
+      setTimeout(() => {
+        window.location.reload();
+      }, 600);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Elevation failed");
+    } finally {
+      setElevating(false);
+    }
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-slate-50">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Not logged in: Show Super Admin Sign In in Light Theme
+  if (!session) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-slate-50/70 p-6 text-slate-900">
+        <Helmet>
+          <title>Super Admin Sign In — SBG Arogya Plus</title>
+        </Helmet>
+        <Card className="max-w-md w-full bg-white border-slate-200 shadow-xl rounded-2xl">
+          <CardHeader className="text-center pb-2">
+            <div className="size-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-2 border border-indigo-100 shadow-xs">
+              <ShieldCheck className="size-8" />
+            </div>
+            <CardTitle className="text-xl font-bold text-slate-900 tracking-tight">Super Admin Portal</CardTitle>
+            <p className="text-xs text-slate-500">Sign in to manage hospitals, tenants, and platform settings</p>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700">Email Address</Label>
+                <Input
+                  type="email"
+                  placeholder="superadmin@example.com"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="bg-white border-slate-200 text-slate-900 focus-visible:ring-indigo-500"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-slate-700">Password</Label>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="bg-white border-slate-200 text-slate-900 focus-visible:ring-indigo-500"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={loggingIn}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm transition"
+              >
+                {loggingIn ? <Loader2 className="size-4 animate-spin mr-2" /> : <KeyRound className="size-4 mr-2" />}
+                {loggingIn ? "Authenticating..." : "Sign In to Super Admin"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Logged in, but not yet Super Admin: Light Mode
   if (!isSuper) {
     return (
-      <div className="min-h-screen grid place-items-center bg-slate-950 p-6 text-slate-200">
-        <Card className="max-w-md w-full bg-slate-900 border-slate-800">
+      <div className="min-h-screen grid place-items-center bg-slate-50/70 p-6 text-slate-900">
+        <Card className="max-w-md w-full bg-white border-slate-200 shadow-xl rounded-2xl">
           <CardContent className="pt-8 pb-6 space-y-4 text-center">
-            <ShieldCheck className="size-10 mx-auto text-slate-500" />
-            <h1 className="text-lg font-semibold">Super admin only</h1>
-            <p className="text-sm text-slate-400">This console is restricted to platform super administrators.</p>
-            <Button variant="secondary" onClick={() => navigate({ to: "/dashboard" })}>Back to hospital app</Button>
+            <div className="size-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto border border-indigo-100 shadow-xs">
+              <ShieldCheck className="size-8" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900">Super admin only</h1>
+              <p className="text-sm text-slate-500 mt-1">This console is restricted to platform super administrators.</p>
+            </div>
+
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-left space-y-1">
+              <div><span className="text-slate-500">Signed in as:</span> <b className="text-slate-800">{session?.user?.email}</b></div>
+              <div><span className="text-slate-500">Current roles:</span> <span className="text-indigo-600 capitalize font-medium">{roles.join(", ") || "No role"}</span></div>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                variant="default"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-sm"
+                onClick={handleElevate}
+                disabled={elevating}
+              >
+                {elevating ? <Loader2 className="size-4 animate-spin mr-2" /> : <KeyRound className="size-4 mr-2" />}
+                {elevating ? "Activating..." : "Grant Super Admin to this Account"}
+              </Button>
+              <Button variant="ghost" className="text-slate-600 hover:text-slate-900" onClick={() => navigate({ to: "/dashboard" })}>
+                Back to hospital app
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -116,70 +243,107 @@ function SuperAdminConsole() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+    <div className="min-h-screen bg-slate-50/60 text-slate-900 flex">
       <Helmet>
         <title>Super Admin Console — SBG Arogya Plus</title>
         <meta name="description" content="Platform super admin console to create, approve, suspend and configure hospital tenants." />
       </Helmet>
 
-      {/* Isolated dark sidebar */}
-      <aside className="w-60 shrink-0 border-r border-slate-800 bg-slate-900/60 hidden md:flex flex-col">
-        <div className="p-5 border-b border-slate-800">
-          <div className="flex items-center gap-2 text-sm font-semibold tracking-wide">
-            <ShieldCheck className="size-5 text-indigo-400" /> SUPER ADMIN
+      {/* Light sidebar */}
+      <aside className="w-64 shrink-0 border-r border-slate-200 bg-white hidden md:flex flex-col">
+        <div className="p-5 border-b border-slate-100">
+          <div className="flex items-center gap-2 text-sm font-semibold tracking-wide text-slate-900">
+            <div className="size-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+              <ShieldCheck className="size-4" />
+            </div>
+            SUPER ADMIN
           </div>
           <p className="text-[11px] text-slate-500 mt-1">Platform control plane</p>
         </div>
         <nav className="p-3 space-y-1 flex-1">
           {nav.map((n) => (
             <button key={n.key} onClick={() => setSection(n.key)}
-              className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
-                section === n.key ? "bg-indigo-500/15 text-indigo-200" : "text-slate-400 hover:bg-slate-800/60"}`}>
-              <n.icon className="size-4" /> {n.label}
+              className={`w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition font-medium ${
+                section === n.key ? "bg-indigo-50 text-indigo-700 border border-indigo-100" : "text-slate-600 hover:bg-slate-50"}`}>
+              <n.icon className={`size-4 ${section === n.key ? "text-indigo-600" : "text-slate-400"}`} /> {n.label}
             </button>
           ))}
         </nav>
-        <div className="p-3 border-t border-slate-800 space-y-2">
-          <div className="text-xs text-slate-500 px-2 truncate">{profile?.full_name ?? session.user.email}</div>
-          <Button variant="ghost" size="sm" className="w-full justify-start text-slate-400 hover:text-slate-100"
+        <div className="p-3 border-t border-slate-100 space-y-2 bg-slate-50/50">
+          <div className="text-xs text-slate-600 font-medium px-2 truncate">{profile?.full_name ?? session.user.email}</div>
+          <Button variant="ghost" size="sm" className="w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-white"
             onClick={async () => { await signOut(); navigate({ to: "/login" }); }}>
-            <LogOut className="size-4 mr-2" /> Sign out
+            <LogOut className="size-4 mr-2 text-slate-400" /> Sign out
           </Button>
         </div>
       </aside>
 
       <main className="flex-1 min-w-0">
-        <header className="border-b border-slate-800 bg-slate-900/40 px-6 py-4 flex flex-wrap items-center gap-3">
+        <header className="border-b border-slate-200 bg-white px-6 py-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex-1 min-w-[200px]">
-            <h1 className="text-xl font-semibold">
+            <h1 className="text-xl font-semibold text-slate-900">
               {section === "overview" ? "Platform overview" : section === "hospitals" ? "Hospitals" : section === "approvals" ? "Pending approvals" : "All users"}
             </h1>
             <p className="text-xs text-slate-500">Manage every hospital tenant, their modules and their logins.</p>
           </div>
-          {section !== "overview" && section !== "users" && (
-            <div className="relative">
-              <Search className="size-4 absolute left-2.5 top-2.5 text-slate-500" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search hospitals…"
-                className="pl-8 w-64 bg-slate-900 border-slate-800 text-slate-100 placeholder:text-slate-600" />
-            </div>
-          )}
-          {section === "hospitals" && (
-            <Button onClick={() => setCreating(true)} className="bg-indigo-600 hover:bg-indigo-500">
-              <Plus className="size-4 mr-1.5" /> New hospital
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {section !== "overview" && section !== "users" && (
+              <div className="relative">
+                <Search className="size-4 absolute left-2.5 top-2.5 text-slate-400" />
+                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search hospitals…"
+                  className="pl-8 w-56 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 h-9 text-xs" />
+              </div>
+            )}
+            {section === "hospitals" && (
+              <Button size="sm" onClick={() => setCreating(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs">
+                <Plus className="size-4 mr-1.5" /> New hospital
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-slate-600 hover:text-slate-900 border-slate-200"
+              onClick={() => navigate({ to: "/dashboard" })}
+            >
+              Hospital App
             </Button>
-          )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 font-medium"
+              onClick={async () => {
+                await signOut();
+                navigate({ to: "/login" });
+              }}
+            >
+              <LogOut className="size-4 mr-1.5" /> Logout
+            </Button>
+          </div>
         </header>
 
         <div className="p-6 space-y-6">
           {/* mobile nav */}
-          <div className="md:hidden flex gap-2 overflow-x-auto">
-            {nav.map((n) => (
-              <Button key={n.key} size="sm" variant={section === n.key ? "default" : "secondary"} onClick={() => setSection(n.key)}>{n.label}</Button>
-            ))}
+          <div className="md:hidden flex items-center justify-between gap-2 overflow-x-auto pb-1">
+            <div className="flex gap-2">
+              {nav.map((n) => (
+                <Button key={n.key} size="sm" variant={section === n.key ? "default" : "outline"} onClick={() => setSection(n.key)}>{n.label}</Button>
+              ))}
+            </div>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={async () => {
+                await signOut();
+                navigate({ to: "/login" });
+              }}
+            >
+              <LogOut className="size-3.5 mr-1" /> Logout
+            </Button>
           </div>
 
-          {error && <p className="text-sm text-rose-400">{(error as Error).message}</p>}
-          {isLoading && <Loader2 className="size-5 animate-spin text-slate-500" />}
+          {error && <p className="text-sm text-rose-600 font-medium">{(error as Error).message}</p>}
+          {isLoading && <Loader2 className="size-5 animate-spin text-slate-400" />}
 
           {section === "overview" && (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -189,14 +353,16 @@ function SuperAdminConsole() {
                 { label: "Pending approval", value: pending.length, icon: Pause },
                 { label: "Platform users", value: users.length, icon: Users },
               ].map((k) => (
-                <Card key={k.label} className="bg-slate-900 border-slate-800">
+                <Card key={k.label} className="bg-white border-slate-200 shadow-xs hover:shadow-sm transition">
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-2xl font-semibold">{k.value}</div>
-                        <div className="text-xs text-slate-500 mt-1">{k.label}</div>
+                        <div className="text-2xl font-bold text-slate-900 tracking-tight">{k.value}</div>
+                        <div className="text-xs text-slate-500 mt-1 font-medium">{k.label}</div>
                       </div>
-                      <k.icon className="size-8 text-indigo-400/60" />
+                      <div className="size-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+                        <k.icon className="size-6" />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -214,13 +380,13 @@ function SuperAdminConsole() {
                 const mods = Array.isArray(h.enabled_modules) ? (h.enabled_modules as string[]) : [];
                 const staff = users.filter((u) => u.hospital_id === h.id);
                 return (
-                  <Card key={h.id} className="bg-slate-900 border-slate-800">
+                  <Card key={h.id} className="bg-white border-slate-200 shadow-xs hover:shadow-sm transition">
                     <CardHeader className="pb-3">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <CardTitle className="text-base flex items-center gap-2">
+                          <CardTitle className="text-base flex items-center gap-2 text-slate-900 font-semibold">
                             {h.hospital_name}
-                            <Badge className={`border ${STATUS_STYLES[status] ?? ""} capitalize`}>{status}</Badge>
+                            <Badge className={`border ${STATUS_STYLES[status] ?? ""} capitalize text-[11px]`}>{status}</Badge>
                           </CardTitle>
                           <p className="text-xs text-slate-500 mt-1">
                             {h.email} · {h.city ?? "—"} · {staff.length} user{staff.length === 1 ? "" : "s"} · {mods.length} module{mods.length === 1 ? "" : "s"}
@@ -228,28 +394,28 @@ function SuperAdminConsole() {
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {status !== "approved" && (
-                            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500"
+                            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
                               onClick={() => statusMut.mutate({ id: h.id, status: "approved" })}>
                               <CheckCircle2 className="size-4 mr-1.5" /> Approve
                             </Button>
                           )}
                           {status === "approved" && (
-                            <Button size="sm" variant="secondary" onClick={() => statusMut.mutate({ id: h.id, status: "suspended" })}>
+                            <Button size="sm" variant="outline" onClick={() => statusMut.mutate({ id: h.id, status: "suspended" })}>
                               <Pause className="size-4 mr-1.5" /> Suspend
                             </Button>
                           )}
                           {status === "pending" && (
-                            <Button size="sm" variant="secondary" onClick={() => statusMut.mutate({ id: h.id, status: "rejected" })}>
+                            <Button size="sm" variant="outline" onClick={() => statusMut.mutate({ id: h.id, status: "rejected" })}>
                               <XCircle className="size-4 mr-1.5" /> Reject
                             </Button>
                           )}
-                          <Button size="sm" variant="secondary" onClick={() => setModulesFor(h)}>
+                          <Button size="sm" variant="outline" onClick={() => setModulesFor(h)}>
                             <Settings2 className="size-4 mr-1.5" /> Modules
                           </Button>
-                          <Button size="sm" variant="secondary" onClick={() => setUsersFor(h)}>
+                          <Button size="sm" variant="outline" onClick={() => setUsersFor(h)}>
                             <Users className="size-4 mr-1.5" /> Logins
                           </Button>
-                          <Button size="sm" variant="secondary" onClick={() => setEditing(h)}>
+                          <Button size="sm" variant="outline" onClick={() => setEditing(h)}>
                             <Pencil className="size-4 mr-1.5" /> Edit
                           </Button>
                           <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(h)}>
@@ -261,7 +427,7 @@ function SuperAdminConsole() {
                     {mods.length > 0 && (
                       <CardContent className="pt-0 flex flex-wrap gap-1.5">
                         {mods.map((m) => (
-                          <Badge key={m} variant="secondary" className="text-[10px] bg-slate-800 text-slate-300">
+                          <Badge key={m} variant="secondary" className="text-[10px] bg-slate-100 text-slate-700 border border-slate-200">
                             {MODULE_REGISTRY.find((r) => r.key === m)?.name ?? m}
                           </Badge>
                         ))}
@@ -274,24 +440,24 @@ function SuperAdminConsole() {
           )}
 
           {section === "users" && (
-            <Card className="bg-slate-900 border-slate-800">
+            <Card className="bg-white border-slate-200 shadow-xs">
               <CardContent className="pt-6 overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="text-xs text-slate-500">
-                    <tr><th className="text-left p-2">Name</th><th className="text-left p-2">Email</th><th className="text-left p-2">Hospital</th><th className="text-left p-2">Roles</th><th className="p-2" /></tr>
+                  <thead className="text-xs text-slate-500 border-b border-slate-100 bg-slate-50/60">
+                    <tr><th className="text-left p-2.5 font-medium">Name</th><th className="text-left p-2.5 font-medium">Email</th><th className="text-left p-2.5 font-medium">Hospital</th><th className="text-left p-2.5 font-medium">Roles</th><th className="p-2.5" /></tr>
                   </thead>
                   <tbody>
                     {users.map((u) => (
-                      <tr key={u.id} className="border-t border-slate-800">
-                        <td className="p-2">{u.full_name ?? "—"}</td>
-                        <td className="p-2 text-slate-400">{u.email ?? "—"}</td>
-                        <td className="p-2 text-slate-400">{hospitals.find((h) => h.id === u.hospital_id)?.hospital_name ?? "—"}</td>
-                        <td className="p-2">
+                      <tr key={u.id} className="border-t border-slate-100 hover:bg-slate-50/50 transition">
+                        <td className="p-2.5 font-medium text-slate-900">{u.full_name ?? "—"}</td>
+                        <td className="p-2.5 text-slate-600">{u.email ?? "—"}</td>
+                        <td className="p-2.5 text-slate-600">{hospitals.find((h) => h.id === u.hospital_id)?.hospital_name ?? "—"}</td>
+                        <td className="p-2.5">
                           <div className="flex flex-wrap gap-1">
-                            {u.roles.length ? u.roles.map((r) => <Badge key={r} variant="secondary" className="bg-slate-800 text-slate-300 text-[10px]">{r}</Badge>) : <span className="text-slate-600 text-xs">no role</span>}
+                            {u.roles.length ? u.roles.map((r) => <Badge key={r} variant="secondary" className="bg-slate-100 text-slate-700 text-[10px] border border-slate-200">{r}</Badge>) : <span className="text-slate-400 text-xs">no role</span>}
                           </div>
                         </td>
-                        <td className="p-2 text-right">
+                        <td className="p-2.5 text-right">
                           <UserRowActions user={u} onDone={refresh} />
                         </td>
                       </tr>

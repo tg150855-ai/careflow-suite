@@ -10,9 +10,13 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Switch } from "@/components/ui/switch";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { fetchUnifiedDoctors, formatDoctorLabel } from "@/lib/doctors";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export function EditAdmissionDialog({ admission, trigger }: { admission: any; trigger?: React.ReactNode }) {
   const qc = useQueryClient();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const [open, setOpen] = useState(false);
   const [f, setF] = useState<any>({});
 
@@ -32,7 +36,7 @@ export function EditAdmissionDialog({ admission, trigger }: { admission: any; tr
         estimated_stay_days: admission.estimated_stay_days ?? "",
         is_emergency: !!admission.is_emergency,
         notes: admission.notes ?? "",
-        admitted_at: admission.admitted_at ? new Date(admission.admitted_at).toISOString().slice(0, 16) : "",
+        admitted_at: admission.admitted_at ? admission.admitted_at.slice(0, 16) : "",
       });
     }
   }, [open, admission]);
@@ -45,7 +49,7 @@ export function EditAdmissionDialog({ admission, trigger }: { admission: any; tr
     enabled: open,
   });
   const { data: beds = [] } = useQuery({
-    queryKey: ["beds-in-ward", f.ward_id],
+    queryKey: ["beds", f.ward_id],
     enabled: open && !!f.ward_id,
     queryFn: async () =>
       (await supabase.from("beds").select("id, bed_number, status").eq("ward_id", f.ward_id).order("bed_number")).data ?? [],
@@ -119,7 +123,7 @@ export function EditAdmissionDialog({ admission, trigger }: { admission: any; tr
               <SelectContent>
                 {doctors.map((d: any) => (
                   <SelectItem key={d.id} value={d.id}>
-                    Dr. {d.name}
+                    {formatDoctorLabel(d)}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -10,12 +10,16 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { inr } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { fetchUnifiedDoctors, formatDoctorLabel } from "@/lib/doctors";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/laboratory/new")({ component: NewLabOrder });
 
 function NewLabOrder() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const [patientId, setPatientId] = useState<string | null>(null);
   const [patient, setPatient] = useState<any | null>(null);
   const [patientQ, setPatientQ] = useState("");
@@ -37,8 +41,8 @@ function NewLabOrder() {
     },
   });
   const { data: doctors = [] } = useQuery({
-    queryKey: ["doctors"],
-    queryFn: async () => (await supabase.from("doctors").select("id, name, specialization").eq("active", true).order("name")).data ?? [],
+    queryKey: ["doctors", hospitalId],
+    queryFn: () => fetchUnifiedDoctors(hospitalId),
   });
 
   useEffect(() => {
@@ -92,7 +96,7 @@ function NewLabOrder() {
             <h2 className="font-semibold mb-3">Referring doctor</h2>
             <select className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm" value={doctorId ?? ""} onChange={(e) => setDoctorId(e.target.value || null)}>
               <option value="">— Select doctor —</option>
-              {doctors.map((d: any) => <option key={d.id} value={d.id}>{d.name} {d.specialization ? `· ${d.specialization}` : ""}</option>)}
+              {doctors.map((d: any) => <option key={d.id} value={d.id}>{formatDoctorLabel(d)}</option>)}
             </select>
           </Card>
 

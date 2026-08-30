@@ -23,6 +23,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { RecordActions } from "@/components/common/record-actions";
+import { useMyHospital } from "@/lib/use-my-hospital";
+import { fetchUnifiedDoctors, formatDoctorLabel } from "@/lib/doctors";
 
 export const Route = createFileRoute("/_authenticated/opd/appointments")({
   component: OpdAppointments,
@@ -40,26 +42,23 @@ const STATUS_TONE: Record<Status, string> = {
   cancelled: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200",
 };
 
+/* ────────────────────────────── Main Page ────────────────────────────── */
+
 function OpdAppointments() {
+  const { user } = useAuth();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const qc = useQueryClient();
-  const today = format(new Date(), "yyyy-MM-dd");
-  const [date, setDate] = useState(today);
-  const [doctorId, setDoctorId] = useState<string>("all");
+  const [date, setDate] = useState<string>(() => format(new Date(), "yyyy-MM-dd"));
   const [status, setStatus] = useState<string>("all");
+  const [doctorId, setDoctorId] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
 
   const { data: doctors = [] } = useQuery({
-    queryKey: ["opd-appts-doctors"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("doctors")
-        .select("id, name, specialization")
-        .eq("active", true)
-        .order("name");
-      return data ?? [];
-    },
+    queryKey: ["opd-appts-doctors", hospitalId],
+    queryFn: () => fetchUnifiedDoctors(hospitalId),
   });
 
   const { data: appts = [], isLoading } = useQuery({
@@ -203,7 +202,7 @@ function OpdAppointments() {
               <SelectItem value="all">All doctors</SelectItem>
               {doctors.map((d: any) => (
                 <SelectItem key={d.id} value={d.id}>
-                  {d.name}
+                  {formatDoctorLabel(d)}
                 </SelectItem>
               ))}
             </SelectContent>

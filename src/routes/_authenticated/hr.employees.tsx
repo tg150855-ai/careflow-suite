@@ -18,6 +18,8 @@ import { RecordActions } from "@/components/common/record-actions";
 import { SearchBox } from "@/components/common/search-box";
 import { DayMonthYearTabs, useDateRange } from "@/components/common/date-range-tabs";
 import { exportXlsx } from "@/lib/export";
+import { syncEmployeeToDoctor } from "@/lib/doctors";
+import { useMyHospital } from "@/lib/use-my-hospital";
 import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 
 export const Route = createFileRoute("/_authenticated/hr/employees")({ component: Employees });
@@ -52,13 +54,32 @@ function Employees() {
     setOpen(true);
   }
 
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
+
   async function save() {
     if (!form.full_name) return toast.error("Name required");
-    const payload = { ...form, joining_date: form.joining_date || null };
-    const { error } = editing
-      ? await (supabase as any).from("employees").update(payload).eq("id", editing.id)
-      : await (supabase as any).from("employees").insert(payload);
+    const payload = {
+      ...form,
+      joining_date: form.joining_date || null,
+      ...(hospitalId ? { hospital_id: hospitalId } : {}),
+    };
+    const { data: savedRow, error } = editing
+      ? await (supabase as any).from("employees").update(payload).eq("id", editing.id).select().maybeSingle()
+      : await (supabase as any).from("employees").insert(payload).select().maybeSingle();
     if (error) return toast.error(error.message);
+
+    // Auto sync doctor to doctors table so they immediately appear in OPD, IPD, and OT
+    await syncEmployeeToDoctor({
+      id: savedRow?.id ?? editing?.id,
+      full_name: form.full_name,
+      department: form.department,
+      designation: form.designation,
+      phone: form.phone,
+      email: form.email,
+      hospital_id: hospitalId,
+    });
+
     toast.success(editing ? "Employee updated" : "Employee added");
     setOpen(false); setEditing(null); setForm(EMPTY); load();
   }

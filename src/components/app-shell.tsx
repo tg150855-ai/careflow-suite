@@ -89,6 +89,7 @@ const GROUPS: NavGroup[] = [
     key: "admin", labelKey: "nav.groups.admin", icon: ShieldAlert, roles: ["admin","super_admin"], items: [
       { to: "/staff", labelKey: "nav.items.user_management", icon: UserCog },
       { to: "/authority", labelKey: "nav.items.roles_permissions", icon: ShieldCheck },
+      { to: "/super-admin", labelKey: "nav.items.super_admin", icon: ShieldAlert, roles: ["super_admin"] },
       { to: "/branches", labelKey: "nav.items.branches", icon: Building2 },
       { to: "/settings", labelKey: "nav.items.hospital_settings", icon: Settings },
       { to: "/backups", labelKey: "nav.items.backups", icon: Database },
@@ -298,6 +299,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </div>
                   ) : (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">No role assigned. Contact admin.</div>
+                  )}
+                  {roles.includes("super_admin") && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/super-admin" className="flex items-center gap-2 font-medium text-primary">
+                          <ShieldCheck className="size-4 text-primary" /> Super Admin Console
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()} className="text-destructive focus:text-destructive">

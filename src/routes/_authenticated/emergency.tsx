@@ -24,6 +24,8 @@ import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 import { logAudit } from "@/lib/audit";
 import { BRAND } from "@/components/brand";
 import ExcelJS from "exceljs";
+import { fetchUnifiedDoctors, formatDoctorLabel } from "@/lib/doctors";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/emergency")({ component: EmergencyPage });
 
@@ -35,27 +37,31 @@ type ER = {
   patients?: { id: string; uhid: string } | null;
 };
 
-const triageColor: Record<string, string> = {
-  red: "bg-destructive text-destructive-foreground",
-  orange: "bg-warning text-warning-foreground",
-  yellow: "bg-yellow-200 text-yellow-900",
-  green: "bg-success/20 text-success",
+const TRIAGE_COLORS: Record<string, string> = {
+  red: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+  orange: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  yellow: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  green: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+  black: "bg-neutral-800 text-neutral-100 dark:bg-neutral-900 dark:text-neutral-300",
 };
+const triageColor = TRIAGE_COLORS;
 
 const STATUS_OPTIONS = ["waiting", "in_treatment", "admitted", "discharged"] as const;
 
 function EmergencyPage() {
   const qc = useQueryClient();
-  const [doctors, setDoctors] = useState<{ id: string; name: string }[]>([]);
-  const [open, setOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>("all");
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const [triageF, setTriageF] = useState<string>("all");
+  const [status, setStatus] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const [doctors, setDoctors] = useState<any[]>([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [appliedFrom, setAppliedFrom] = useState("");
   const [appliedTo, setAppliedTo] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<ER | null>(null);
   const [form, setForm] = useState({ full_name: "", mobile: "", gender: "male", approx_age: 30, emergency_type: "trauma", chief_complaint: "", triage: "yellow" });
 
@@ -65,10 +71,10 @@ function EmergencyPage() {
   // Load doctors once
   useMemo(() => {
     (async () => {
-      const { data } = await supabase.from("doctors").select("id, name").order("name");
+      const data = await fetchUnifiedDoctors(hospitalId);
       setDoctors(data ?? []);
     })();
-  }, []);
+  }, [hospitalId]);
 
   const buildBaseQuery = () => {
     // NOTE: no schema FK exists between emergency_cases.patient_id and patients,
@@ -524,7 +530,7 @@ Status: ${c.status}</pre>`);
                   <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none">Unassigned</SelectItem>
-                    {doctors.map((d) => (<SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>))}
+                    {doctors.map((d) => (<SelectItem key={d.id} value={d.id}>{formatDoctorLabel(d)}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>

@@ -20,6 +20,8 @@ import { can } from "@/lib/permissions";
 import { Can } from "@/components/can";
 import { RecordActions } from "@/components/common/record-actions";
 import { shareOnWhatsApp } from "@/lib/share";
+import { fetchUnifiedDoctors, formatDoctorLabel } from "@/lib/doctors";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/ot/schedule")({ component: OtSchedule });
 
@@ -28,35 +30,32 @@ type FormState = {
   primary_surgeon_id: string; assistant_surgeon_id: string; anesthetist_id: string;
   procedure_name: string; procedure_code: string; priority: string;
   scheduled_start: string; scheduled_end: string;
-  ot_charge: number; surgeon_charge: number; assistant_charge: number; anesthesia_charge: number; consumables_charge: number;
+  estimated_cost: string; ot_charge: string; surgeon_charge: string;
+  assistant_charge: string; anesthesia_charge: string; consumables_charge: string;
   notes: string;
 };
 
-const empty: FormState = {
+const EMPTY: FormState = {
   patient_id: "", admission_id: "", ot_room_id: "",
   primary_surgeon_id: "", assistant_surgeon_id: "", anesthetist_id: "",
-  procedure_name: "", procedure_code: "", priority: "planned",
+  procedure_name: "", procedure_code: "", priority: "elective",
   scheduled_start: "", scheduled_end: "",
-  ot_charge: 0, surgeon_charge: 0, assistant_charge: 0, anesthesia_charge: 0, consumables_charge: 0,
+  estimated_cost: "0", ot_charge: "0", surgeon_charge: "0",
+  assistant_charge: "0", anesthesia_charge: "0", consumables_charge: "0",
   notes: "",
 };
 
 function OtSchedule() {
-  const qc = useQueryClient();
   const { roles } = useAuth();
-  const canCreate = can(roles, "ot", "create");
-  const canEdit = can(roles, "ot", "edit");
-  const canDelete = can(roles, "ot", "delete");
-  const canApprove = can(roles, "ot", "approve");
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
+  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<FormState>(empty);
-  const [cancelTarget, setCancelTarget] = useState<any | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
-  const [reschedTarget, setReschedTarget] = useState<any | null>(null);
-  const [reschedForm, setReschedForm] = useState({ scheduled_start: "", scheduled_end: "", reason: "" });
+  const [editing, setEditing] = useState<any | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY);
+  const [submitting, setSubmitting] = useState(false);
 
-  const { data: rows = [] } = useQuery({
+  const { data: surgeries = [], isLoading } = useQuery({
     queryKey: ["ot-schedule"],
     queryFn: async () => (await (supabase as any).from("surgeries")
       .select("id, surgery_no, procedure_name, priority, status, scheduled_start, scheduled_end, estimated_cost, ot_charge, surgeon_charge, assistant_charge, anesthesia_charge, consumables_charge, admission_id, patients(full_name, uhid), ot_rooms(name), primary:primary_surgeon_id(name), assistant:assistant_surgeon_id(name), anesthetist:anesthetist_id(name)")
@@ -64,7 +63,7 @@ function OtSchedule() {
   });
   const { data: patients = [] } = useQuery({ queryKey: ["ot-patients"], queryFn: async () => (await supabase.from("patients").select("id, full_name, uhid").order("full_name").limit(500)).data ?? [] });
   const { data: rooms = [] } = useQuery({ queryKey: ["ot-rooms"], queryFn: async () => (await (supabase as any).from("ot_rooms").select("id, name").eq("active", true)).data ?? [] });
-  const { data: doctors = [] } = useQuery({ queryKey: ["ot-doctors"], queryFn: async () => (await supabase.from("doctors").select("id, name").eq("active", true).order("name")).data ?? [] });
+  const { data: doctors = [] } = useQuery({ queryKey: ["ot-doctors", hospitalId], queryFn: () => fetchUnifiedDoctors(hospitalId) });
   const { data: procedures = [] } = useQuery({ queryKey: ["ot-catalog"], queryFn: async () => (await (supabase as any).from("ot_procedure_catalog").select("*").eq("active", true).order("name")).data ?? [] });
   const { data: admissions = [] } = useQuery({
     queryKey: ["ot-adms", form.patient_id],

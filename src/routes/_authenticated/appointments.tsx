@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useAuth } from "@/lib/auth-context";
+import { fetchUnifiedDoctors, formatDoctorLabel } from "@/lib/doctors";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/appointments")({ component: Appointments });
 
@@ -100,6 +102,8 @@ function Appointments() {
 
 function BookDialog({ onCreated, defaultDate }: { onCreated: () => void; defaultDate: string }) {
   const { user } = useAuth();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const [open, setOpen] = useState(false);
   const [patientQ, setPatientQ] = useState("");
   const [patientId, setPatientId] = useState("");
@@ -117,8 +121,8 @@ function BookDialog({ onCreated, defaultDate }: { onCreated: () => void; default
     enabled: open,
   });
   const { data: doctors = [] } = useQuery({
-    queryKey: ["doctors"],
-    queryFn: async () => (await supabase.from("doctors").select("id, name, specialization").eq("active", true)).data ?? [],
+    queryKey: ["doctors", hospitalId],
+    queryFn: () => fetchUnifiedDoctors(hospitalId),
     enabled: open,
   });
 
@@ -138,7 +142,7 @@ function BookDialog({ onCreated, defaultDate }: { onCreated: () => void; default
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg"><Plus className="size-4 mr-2" />Book appointment</Button>
+        <Button><Plus className="size-4 mr-2" />Book appointment</Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>Book appointment</DialogTitle></DialogHeader>
@@ -154,7 +158,7 @@ function BookDialog({ onCreated, defaultDate }: { onCreated: () => void; default
             {!patientId && patients.length > 0 && (
               <div className="border rounded-lg divide-y max-h-44 overflow-y-auto">
                 {patients.map((p) => (
-                  <button key={p.id} type="button" onClick={() => setPatientId(p.id)} className="w-full text-left px-3 py-2 hover:bg-surface-muted text-sm">
+                  <button key={p.id} type="button" onClick={() => setPatientId(p.id)} className="w-full text-left px-3 py-2 hover:bg-muted text-sm">
                     <div className="font-medium">{p.full_name}</div>
                     <div className="text-xs text-muted-foreground">{p.uhid} · {p.mobile}</div>
                   </button>
@@ -169,7 +173,11 @@ function BookDialog({ onCreated, defaultDate }: { onCreated: () => void; default
               <Select value={doctorId} onValueChange={setDoctorId}>
                 <SelectTrigger><SelectValue placeholder="Select doctor" /></SelectTrigger>
                 <SelectContent>
-                  {doctors.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  {doctors.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {formatDoctorLabel(d)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

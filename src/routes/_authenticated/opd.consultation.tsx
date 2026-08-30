@@ -16,6 +16,9 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { PatientAttachments } from "@/components/patient-attachments";
 import { MedicineAutocomplete } from "@/components/opd/medicine-autocomplete";
+import { ConsultationTemplateManager } from "@/components/opd/consultation-template-manager";
+import { PreviousConsultationHistory } from "@/components/opd/previous-consultation-history";
+import { useMyHospital } from "@/lib/use-my-hospital";
 import { toast } from "sonner";
 import { differenceInMinutes, format, formatDistanceToNow } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -31,14 +34,16 @@ function endOfDayIso() { const d = new Date(); d.setHours(23,59,59,999); return 
 function ConsultationPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const qc = useQueryClient();
   const [doctorFilter, setDoctorFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data: doctors = [] } = useQuery({
-    queryKey: ["doctors-list"],
-    queryFn: async () => (await supabase.from("doctors").select("id, name, specialization").order("name")).data ?? [],
+    queryKey: ["doctors-list", hospitalId],
+    queryFn: () => fetchUnifiedDoctors(hospitalId),
   });
 
   const { data: queue = [], refetch: refetchQueue } = useQuery({
@@ -153,7 +158,7 @@ function ConsultationPage() {
             <SelectTrigger className="h-9 w-[200px]"><SelectValue placeholder="All doctors" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All doctors</SelectItem>
-              {doctors.map((d: any) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+              {doctors.map((d: any) => <SelectItem key={d.id} value={d.id}>{formatDoctorLabel(d)}</SelectItem>)}
             </SelectContent>
           </Select>
           <div className="relative">
@@ -473,56 +478,114 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
     }
   }
 
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
+
+  function applyConsultationTemplate(tpl: any) {
+    if (tpl.chief_complaint) setChief(tpl.chief_complaint);
+    if (tpl.clinical_findings) setFindings(tpl.clinical_findings);
+    if (tpl.diagnosis) setDiagnosis(tpl.diagnosis);
+    if (tpl.advice) setNotes(tpl.advice);
+    if (tpl.follow_up_advice || tpl.follow_up_days) {
+      if (tpl.follow_up_days && !isNaN(Number(tpl.follow_up_days))) {
+        const d = new Date();
+        d.setDate(d.getDate() + Number(tpl.follow_up_days));
+        setFollowUp(format(d, "yyyy-MM-dd"));
+      } else if (tpl.follow_up_advice) {
+        setNotes((prev) => (prev ? `${prev}\n\nFollow-up: ${tpl.follow_up_advice}` : `Follow-up: ${tpl.follow_up_advice}`));
+      }
+    }
+    if (tpl.medicines && tpl.medicines.length > 0) {
+      const rx = tpl.medicines.map((m: any) => ({
+        medicine_name: m.medicine_name ?? "",
+        dosage: m.dosage || m.frequency || "1-0-1",
+        food_instruction: m.food_instruction || "After food",
+        duration_days: m.duration_days ? String(m.duration_days) : "5",
+      }));
+      setItems(rx);
+    }
+  }
+
+  function handleCopyHistoryMedicines(meds: any[]) {
+    const valid = items.filter((it) => it.medicine_name.trim());
+    const converted = meds.map((m) => ({
+      medicine_name: m.medicine_name,
+      dosage: m.dosage || m.frequency || "1-0-1",
+      food_instruction: m.food_instruction || "After food",
+      duration_days: m.duration_days ? String(m.duration_days) : "5",
+    }));
+    setItems([...valid, ...converted]);
+  }
+
   const age = p?.dob ? Math.floor((Date.now() - new Date(p.dob).getTime()) / 31557600000) : null;
 
   return (
     <Card className="p-4 space-y-4">
-      {/* Patient header + timer */}
-      <div className="flex flex-wrap items-start gap-3 pb-3 border-b">
-        <div className="size-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold">
-          {p?.full_name?.split(" ").map((n: string) => n[0]).slice(0,2).join("")}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-base font-semibold truncate">{p?.full_name}</h2>
-            <span className="text-xs text-muted-foreground font-mono">{p?.uhid}</span>
-            {age != null && <Badge variant="secondary" className="rounded-full text-[10px]">{age}y · {p?.gender}</Badge>}
-            {p?.blood_group && <Badge variant="outline" className="rounded-full text-[10px]">{p.blood_group}</Badge>}
+      {/* Patient header + timer + template selector */}
+      <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="size-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold shrink-0">
+            {p?.full_name?.split(" ").map((n: string) => n[0]).slice(0,2).join("")}
           </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            {appt.doctors?.name} · token {appt.token_no ?? "—"} · scheduled {format(new Date(appt.scheduled_at), "HH:mm")}
-          </div>
-          {(p?.allergies || p?.chronic_diseases) && (
-            <div className="flex gap-2 mt-1.5 flex-wrap">
-              {p.allergies && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300">Allergy: {p.allergies}</span>}
-              {p.chronic_diseases && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">Chronic: {p.chronic_diseases}</span>}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-semibold truncate">{p?.full_name}</h2>
+              <span className="text-xs text-muted-foreground font-mono">{p?.uhid}</span>
+              {age != null && <Badge variant="secondary" className="rounded-full text-[10px]">{age}y · {p?.gender}</Badge>}
+              {p?.blood_group && <Badge variant="outline" className="rounded-full text-[10px]">{p.blood_group}</Badge>}
             </div>
-          )}
-          {history.length > 0 && (
-            <div className="mt-2 rounded-lg border bg-muted/30 px-3 py-2">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Patient history</div>
-              <div className="space-y-1">
-                {history.slice(0, 3).map((h: any) => (
-                  <div key={h.id} className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="truncate">{h.title}</span>
-                    <span className="text-muted-foreground shrink-0">{formatDistanceToNow(new Date(h.date), { addSuffix: true })}</span>
-                  </div>
-                ))}
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {appt.doctors?.name} · token {appt.token_no ?? "—"} · scheduled {format(new Date(appt.scheduled_at), "HH:mm")}
+            </div>
+            {(p?.allergies || p?.chronic_diseases) && (
+              <div className="flex gap-2 mt-1.5 flex-wrap">
+                {p.allergies && <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300">Allergy: {p.allergies}</span>}
+                {p.chronic_diseases && <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">Chronic: {p.chronic_diseases}</span>}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border px-3 py-2 bg-muted/40">
-          <Clock className="size-4 text-primary" />
-          <span className="font-mono text-lg tabular-nums tracking-tight">{fmtTime(elapsed)}</span>
-          <Button size="icon" variant="ghost" className="size-7" onClick={() => setRunning((r) => !r)} title={running ? "Pause" : "Resume"}>
-            {running ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
-          </Button>
-          <Button size="icon" variant="ghost" className="size-7" onClick={resetTimer} title="Reset">
-            <RotateCcw className="size-3.5" />
-          </Button>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <ConsultationTemplateManager
+            doctorId={appt.doctor_id}
+            userId={userId}
+            hospitalId={hospitalId}
+            currentConsultation={{
+              chief,
+              findings,
+              diagnosis,
+              notes,
+              followUp,
+              medicines: items,
+            }}
+            onApplyTemplate={applyConsultationTemplate}
+          />
+          <div className="flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 bg-muted/40 shrink-0">
+            <Clock className="size-3.5 text-primary" />
+            <span className="font-mono text-base tabular-nums font-semibold tracking-tight">{fmtTime(elapsed)}</span>
+            <Button size="icon" variant="ghost" className="size-6" onClick={() => setRunning((r) => !r)} title={running ? "Pause" : "Resume"}>
+              {running ? <Pause className="size-3" /> : <Play className="size-3" />}
+            </Button>
+            <Button size="icon" variant="ghost" className="size-6" onClick={resetTimer} title="Reset">
+              <RotateCcw className="size-3" />
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Previous History Section */}
+      <PreviousConsultationHistory
+        patientId={appt.patient_id}
+        currentAppointmentId={appt.id}
+        hospitalId={hospitalId}
+        onCopyMedicines={handleCopyHistoryMedicines}
+        onCopyAdvice={(adv) => setNotes((prev) => (prev ? `${prev}\n\n${adv}` : adv))}
+        onCopyDiagnosis={(diag, find) => {
+          if (diag) setDiagnosis(diag);
+          if (find) setFindings(find);
+        }}
+      />
 
       {/* Vitals */}
       <div>

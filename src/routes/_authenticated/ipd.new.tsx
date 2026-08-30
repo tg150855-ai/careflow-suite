@@ -13,6 +13,8 @@ import { ArrowLeft, Search, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { z } from "zod";
+import { useMyHospital } from "@/lib/use-my-hospital";
+import { fetchUnifiedDoctors, formatDoctorLabel } from "@/lib/doctors";
 
 export const Route = createFileRoute("/_authenticated/ipd/new")({
   component: NewAdmission,
@@ -42,6 +44,8 @@ const Schema = z.object({
 function NewAdmission() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const { patientId: presetPatient } = useSearch({ from: "/_authenticated/ipd/new" });
 
   const [patientQ, setPatientQ] = useState("");
@@ -60,7 +64,10 @@ function NewAdmission() {
   const [estDays, setEstDays] = useState<number>(3);
   const [isEmergency, setIsEmergency] = useState(false);
 
-  const { data: doctors = [] } = useQuery({ queryKey: ["doctors"], queryFn: async () => (await supabase.from("doctors").select("id, name, specialization").eq("active", true).order("name")).data ?? [] });
+  const { data: doctors = [] } = useQuery({
+    queryKey: ["doctors", hospitalId],
+    queryFn: () => fetchUnifiedDoctors(hospitalId),
+  });
   const { data: wards = [] } = useQuery({ queryKey: ["wards"], queryFn: async () => (await supabase.from("wards").select("id, name, type").order("name")).data ?? [] });
   const { data: beds = [] } = useQuery({
     queryKey: ["beds-available", wardId],
@@ -162,7 +169,7 @@ function NewAdmission() {
                 <Label>Treating doctor</Label>
                 <Select value={doctorId} onValueChange={setDoctorId}>
                   <SelectTrigger><SelectValue placeholder="Select doctor" /></SelectTrigger>
-                  <SelectContent>{doctors.map((d: any) => <SelectItem key={d.id} value={d.id}>{d.name}{d.specialization ? ` · ${d.specialization}` : ""}</SelectItem>)}</SelectContent>
+                  <SelectContent>{doctors.map((d: any) => <SelectItem key={d.id} value={d.id}>{formatDoctorLabel(d)}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
