@@ -22,6 +22,8 @@ import { useMyHospital } from "@/lib/use-my-hospital";
 import { toast } from "sonner";
 import { differenceInMinutes, format, formatDistanceToNow } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { fetchUnifiedDoctors, formatDoctorLabel } from "@/lib/doctors";
+import { DoctorDictate, mergeSpeechTranscript } from "@/components/doctor-dictate";
 
 export const Route = createFileRoute("/_authenticated/opd/consultation")({ component: ConsultationPage });
 
@@ -681,9 +683,16 @@ function VitalInput({ label, value, onChange, placeholder }: { label: string; va
   );
 }
 function FieldArea({ label, value, onChange, rows }: { label: string; value: string; onChange: (v: string) => void; rows: number }) {
+  const handleDictate = (text: string, mode: "append" | "replace") => {
+    if (mode === "replace") onChange(text);
+    else onChange(mergeSpeechTranscript(value, text));
+  };
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
+        <DoctorDictate onTranscript={handleDictate} contextPrompt={`Field: ${label}.`} title="Dictate" />
+      </div>
       <Textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className="resize-none" />
     </div>
   );

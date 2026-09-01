@@ -41,6 +41,81 @@ function resolveLang(pref: LangKey): string {
   return "en-IN";
 }
 
+export function cleanConsecutiveDuplicates(text: string): string {
+  if (!text) return "";
+  const tokens = text.split(/(\s+)/);
+  const words: string[] = [];
+  const resultTokens: string[] = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    if (/^\s+$/.test(tok)) {
+      resultTokens.push(tok);
+      continue;
+    }
+    const cleanTok = tok.toLowerCase().replace(/[.,!?;:]/g, "").trim();
+    const prevCleanTok = words.length > 0 ? words[words.length - 1] : "";
+
+    if (cleanTok && cleanTok === prevCleanTok) {
+      if (resultTokens.length > 0 && /^\s+$/.test(resultTokens[resultTokens.length - 1])) {
+        resultTokens.pop();
+      }
+      continue;
+    }
+    words.push(cleanTok);
+    resultTokens.push(tok);
+  }
+  return resultTokens.join("").trim();
+}
+
+export function mergeSpeechTranscript(existing: string, incoming: string): string {
+  const cleanIncoming = cleanConsecutiveDuplicates(incoming.trim());
+  if (!existing || !existing.trim()) return cleanIncoming;
+  if (!cleanIncoming) return existing;
+
+  const existingTrimmed = existing.trim();
+  const existingWords = existingTrimmed.split(/\s+/);
+  const incomingWords = cleanIncoming.split(/\s+/);
+
+  const normalize = (w: string) => w.toLowerCase().replace(/[.,!?;:]/g, "").trim();
+  const normExisting = existingWords.map(normalize);
+  const normIncoming = incomingWords.map(normalize);
+
+  const maxOverlap = Math.min(existingWords.length, incomingWords.length, 12);
+  let overlapLen = 0;
+
+  for (let len = maxOverlap; len >= 1; len--) {
+    let match = true;
+    for (let i = 0; i < len; i++) {
+      const eWord = normExisting[normExisting.length - len + i];
+      const iWord = normIncoming[i];
+      if (eWord !== iWord || !eWord) {
+        match = false;
+        break;
+      }
+    }
+    if (match) {
+      overlapLen = len;
+      break;
+    }
+  }
+
+  if (overlapLen > 0) {
+    const remainingIncoming = incomingWords.slice(overlapLen).join(" ");
+    if (!remainingIncoming) return existingTrimmed;
+    return `${existingTrimmed} ${remainingIncoming}`;
+  }
+
+  // Check if incoming text is already fully contained in the recent words of existing text
+  const tailSlice = normExisting.slice(-15).join(" ");
+  const incomingNorm = normIncoming.join(" ");
+  if (tailSlice.includes(incomingNorm) && incomingNorm.length > 0) {
+    return existingTrimmed;
+  }
+
+  return `${existingTrimmed} ${cleanIncoming}`;
+}
+
 export function DoctorDictate({
   onTranscript,
   language,
@@ -81,13 +156,14 @@ export function DoctorDictate({
       rec.interimResults = true;
       rec.maxAlternatives = 1;
       finalRef.current = "";
-      lastEmittedRef.current = "";
+      recentEmissionsRef.current = [];
       lastFinalIndexRef.current = -1;
       isRecordingRef.current = true;
 
       rec.onresult = (e: any) => {
         let delta = "";
-        for (let i = 0; i < e.results.length; i++) {
+        const startIndex = e.resultIndex ?? 0;
+        for (let i = startIndex; i < e.results.length; i++) {
           const res = e.results[i];
           if (res.isFinal && i > lastFinalIndexRef.current) {
             const t = (res[0]?.transcript || "").trim();
@@ -99,17 +175,21 @@ export function DoctorDictate({
         }
         if (!delta) return;
 
+        delta = cleanConsecutiveDuplicates(delta);
+        if (!delta) return;
+
         const now = Date.now();
-        recentEmissionsRef.current = recentEmissionsRef.current.filter((item) => now - item.time < 3000);
+        recentEmissionsRef.current = recentEmissionsRef.current.filter((item) => now - item.time < 4000);
         const cleanDelta = delta.toLowerCase().replace(/[.,!?;:]/g, "").trim();
         const isDupe = recentEmissionsRef.current.some((item) => {
-          return item.text.toLowerCase().replace(/[.,!?;:]/g, "").trim() === cleanDelta;
+          const prevClean = item.text.toLowerCase().replace(/[.,!?;:]/g, "").trim();
+          return prevClean === cleanDelta || prevClean.endsWith(cleanDelta);
         });
 
         if (isDupe) return;
         recentEmissionsRef.current.push({ text: delta, time: now });
 
-        finalRef.current = (finalRef.current ? finalRef.current + " " : "") + delta;
+        finalRef.current = mergeSpeechTranscript(finalRef.current, delta);
         if (mode === "replace") {
           onTranscript(finalRef.current, "replace");
         } else {

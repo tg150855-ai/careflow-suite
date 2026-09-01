@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { VoiceDictate } from "@/components/voice-dictate";
+import { mergeSpeechTranscript } from "@/components/doctor-dictate";
 
 export function MicButton({
   onAppend,
@@ -35,11 +36,11 @@ export function DictateTextarea({
 }) {
   const appendChunk = (chunk: string) => {
     if (!chunk.trim()) return;
-    onChange(
-      value
-        ? value.replace(/\s+$/, "") + (chunk.startsWith("\n") || /^[,.:;?]/.test(chunk) ? "" : " ") + chunk
-        : chunk
-    );
+    if (chunk.startsWith("\n") || /^[,.:;?]/.test(chunk)) {
+      onChange(value ? value.replace(/\s+$/, "") + chunk : chunk);
+    } else {
+      onChange(mergeSpeechTranscript(value, chunk));
+    }
   };
 
   const id = useMemo(() => `dict-${Math.random().toString(36).slice(2, 9)}`, []);

@@ -30,30 +30,37 @@ type FormState = {
   primary_surgeon_id: string; assistant_surgeon_id: string; anesthetist_id: string;
   procedure_name: string; procedure_code: string; priority: string;
   scheduled_start: string; scheduled_end: string;
-  estimated_cost: string; ot_charge: string; surgeon_charge: string;
-  assistant_charge: string; anesthesia_charge: string; consumables_charge: string;
+  estimated_cost: number; ot_charge: number; surgeon_charge: number;
+  assistant_charge: number; anesthesia_charge: number; consumables_charge: number;
   notes: string;
 };
 
 const EMPTY: FormState = {
   patient_id: "", admission_id: "", ot_room_id: "",
   primary_surgeon_id: "", assistant_surgeon_id: "", anesthetist_id: "",
-  procedure_name: "", procedure_code: "", priority: "elective",
+  procedure_name: "", procedure_code: "", priority: "planned",
   scheduled_start: "", scheduled_end: "",
-  estimated_cost: "0", ot_charge: "0", surgeon_charge: "0",
-  assistant_charge: "0", anesthesia_charge: "0", consumables_charge: "0",
+  estimated_cost: 0, ot_charge: 0, surgeon_charge: 0,
+  assistant_charge: 0, anesthesia_charge: 0, consumables_charge: 0,
   notes: "",
 };
 
 function OtSchedule() {
   const { roles } = useAuth();
+  const canCreate = can(roles, "ot", "create");
+  const canEdit = can(roles, "ot", "edit");
+  const canApprove = can(roles, "ot", "approve");
+  const canDelete = can(roles, "ot", "delete");
   const { hospital } = useMyHospital();
   const hospitalId = hospital?.id ?? null;
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<any | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
-  const [submitting, setSubmitting] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<any | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [reschedTarget, setReschedTarget] = useState<any | null>(null);
+  const [reschedForm, setReschedForm] = useState({ scheduled_start: "", scheduled_end: "", reason: "" });
 
   const { data: surgeries = [], isLoading } = useQuery({
     queryKey: ["ot-schedule"],
@@ -61,6 +68,7 @@ function OtSchedule() {
       .select("id, surgery_no, procedure_name, priority, status, scheduled_start, scheduled_end, estimated_cost, ot_charge, surgeon_charge, assistant_charge, anesthesia_charge, consumables_charge, admission_id, patients(full_name, uhid), ot_rooms(name), primary:primary_surgeon_id(name), assistant:assistant_surgeon_id(name), anesthetist:anesthetist_id(name)")
       .order("scheduled_start", { ascending: false }).limit(200)).data ?? [],
   });
+  const rows = surgeries;
   const { data: patients = [] } = useQuery({ queryKey: ["ot-patients"], queryFn: async () => (await supabase.from("patients").select("id, full_name, uhid").order("full_name").limit(500)).data ?? [] });
   const { data: rooms = [] } = useQuery({ queryKey: ["ot-rooms"], queryFn: async () => (await (supabase as any).from("ot_rooms").select("id, name").eq("active", true)).data ?? [] });
   const { data: doctors = [] } = useQuery({ queryKey: ["ot-doctors", hospitalId], queryFn: () => fetchUnifiedDoctors(hospitalId) });
@@ -83,7 +91,7 @@ function OtSchedule() {
     }));
   }
 
-  function openNew() { setEditId(null); setForm(empty); setOpen(true); }
+  function openNew() { setEditId(null); setForm(EMPTY); setOpen(true); }
   function openEdit(r: any) {
     setEditId(r.id);
     setForm({
@@ -92,6 +100,7 @@ function OtSchedule() {
       procedure_name: r.procedure_name ?? "", procedure_code: r.procedure_code ?? "", priority: r.priority ?? "planned",
       scheduled_start: r.scheduled_start ? r.scheduled_start.slice(0, 16) : "",
       scheduled_end: r.scheduled_end ? r.scheduled_end.slice(0, 16) : "",
+      estimated_cost: Number(r.estimated_cost ?? 0),
       ot_charge: Number(r.ot_charge ?? 0), surgeon_charge: Number(r.surgeon_charge ?? 0),
       assistant_charge: Number(r.assistant_charge ?? 0), anesthesia_charge: Number(r.anesthesia_charge ?? 0),
       consumables_charge: Number(r.consumables_charge ?? 0),

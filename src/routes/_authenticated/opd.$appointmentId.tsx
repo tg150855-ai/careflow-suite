@@ -16,7 +16,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { format, differenceInYears } from "date-fns";
-import { DoctorDictate, parseMedicationLine, splitDictationToLines } from "@/components/doctor-dictate";
+import { DoctorDictate, parseMedicationLine, splitDictationToLines, mergeSpeechTranscript } from "@/components/doctor-dictate";
 import { PrescriptionComposer, type ComposerContext } from "@/components/opd/prescription-composer";
 import type { InlineRxAction, InlineRxPayload } from "@/components/opd/prescription-inline";
 import { PrescriptionSheet } from "@/components/opd/prescription-sheet";
@@ -792,7 +792,7 @@ function VitalInput({ label, value, onChange, placeholder }: { label: string; va
 function FieldArea({ label, value, onChange, rows }: { label: string; value: string; onChange: (v: string) => void; rows: number }) {
   const handleDictate = (text: string, mode: "append" | "replace") => {
     if (mode === "replace") onChange(text);
-    else onChange(value ? `${value.replace(/\s+$/, "")} ${text}` : text);
+    else onChange(mergeSpeechTranscript(value, text));
   };
   return (
     <div className="space-y-1.5">

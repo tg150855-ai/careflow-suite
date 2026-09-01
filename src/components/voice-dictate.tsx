@@ -20,6 +20,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { cleanConsecutiveDuplicates } from "@/components/doctor-dictate";
 
 export const SPEECH_LANGUAGES = [
   { code: "en-IN", label: "English (India)", short: "EN" },
@@ -173,9 +174,10 @@ export function VoiceDictate({
         recognition.onresult = (e: any) => {
           let newFinalText = "";
           let currentInterim = "";
+          const startIndex = e.resultIndex ?? 0;
 
-          // Process all results from resultIndex to length, but guard against already processed indices (crucial for Android tablets & iPads)
-          for (let i = 0; i < e.results.length; i++) {
+          // Process results starting from resultIndex (crucial for Android tablets & iPads)
+          for (let i = startIndex; i < e.results.length; i++) {
             const res = e.results[i];
             const transcript = (res[0]?.transcript || "").trim();
             if (!transcript) continue;
@@ -197,17 +199,18 @@ export function VoiceDictate({
           }
 
           if (newFinalText.trim()) {
-            const formatted = applyVoiceFormatting(newFinalText.trim());
+            const cleanedText = cleanConsecutiveDuplicates(newFinalText.trim());
+            const formatted = applyVoiceFormatting(cleanedText);
             const now = Date.now();
 
-            // Clear emissions older than 3 seconds
-            recentEmissionsRef.current = recentEmissionsRef.current.filter((item) => now - item.time < 3000);
+            // Clear emissions older than 4 seconds
+            recentEmissionsRef.current = recentEmissionsRef.current.filter((item) => now - item.time < 4000);
 
             // Deduplicate across mobile restart events
             const cleanNew = formatted.trim().toLowerCase().replace(/[.,!?;:]/g, "");
             const isDupe = recentEmissionsRef.current.some((item) => {
               const cleanPrev = item.text.trim().toLowerCase().replace(/[.,!?;:]/g, "");
-              return cleanPrev === cleanNew;
+              return cleanPrev === cleanNew || cleanPrev.endsWith(cleanNew);
             });
 
             if (!isDupe && formatted.trim()) {

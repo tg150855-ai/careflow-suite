@@ -67,7 +67,7 @@ export async function ensureOpdAppointment(opts: {
 
   const { data, error } = await supabase.from("appointments").insert({
     patient_id: patientId,
-    doctor_id: doc,
+    doctor_id: (doc ?? "") as any,
     scheduled_at: new Date().toISOString(),
     status: "waiting" as any,
     created_by: createdBy ?? null,
