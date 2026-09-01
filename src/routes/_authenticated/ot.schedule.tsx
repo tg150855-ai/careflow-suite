@@ -102,6 +102,9 @@ function OtSchedule() {
 
   async function save() {
     if (!form.patient_id || !form.procedure_name || !form.scheduled_start || !form.scheduled_end) return toast.error("Patient, procedure, start and end are required.");
+    if (!editId && new Date(form.scheduled_start) < new Date(Date.now() - 2 * 60 * 1000)) {
+      return toast.error("Surgery start time cannot be in the past.");
+    }
     const total = form.ot_charge + form.surgeon_charge + form.assistant_charge + form.anesthesia_charge + form.consumables_charge;
     const payload: any = {
       patient_id: form.patient_id,
@@ -191,6 +194,9 @@ function OtSchedule() {
     if (!canEdit) return toast.error("No permission to reschedule.");
     if (reschedTarget.status === "completed") return toast.error("Completed surgery cannot be rescheduled.");
     if (!reschedForm.scheduled_start || !reschedForm.scheduled_end) return toast.error("Both start and end are required.");
+    if (new Date(reschedForm.scheduled_start) < new Date(Date.now() - 2 * 60 * 1000)) {
+      return toast.error("Rescheduled surgery start time cannot be in the past.");
+    }
     if (!reschedForm.reason.trim()) return toast.error("Reschedule reason is required.");
     const patch: any = {
       scheduled_start: new Date(reschedForm.scheduled_start).toISOString(),

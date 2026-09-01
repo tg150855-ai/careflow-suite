@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-import { Plus, Calendar } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Plus, Calendar, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,16 +100,52 @@ function Appointments() {
   );
 }
 
+function getNextSlot(dateStr: string): string {
+  const today = format(new Date(), "yyyy-MM-dd");
+  if (dateStr === today) {
+    const now = new Date();
+    const minutes = now.getMinutes();
+    const rounded = Math.ceil((minutes + 5) / 15) * 15;
+    now.setMinutes(rounded, 0, 0);
+    return format(now, "HH:mm");
+  }
+  return "10:00";
+}
+
+function isPastBooking(dateStr: string, timeStr: string): boolean {
+  if (!dateStr || !timeStr) return false;
+  const sched = new Date(`${dateStr}T${timeStr}:00`);
+  if (Number.isNaN(sched.getTime())) return false;
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - 2);
+  return sched < now;
+}
+
 function BookDialog({ onCreated, defaultDate }: { onCreated: () => void; defaultDate: string }) {
   const { user } = useAuth();
   const { hospital } = useMyHospital();
   const hospitalId = hospital?.id ?? null;
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const initialDate = defaultDate && defaultDate >= todayStr ? defaultDate : todayStr;
+
   const [open, setOpen] = useState(false);
   const [patientQ, setPatientQ] = useState("");
   const [patientId, setPatientId] = useState("");
   const [doctorId, setDoctorId] = useState("");
-  const [time, setTime] = useState("10:00");
+  const [bookDate, setBookDate] = useState(initialDate);
+  const [time, setTime] = useState(() => getNextSlot(initialDate));
   const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const isPast = useMemo(() => isPastBooking(bookDate, time), [bookDate, time]);
+
+  useEffect(() => {
+    if (open) {
+      const targetDate = defaultDate && defaultDate >= todayStr ? defaultDate : todayStr;
+      setBookDate(targetDate);
+      setTime(getNextSlot(targetDate));
+    }
+  }, [open, defaultDate, todayStr]);
 
   const { data: patients = [] } = useQuery({
     queryKey: ["patient-search", patientQ],
@@ -128,12 +164,19 @@ function BookDialog({ onCreated, defaultDate }: { onCreated: () => void; default
 
   async function book() {
     if (!patientId || !doctorId || !time) return toast.error("Patient, doctor and time required");
-    const scheduled_at = new Date(`${defaultDate}T${time}:00`).toISOString();
+    if (isPast) {
+      return toast.error("Cannot book appointment for a past date or time", {
+        description: "Please select a future time slot.",
+      });
+    }
+    setSaving(true);
+    const scheduled_at = new Date(`${bookDate}T${time}:00`).toISOString();
     const { error } = await supabase.from("appointments").insert({
-      patient_id: patientId, doctor_id: doctorId, scheduled_at, notes, created_by: user?.id,
+      patient_id: patientId, doctor_id: doctorId, scheduled_at, notes: notes || null, created_by: user?.id,
     });
+    setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Appointment booked");
+    toast.success("Appointment booked successfully");
     setOpen(false);
     setPatientId(""); setPatientQ(""); setNotes("");
     onCreated();
@@ -168,7 +211,7 @@ function BookDialog({ onCreated, defaultDate }: { onCreated: () => void; default
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 col-span-2">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Doctor</Label>
               <Select value={doctorId} onValueChange={setDoctorId}>
                 <SelectTrigger><SelectValue placeholder="Select doctor" /></SelectTrigger>
@@ -182,9 +225,31 @@ function BookDialog({ onCreated, defaultDate }: { onCreated: () => void; default
               </Select>
             </div>
             <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Date</Label>
+              <Input
+                type="date"
+                min={todayStr}
+                value={bookDate}
+                onChange={(e) => {
+                  const d = e.target.value;
+                  setBookDate(d);
+                  if (d === todayStr && isPastBooking(d, time)) {
+                    setTime(getNextSlot(d));
+                  }
+                }}
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Time</Label>
               <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </div>
+
+            {isPast && (
+              <div className="col-span-2 text-xs text-destructive flex items-center gap-1.5 bg-destructive/10 border border-destructive/20 p-2.5 rounded-lg font-medium">
+                <AlertCircle className="size-4 shrink-0" />
+                Selected date/time is in the past. Please choose a future time slot.
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -192,7 +257,9 @@ function BookDialog({ onCreated, defaultDate }: { onCreated: () => void; default
             <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Chief complaint" />
           </div>
 
-          <Button onClick={book} className="w-full" size="lg">Confirm booking</Button>
+          <Button onClick={book} className="w-full" size="lg" disabled={saving || isPast}>
+            {saving ? "Booking…" : "Confirm booking"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

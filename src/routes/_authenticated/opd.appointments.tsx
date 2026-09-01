@@ -5,7 +5,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import {
   CalendarPlus, CalendarDays, Search, Clock, Pencil, X, Stethoscope,
-  FileText, Activity, History, ChevronRight, User2,
+  FileText, Activity, History, ChevronRight, User2, AlertCircle,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -390,19 +390,48 @@ function StatChip({
   );
 }
 
+/* ─────────────────────── Helpers ─────────────────────── */
+function getNextAvailableTime(dateStr: string): string {
+  const today = format(new Date(), "yyyy-MM-dd");
+  if (dateStr === today) {
+    const now = new Date();
+    // Round up to next 15-minute slot with 5 min buffer
+    const minutes = now.getMinutes();
+    const roundedMinutes = Math.ceil((minutes + 5) / 15) * 15;
+    now.setMinutes(roundedMinutes, 0, 0);
+    return format(now, "HH:mm");
+  }
+  return "10:00";
+}
+
+function checkIsPastDateTime(dateStr: string, timeStr: string): boolean {
+  if (!dateStr || !timeStr) return false;
+  const sched = new Date(`${dateStr}T${timeStr}:00`);
+  if (Number.isNaN(sched.getTime())) return false;
+  const now = new Date();
+  // 2 minutes grace period for user interactions
+  now.setMinutes(now.getMinutes() - 2);
+  return sched < now;
+}
+
 /* ─────────────────────── Book dialog ─────────────────────── */
 function BookDialog({
   defaultDate, doctors, onCreated,
 }: { defaultDate: string; doctors: any[]; onCreated: (bookedDate: string) => void }) {
   const { user } = useAuth();
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const initialDate = defaultDate && defaultDate >= todayStr ? defaultDate : todayStr;
+
   const [open, setOpen] = useState(false);
   const [patientQ, setPatientQ] = useState("");
   const [patientId, setPatientId] = useState("");
   const [doctorId, setDoctorId] = useState("");
-  const [date, setDate] = useState(defaultDate);
-  const [time, setTime] = useState("10:00");
+  const [date, setDate] = useState(initialDate);
+  const [time, setTime] = useState(() => getNextAvailableTime(initialDate));
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const isPast = useMemo(() => checkIsPastDateTime(date, time), [date, time]);
 
   const { data: patients = [] } = useQuery({
     queryKey: ["opd-appts-patient-search", patientQ],
@@ -420,12 +449,29 @@ function BookDialog({
 
   function reset() {
     setPatientQ(""); setPatientId(""); setDoctorId("");
-    setTime("10:00"); setNotes(""); setDate(defaultDate);
+    const freshDate = defaultDate && defaultDate >= todayStr ? defaultDate : todayStr;
+    setDate(freshDate);
+    setTime(getNextAvailableTime(freshDate));
+    setNotes("");
   }
+
+  // Update date/time when modal opens
+  useEffect(() => {
+    if (open) {
+      const targetDate = defaultDate && defaultDate >= todayStr ? defaultDate : todayStr;
+      setDate(targetDate);
+      setTime(getNextAvailableTime(targetDate));
+    }
+  }, [open, defaultDate, todayStr]);
 
   async function book() {
     if (!patientId || !doctorId || !time) {
       return toast.error("Patient, doctor and time are required");
+    }
+    if (isPast) {
+      return toast.error("Cannot book appointment for a past date or time", {
+        description: "Please select a future time slot.",
+      });
     }
     setSaving(true);
     const scheduled_at = new Date(`${date}T${time}:00`).toISOString();
@@ -439,7 +485,7 @@ function BookDialog({
     });
     setSaving(false);
     if (error) { console.error("[book-appointment] insert error", error); return toast.error(error.message); }
-    toast.success("Appointment booked");
+    toast.success("Appointment booked successfully");
     const bookedDate = date;
     reset();
     setOpen(false);
@@ -488,7 +534,7 @@ function BookDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 col-span-2">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Doctor</Label>
               <Select value={doctorId} onValueChange={setDoctorId}>
                 <SelectTrigger><SelectValue placeholder="Select doctor" /></SelectTrigger>
@@ -503,22 +549,44 @@ function BookDialog({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Date</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Input
+                type="date"
+                min={todayStr}
+                value={date}
+                onChange={(e) => {
+                  const newDate = e.target.value;
+                  setDate(newDate);
+                  if (newDate === todayStr && checkIsPastDateTime(newDate, time)) {
+                    setTime(getNextAvailableTime(newDate));
+                  }
+                }}
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Time</Label>
-              <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+              <Input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+              />
             </div>
+
+            {isPast && (
+              <div className="col-span-2 text-xs text-destructive flex items-center gap-1.5 bg-destructive/10 border border-destructive/20 p-2.5 rounded-lg font-medium">
+                <AlertCircle className="size-4 shrink-0" />
+                Selected date/time is in the past. Please choose a future time slot.
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Chief complaint / notes</Label>
-            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Fever and cough for 3 days" />
           </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={book} disabled={saving}>
+          <Button onClick={book} disabled={saving || isPast}>
             {saving ? "Booking…" : "Confirm booking"}
           </Button>
         </DialogFooter>
@@ -532,6 +600,7 @@ function EditDialog({
   appointment, doctors, onClose, onSaved,
 }: { appointment: any; doctors: any[]; onClose: () => void; onSaved: (newDate?: string) => void }) {
   const sched = new Date(appointment.scheduled_at);
+  const todayStr = format(new Date(), "yyyy-MM-dd");
   const [date, setDate] = useState(format(sched, "yyyy-MM-dd"));
   const [time, setTime] = useState(format(sched, "HH:mm"));
   const [doctorId, setDoctorId] = useState<string>(appointment.doctor_id);
@@ -539,7 +608,21 @@ function EditDialog({
   const [notes, setNotes] = useState<string>(appointment.notes ?? "");
   const [saving, setSaving] = useState(false);
 
+  const isPast = useMemo(() => {
+    if (!date || !time) return false;
+    const newSched = new Date(`${date}T${time}:00`);
+    const originalSched = new Date(appointment.scheduled_at);
+    // If date/time wasn't changed, allow editing notes/status/doctor
+    if (Math.abs(newSched.getTime() - originalSched.getTime()) < 60000) return false;
+    return checkIsPastDateTime(date, time);
+  }, [date, time, appointment.scheduled_at]);
+
   async function save() {
+    if (isPast) {
+      return toast.error("Cannot reschedule appointment to a past date or time", {
+        description: "Please select a future date and time.",
+      });
+    }
     setSaving(true);
     const scheduled_at = new Date(`${date}T${time}:00`).toISOString();
     const { error } = await supabase
@@ -580,12 +663,25 @@ function EditDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Date</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Input
+                type="date"
+                min={todayStr}
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Time</Label>
               <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </div>
+
+            {isPast && (
+              <div className="col-span-2 text-xs text-destructive flex items-center gap-1.5 bg-destructive/10 border border-destructive/20 p-2.5 rounded-lg font-medium">
+                <AlertCircle className="size-4 shrink-0" />
+                Reschedule time is in the past. Please select a future date and time.
+              </div>
+            )}
+
             <div className="space-y-1.5 col-span-2">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Doctor</Label>
               <Select value={doctorId} onValueChange={setDoctorId}>
@@ -623,7 +719,7 @@ function EditDialog({
           <Button variant="outline" onClick={cancel} className="text-rose-600">
             <X className="size-4" /> Cancel appointment
           </Button>
-          <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
+          <Button onClick={save} disabled={saving || isPast}>{saving ? "Saving…" : "Save changes"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

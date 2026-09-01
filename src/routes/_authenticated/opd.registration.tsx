@@ -459,14 +459,24 @@ function PatientDetailActions({ patient }: { patient: any }) {
 /* ─────────────────────── OPD list (with From-To filter + export) ─────────────────────── */
 
 function toIsoDayStart(s: string) {
+  if (!s) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }
   const parts = s.split("-").map(Number);
   const d = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
-  return d.toISOString();
+  return Number.isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
 }
 function toIsoDayEnd(s: string) {
+  if (!s) {
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  }
   const parts = s.split("-").map(Number);
   const d = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59, 999);
-  return d.toISOString();
+  return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
 
@@ -530,18 +540,56 @@ function OpdListPanel() {
     }
   }
 
-  const { data: rows = [], isFetching, refetch } = useQuery({
+  const { data: rows = [], isFetching, isError, error, refetch } = useQuery({
     queryKey: ["opd-list-panel", from, to],
     queryFn: async () => {
+      const startIso = toIsoDayStart(from);
+      const endIso = toIsoDayEnd(to);
+
       const { data, error } = await (supabase as any)
         .from("appointments")
-        .select("id, token_no, scheduled_at, status, patient_id, doctor_id, patients(id, uhid, full_name, mobile, gender, dob), doctors(name), bills(id, bill_no, total, pending, status)")
-        .gte("scheduled_at", toIsoDayStart(from))
-        .lte("scheduled_at", toIsoDayEnd(to))
+        .select("id, token_no, scheduled_at, status, notes, patient_id, doctor_id, patients(id, uhid, full_name, mobile, gender, dob), doctors(id, name, specialization)")
+        .gte("scheduled_at", startIso)
+        .lte("scheduled_at", endIso)
         .order("scheduled_at", { ascending: false })
         .limit(500);
-      if (error) throw error;
-      return data ?? [];
+
+      if (error) {
+        console.error("[opd-list-panel] error fetching appointments:", error);
+        throw error;
+      }
+
+      const list = data ?? [];
+      if (list.length === 0) return [];
+
+      // Fetch bills for patient IDs present in the list
+      const patientIds = Array.from(new Set(list.map((r: any) => r.patient_id).filter(Boolean)));
+      const billsMap: Record<string, any> = {};
+
+      if (patientIds.length > 0) {
+        try {
+          const { data: billsData } = await (supabase as any)
+            .from("bills")
+            .select("id, bill_no, total, paid, pending, status, patient_id, created_at")
+            .in("patient_id", patientIds)
+            .order("created_at", { ascending: false });
+
+          if (billsData) {
+            for (const b of billsData) {
+              if (b.patient_id && !billsMap[b.patient_id]) {
+                billsMap[b.patient_id] = b;
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("[opd-list-panel] could not fetch bills:", err);
+        }
+      }
+
+      return list.map((r: any) => ({
+        ...r,
+        bills: billsMap[r.patient_id] ? [billsMap[r.patient_id]] : [],
+      }));
     },
     refetchInterval: 10000,
   });
@@ -562,6 +610,7 @@ function OpdListPanel() {
         r.patients?.full_name?.toLowerCase().includes(s) ||
         r.patients?.uhid?.toLowerCase().includes(s) ||
         r.patients?.mobile?.toLowerCase().includes(s) ||
+        (r.token_no !== null && String(r.token_no).includes(s)) ||
         r.doctors?.name?.toLowerCase().includes(s));
     });
   }, [rows, search, doctorId, statusFilter]);
@@ -696,7 +745,18 @@ function OpdListPanel() {
             <tbody className="divide-y">
               {filtered.length === 0 && (
                 <tr><td colSpan={10} className="text-center py-10 text-muted-foreground text-sm">
-                  {isFetching ? "Loading…" : "No OPD patients in this date range."}
+                  {isFetching ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="size-4 animate-spin text-primary" /> Loading OPD visits…
+                    </div>
+                  ) : isError ? (
+                    <div className="space-y-2 text-destructive">
+                      <div>Failed to load OPD visits.</div>
+                      <Button size="sm" variant="outline" onClick={() => refetch()}>Retry</Button>
+                    </div>
+                  ) : (
+                    "No OPD patients found in this date range."
+                  )}
                 </td></tr>
               )}
               {filtered.map((r: any) => {

@@ -61,13 +61,15 @@ export function DoctorDictate({
   const [lang, setLang] = useState<LangKey>(initialLang);
   const recRef = useRef<any>(null);
   const finalRef = useRef("");
-  const lastEmittedRef = useRef("");
+  const isRecordingRef = useRef(false);
+  const lastFinalIndexRef = useRef<number>(-1);
+  const recentEmissionsRef = useRef<{ text: string; time: number }[]>([]);
   const supported = !!getSR();
 
   useEffect(() => {
     try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch {}
   }, [lang]);
-  useEffect(() => () => { try { recRef.current?.stop(); } catch {} }, []);
+  useEffect(() => () => { isRecordingRef.current = false; try { recRef.current?.stop(); } catch {} }, []);
 
   const start = () => {
     const SR = getSR();
@@ -80,16 +82,33 @@ export function DoctorDictate({
       rec.maxAlternatives = 1;
       finalRef.current = "";
       lastEmittedRef.current = "";
+      lastFinalIndexRef.current = -1;
+      isRecordingRef.current = true;
+
       rec.onresult = (e: any) => {
-        // Only act on newly FINALIZED segments to prevent repetition.
         let delta = "";
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) {
-            const t = (e.results[i][0].transcript || "").trim();
-            if (t) delta += (delta ? " " : "") + t;
+        for (let i = 0; i < e.results.length; i++) {
+          const res = e.results[i];
+          if (res.isFinal && i > lastFinalIndexRef.current) {
+            const t = (res[0]?.transcript || "").trim();
+            if (t) {
+              delta += (delta ? " " : "") + t;
+              lastFinalIndexRef.current = i;
+            }
           }
         }
         if (!delta) return;
+
+        const now = Date.now();
+        recentEmissionsRef.current = recentEmissionsRef.current.filter((item) => now - item.time < 3000);
+        const cleanDelta = delta.toLowerCase().replace(/[.,!?;:]/g, "").trim();
+        const isDupe = recentEmissionsRef.current.some((item) => {
+          return item.text.toLowerCase().replace(/[.,!?;:]/g, "").trim() === cleanDelta;
+        });
+
+        if (isDupe) return;
+        recentEmissionsRef.current.push({ text: delta, time: now });
+
         finalRef.current = (finalRef.current ? finalRef.current + " " : "") + delta;
         if (mode === "replace") {
           onTranscript(finalRef.current, "replace");
@@ -100,17 +119,36 @@ export function DoctorDictate({
       rec.onerror = (e: any) => {
         if (e.error === "not-allowed") toast.error("Microphone permission denied.");
         else if (e.error !== "aborted" && e.error !== "no-speech") toast.error(`Voice error: ${e.error}`);
+        isRecordingRef.current = false;
         setRecording(false);
       };
-      rec.onend = () => setRecording(false);
+      rec.onend = () => {
+        if (isRecordingRef.current) {
+          lastFinalIndexRef.current = -1;
+          try {
+            rec.start();
+          } catch {
+            isRecordingRef.current = false;
+            setRecording(false);
+          }
+        } else {
+          setRecording(false);
+        }
+      };
       recRef.current = rec;
       rec.start();
       setRecording(true);
     } catch (err: any) {
       toast.error(err?.message ?? "Could not start voice input.");
+      isRecordingRef.current = false;
+      setRecording(false);
     }
   };
-  const stop = () => { try { recRef.current?.stop(); } catch {} setRecording(false); };
+  const stop = () => {
+    isRecordingRef.current = false;
+    try { recRef.current?.stop(); } catch {}
+    setRecording(false);
+  };
 
   if (!supported) return null;
 

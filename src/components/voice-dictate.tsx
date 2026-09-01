@@ -103,6 +103,9 @@ export function VoiceDictate({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<any>(null);
+  const isRecordingRef = useRef(false);
+  const lastFinalIndexRef = useRef<number>(-1);
+  const recentEmissionsRef = useRef<{ text: string; time: number }[]>([]);
 
   useEffect(() => {
     try {
@@ -117,6 +120,7 @@ export function VoiceDictate({
   }, []);
 
   function cleanupAudio() {
+    isRecordingRef.current = false;
     try {
       recRef.current?.stop();
     } catch {}
@@ -163,27 +167,54 @@ export function VoiceDictate({
         recognition.interimResults = true;
         recognition.maxAlternatives = 1;
 
-        recognition.onresult = (e: any) => {
-          let finalChunk = "";
-          let interimChunk = "";
+        lastFinalIndexRef.current = -1;
+        isRecordingRef.current = true;
 
-          for (let i = e.resultIndex; i < e.results.length; i++) {
-            const transcript = e.results[i][0].transcript || "";
-            if (e.results[i].isFinal) {
-              finalChunk += (finalChunk ? " " : "") + transcript;
+        recognition.onresult = (e: any) => {
+          let newFinalText = "";
+          let currentInterim = "";
+
+          // Process all results from resultIndex to length, but guard against already processed indices (crucial for Android tablets & iPads)
+          for (let i = 0; i < e.results.length; i++) {
+            const res = e.results[i];
+            const transcript = (res[0]?.transcript || "").trim();
+            if (!transcript) continue;
+
+            if (res.isFinal) {
+              if (i > lastFinalIndexRef.current) {
+                newFinalText += (newFinalText ? " " : "") + transcript;
+                lastFinalIndexRef.current = i;
+              }
             } else {
-              interimChunk += (interimChunk ? " " : "") + transcript;
+              if (i > lastFinalIndexRef.current) {
+                currentInterim += (currentInterim ? " " : "") + transcript;
+              }
             }
           }
 
-          if (interimChunk) {
-            setInterimText(interimChunk);
+          if (currentInterim) {
+            setInterimText(currentInterim);
           }
 
-          if (finalChunk.trim()) {
-            const formatted = applyVoiceFormatting(finalChunk.trim());
-            onTranscript(formatted);
-            setInterimText("");
+          if (newFinalText.trim()) {
+            const formatted = applyVoiceFormatting(newFinalText.trim());
+            const now = Date.now();
+
+            // Clear emissions older than 3 seconds
+            recentEmissionsRef.current = recentEmissionsRef.current.filter((item) => now - item.time < 3000);
+
+            // Deduplicate across mobile restart events
+            const cleanNew = formatted.trim().toLowerCase().replace(/[.,!?;:]/g, "");
+            const isDupe = recentEmissionsRef.current.some((item) => {
+              const cleanPrev = item.text.trim().toLowerCase().replace(/[.,!?;:]/g, "");
+              return cleanPrev === cleanNew;
+            });
+
+            if (!isDupe && formatted.trim()) {
+              recentEmissionsRef.current.push({ text: formatted.trim(), time: now });
+              onTranscript(formatted);
+              setInterimText("");
+            }
           }
         };
 
@@ -199,20 +230,24 @@ export function VoiceDictate({
           }
           if (e.error === "not-allowed") {
             toast.error("Microphone access blocked. Enable permissions.");
-            setRecording(false);
+            stopRecording();
           } else if (e.error !== "no-speech" && e.error !== "aborted") {
             toast.error(`Speech recognition: ${e.error}`);
-            setRecording(false);
+            stopRecording();
           }
         };
 
         recognition.onend = () => {
-          if (recording) {
-            // Continuous auto-restart if still flagged recording
+          if (isRecordingRef.current) {
+            // On mobile / tablet, WebSpeech continuous mode stops automatically after brief pauses.
+            // Reset index tracker for new instance session so upcoming words are captured without duplicating previous ones.
+            lastFinalIndexRef.current = -1;
             try {
               recognition.start();
             } catch {
+              isRecordingRef.current = false;
               setRecording(false);
+              setInterimText("");
             }
           } else {
             setRecording(false);
@@ -252,11 +287,13 @@ export function VoiceDictate({
 
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start(250);
+      isRecordingRef.current = true;
       setRecording(true);
       startTimer();
       toast.info("Recording voice notes... Speak now.");
     } catch (err: any) {
       toast.error(`Recording failed: ${err?.message}`);
+      isRecordingRef.current = false;
       setRecording(false);
     }
   }
@@ -270,6 +307,7 @@ export function VoiceDictate({
   }
 
   function stopRecording() {
+    isRecordingRef.current = false;
     setRecording(false);
     if (timerRef.current) clearInterval(timerRef.current);
     try {

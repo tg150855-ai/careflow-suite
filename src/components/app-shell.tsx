@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { GlobalSearch } from "@/components/global-search";
 import { NotificationBell } from "@/components/notification-bell";
+import { NetworkPingIndicator } from "@/components/network-ping-indicator";
 import { BRAND, BrandLogo, BrandMark } from "@/components/brand";
 import { useTranslation } from "react-i18next";
 import { useEnabledModules } from "@/lib/use-enabled-modules";
@@ -272,6 +273,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
+              <NetworkPingIndicator />
               <NotificationBell />
 
               <DropdownMenu>
