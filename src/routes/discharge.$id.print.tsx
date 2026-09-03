@@ -52,9 +52,9 @@ function PrintDischarge() {
           <Field label="Condition" value={ds.condition_at_discharge} />
         </div>
 
-        <Section title="Final diagnosis" value={ds.final_diagnosis} />
-        <Section title="Procedures performed" value={ds.procedures_performed} />
-        <Section title="Hospital course" value={ds.hospital_course} />
+        <Section title="Primary Diagnosis" value={ds.final_diagnosis} />
+        <Section title="Secondary Diagnosis / Procedures" value={ds.procedures_performed} />
+        <Section title="Doctor's Notes & Hospital Course" value={ds.hospital_course} />
 
         {data.meds.length > 0 && (
           <div className="mb-5">

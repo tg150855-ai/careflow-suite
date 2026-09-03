@@ -12,6 +12,7 @@ import { AlertTriangle, CheckCircle2, LogOut, Plus, Trash2, Sparkles } from "luc
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { DischargeTemplateSelector, DischargeTemplateApplyPayload } from "@/components/ipd/discharge-template-selector";
 
 type MedRow = {
   id: string;
@@ -105,7 +106,6 @@ export function DischargeDialog({ admission }: { admission: any }) {
       if (fu && !followUpInstr) setFollowUpInstr(fu);
       if (meds.length === 0) {
         const seen = new Set<string>();
-        const rows: MedRow[] = [];
         (mar.data ?? []).forEach((m: any) => {
           const k = m.medicine_name?.toLowerCase(); if (!k || seen.has(k)) return; seen.add(k);
           rows.push({ id: crypto.randomUUID(), medicine_name: m.medicine_name, dose: m.dosage ?? "", route: m.route ?? "", frequency: "", duration: "", instructions: "" });
@@ -114,6 +114,28 @@ export function DischargeDialog({ admission }: { admission: any }) {
       }
       toast.success("Auto-filled from records");
     } catch (e: any) { toast.error(e.message); }
+  };
+
+  const handleApplyTemplate = (data: DischargeTemplateApplyPayload) => {
+    setPrimaryDx(data.primary_diagnosis || "");
+    if (data.secondary_diagnosis) setSecondaryDx(data.secondary_diagnosis);
+    if (data.doctor_notes) setDoctorNotes(data.doctor_notes);
+    if (data.follow_up_instructions) setFollowUpInstr(data.follow_up_instructions);
+    if (data.follow_up_date) setFollowUpDate(data.follow_up_date);
+    if (data.condition_at_discharge) setCondition(data.condition_at_discharge);
+    if (data.medicines && data.medicines.length > 0) {
+      setMeds(
+        data.medicines.map((m) => ({
+          id: m.id || crypto.randomUUID(),
+          medicine_name: m.medicine_name,
+          dose: m.dose || "",
+          route: m.route || "",
+          frequency: m.frequency || "",
+          duration: m.duration || "",
+          instructions: m.instructions || "",
+        }))
+      );
+    }
   };
 
   const buildPayload = () => ({
@@ -229,8 +251,23 @@ export function DischargeDialog({ admission }: { admission: any }) {
               {cleared ? "✅ All bills cleared" : `⚠️ Bills pending: ₹${totals.pending.toLocaleString("en-IN")}. Please clear before discharge.`}
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={autofill}><Sparkles className="size-4 mr-1.5" />Auto-fill</Button>
+          <Button variant="ghost" size="sm" onClick={autofill}><Sparkles className="size-4 mr-1.5" />Auto-fill from records</Button>
         </div>
+
+        {/* Discharge template selector & auto-fill */}
+        <DischargeTemplateSelector
+          hospitalId={admission.hospital_id}
+          doctorId={admission.doctor_id}
+          currentValues={{
+            primary_diagnosis: primaryDx,
+            secondary_diagnosis: secondaryDx,
+            doctor_notes: doctorNotes,
+            follow_up_instructions: followUpInstr,
+            condition_at_discharge: condition,
+            medicines: meds,
+          }}
+          onApplyTemplate={handleApplyTemplate}
+        />
 
         {/* Discharge details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

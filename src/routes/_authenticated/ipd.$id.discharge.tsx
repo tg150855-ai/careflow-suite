@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth-context";
 import { getPatientBillingSummary } from "@/lib/billing-aggregator";
 import { DictateTextarea, MicButton } from "@/components/dictate-textarea";
 import { archiveDischargeDocument } from "@/lib/discharge-doc";
+import { DischargeTemplateSelector, DischargeTemplateApplyPayload } from "@/components/ipd/discharge-template-selector";
 
 export const Route = createFileRoute("/_authenticated/ipd/$id/discharge")({ component: DischargeForm });
 
@@ -143,6 +144,27 @@ function DischargeForm() {
     onSuccess: () => toast.success("Discharge summary populated from records"),
     onError: (e: any) => toast.error(e.message),
   });
+
+  const handleApplyTemplate = (data: DischargeTemplateApplyPayload) => {
+    setFinalDx(data.primary_diagnosis || "");
+    if (data.secondary_diagnosis) setProcedures(data.secondary_diagnosis);
+    if (data.doctor_notes) setAdvice(data.doctor_notes);
+    if (data.hospital_course) setCourse(data.hospital_course);
+    if (data.follow_up_instructions) setFollowUpInstr(data.follow_up_instructions);
+    if (data.follow_up_date) setFollowUpDate(data.follow_up_date);
+    if (data.condition_at_discharge) setCondition(data.condition_at_discharge);
+    if (data.medicines && data.medicines.length > 0) {
+      setMeds(
+        data.medicines.map((m) => ({
+          id: m.id || crypto.randomUUID(),
+          medicine_name: m.medicine_name,
+          dosage: m.dose || m.dosage || "",
+          duration: m.duration || "",
+          instructions: [m.route, m.frequency, m.instructions].filter(Boolean).join(" · ") || (m.instructions || ""),
+        }))
+      );
+    }
+  };
 
   // Auto-fill once on mount when no existing summary
   const autoTriedRef = useRef(false);
@@ -310,6 +332,22 @@ function DischargeForm() {
           </div>
         </Card>
       )}
+
+      {/* Discharge template selector & auto-fill */}
+      <DischargeTemplateSelector
+        hospitalId={(adm as any)?.hospital_id}
+        doctorId={adm.doctor_id}
+        currentValues={{
+          primary_diagnosis: finalDx,
+          secondary_diagnosis: procedures,
+          doctor_notes: advice,
+          hospital_course: course,
+          follow_up_instructions: followUpInstr,
+          condition_at_discharge: condition,
+          medicines: meds,
+        }}
+        onApplyTemplate={handleApplyTemplate}
+      />
 
       <Card className="p-4 sm:p-6 space-y-4">
         <div className="flex items-center justify-between gap-2 flex-wrap">
