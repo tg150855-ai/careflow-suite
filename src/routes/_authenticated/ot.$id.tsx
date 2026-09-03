@@ -13,7 +13,7 @@ import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Ban }
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { inr } from "@/lib/format";
-import { VoiceDictate } from "@/components/voice-dictate";
+import { DoctorDictate, mergeSpeechTranscript } from "@/components/doctor-dictate";
 import { PriorityBadge, StatusBadge } from "./ot.index";
 import { useAuth } from "@/lib/auth-context";
 import { can } from "@/lib/permissions";
@@ -218,7 +218,13 @@ function NotesEditor({ surgeryId, initial }: { surgeryId: string; initial: any }
   const Field = ({ label, value, onChange, rows = 2 }: any) => (
     <div>
       <div className="flex items-center justify-between"><Label>{label}</Label>
-        <VoiceDictate label={`Dictate ${label}`} onTranscript={(t) => onChange((value ? value + " " : "") + t)} />
+        <DoctorDictate
+          title={`Dictate ${label}`}
+          onTranscript={(t, mode) => {
+            if (mode === "replace") onChange(t);
+            else onChange(mergeSpeechTranscript(value || "", t));
+          }}
+        />
       </div>
       <Textarea rows={rows} value={value} onChange={(e) => onChange(e.target.value)} />
     </div>

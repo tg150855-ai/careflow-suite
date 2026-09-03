@@ -42,7 +42,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { VoiceDictate } from "@/components/voice-dictate";
+import { DoctorDictate, mergeSpeechTranscript } from "@/components/doctor-dictate";
 import { ICU_STATUS, ICU_STATUS_STYLES, pushICUChargeToBill } from "@/components/icu/shared";
 
 export const Route = createFileRoute("/_authenticated/icu/$id")({ component: ICUWorkspace });
@@ -285,7 +285,13 @@ function DoctorNotesTab({ adm }: any) {
         <div>
           <div className="flex items-center justify-between mb-1">
             <Label>Clinical note</Label>
-            <VoiceDictate onTranscript={(t) => setNote((p) => (p ? p + " " + t : t))} />
+            <DoctorDictate
+              title="Dictate note"
+              onTranscript={(t, mode) => {
+                if (mode === "replace") setNote(t);
+                else setNote((p) => mergeSpeechTranscript(p, t));
+              }}
+            />
           </div>
           <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} />
         </div>
@@ -332,7 +338,13 @@ function NursingNotesTab({ adm }: any) {
       <Card className="p-4 space-y-3">
         <div className="flex items-center justify-between">
           <Label>Nursing note</Label>
-          <VoiceDictate onTranscript={(t) => setNote((p) => (p ? p + " " + t : t))} />
+          <DoctorDictate
+            title="Dictate note"
+            onTranscript={(t, mode) => {
+              if (mode === "replace") setNote(t);
+              else setNote((p) => mergeSpeechTranscript(p, t));
+            }}
+          />
         </div>
         <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} />
         <Button onClick={save}>

@@ -17,7 +17,7 @@ import { format, differenceInDays } from "date-fns";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
-import { VoiceDictate } from "@/components/voice-dictate";
+import { DoctorDictate, mergeSpeechTranscript } from "@/components/doctor-dictate";
 import { PrintHeader, PrintFooter } from "@/components/print-header";
 import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 import { DischargeDialog } from "@/components/ipd/discharge-dialog";
@@ -401,7 +401,13 @@ function RoundsTab({ admissionId, doctorId }: { admissionId: string; doctorId: s
           <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
             <h3 className="font-semibold">New round entry</h3>
             <div className="flex gap-2 items-center">
-              <VoiceDictate onTranscript={(t) => setProgress((prev) => (prev ? prev + " " : "") + t)} label="Dictate progress" />
+              <DoctorDictate
+                onTranscript={(t, mode) => {
+                  if (mode === "replace") setProgress(t);
+                  else setProgress((prev) => mergeSpeechTranscript(prev, t));
+                }}
+                title="Dictate progress"
+              />
               <Select onValueChange={(k) => setProgress(TEMPLATES[k] ?? "")}>
                 <SelectTrigger className="w-48 h-9"><SelectValue placeholder="Quick template…" /></SelectTrigger>
                 <SelectContent>
@@ -593,7 +599,13 @@ function NursingTab({ admissionId }: { admissionId: string }) {
       <Card className="p-6">
         <div className="flex items-center justify-between mb-3 gap-3">
           <h3 className="font-semibold">Add nursing note</h3>
-          <VoiceDictate onTranscript={(t) => setNote((prev) => (prev ? prev + " " : "") + t)} />
+          <DoctorDictate
+            onTranscript={(t, mode) => {
+              if (mode === "replace") setNote(t);
+              else setNote((prev) => mergeSpeechTranscript(prev, t));
+            }}
+            title="Dictate note"
+          />
         </div>
         <div className="flex gap-3 mb-3">
           <Select value={shift} onValueChange={setShift}>

@@ -12,7 +12,7 @@ import { Save, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useAuth } from "@/lib/auth-context";
-import { VoiceDictate } from "@/components/voice-dictate";
+import { DoctorDictate, mergeSpeechTranscript } from "@/components/doctor-dictate";
 import { NS_QK, SHIFTS, loadActiveAdmissions } from "./shared";
 
 export function NSHandover() {
@@ -83,7 +83,15 @@ ${(h.pending_tasks || []).map((t: string) => "• " + t).join("\n")}
         </div>
         <div>
           <Textarea rows={4} placeholder="Handover notes — summary of shift, alerts, pending decisions..." value={notes} onChange={(e) => setNotes(e.target.value)} />
-          <div className="mt-1"><VoiceDictate onTranscript={(t: string) => setNotes((n) => (n ? n + " " : "") + t)} /></div>
+          <div className="mt-1">
+            <DoctorDictate
+              onTranscript={(t, mode) => {
+                if (mode === "replace") setNotes(t);
+                else setNotes((prev) => mergeSpeechTranscript(prev, t));
+              }}
+              title="Dictate handover"
+            />
+          </div>
         </div>
         <div>
           <div className="text-sm font-medium mb-1">Critical patients</div>

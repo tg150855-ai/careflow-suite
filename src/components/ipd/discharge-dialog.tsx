@@ -106,6 +106,7 @@ export function DischargeDialog({ admission }: { admission: any }) {
       if (fu && !followUpInstr) setFollowUpInstr(fu);
       if (meds.length === 0) {
         const seen = new Set<string>();
+        const rows: any[] = [];
         (mar.data ?? []).forEach((m: any) => {
           const k = m.medicine_name?.toLowerCase(); if (!k || seen.has(k)) return; seen.add(k);
           rows.push({ id: crypto.randomUUID(), medicine_name: m.medicine_name, dose: m.dosage ?? "", route: m.route ?? "", frequency: "", duration: "", instructions: "" });

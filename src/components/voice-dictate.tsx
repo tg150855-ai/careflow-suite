@@ -20,7 +20,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { cleanConsecutiveDuplicates } from "@/components/doctor-dictate";
+import { cleanConsecutiveDuplicates, mergeSpeechTranscript } from "@/components/doctor-dictate";
 
 export const SPEECH_LANGUAGES = [
   { code: "en-IN", label: "English (India)", short: "EN" },
@@ -107,6 +107,7 @@ export function VoiceDictate({
   const isRecordingRef = useRef(false);
   const lastFinalIndexRef = useRef<number>(-1);
   const recentEmissionsRef = useRef<{ text: string; time: number }[]>([]);
+  const finalTranscriptRef = useRef<string>("");
 
   useEffect(() => {
     try {
@@ -169,6 +170,8 @@ export function VoiceDictate({
         recognition.maxAlternatives = 1;
 
         lastFinalIndexRef.current = -1;
+        finalTranscriptRef.current = "";
+        recentEmissionsRef.current = [];
         isRecordingRef.current = true;
 
         recognition.onresult = (e: any) => {
@@ -203,18 +206,23 @@ export function VoiceDictate({
             const formatted = applyVoiceFormatting(cleanedText);
             const now = Date.now();
 
-            // Clear emissions older than 4 seconds
-            recentEmissionsRef.current = recentEmissionsRef.current.filter((item) => now - item.time < 4000);
+            // Clear emissions older than 6 seconds
+            recentEmissionsRef.current = recentEmissionsRef.current.filter((item) => now - item.time < 6000);
 
-            // Deduplicate across mobile restart events
+            // Deduplicate across mobile restart events & repetition
             const cleanNew = formatted.trim().toLowerCase().replace(/[.,!?;:]/g, "");
             const isDupe = recentEmissionsRef.current.some((item) => {
               const cleanPrev = item.text.trim().toLowerCase().replace(/[.,!?;:]/g, "");
-              return cleanPrev === cleanNew || cleanPrev.endsWith(cleanNew);
+              return (
+                cleanPrev === cleanNew ||
+                cleanPrev.endsWith(cleanNew) ||
+                (cleanNew.length > 2 && cleanPrev.includes(cleanNew))
+              );
             });
 
             if (!isDupe && formatted.trim()) {
               recentEmissionsRef.current.push({ text: formatted.trim(), time: now });
+              finalTranscriptRef.current = mergeSpeechTranscript(finalTranscriptRef.current, formatted.trim());
               onTranscript(formatted);
               setInterimText("");
             }

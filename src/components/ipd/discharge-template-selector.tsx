@@ -170,7 +170,7 @@ export function DischargeTemplateSelector({
     onApplyTemplate({
       primary_diagnosis: tpl.primary_diagnosis,
       secondary_diagnosis: tpl.secondary_diagnosis || "",
-      doctor_notes: tpl.doctor_notes || tpl.advice || "",
+      doctor_notes: tpl.doctor_notes || (tpl as any).advice || "",
       hospital_course: tpl.hospital_course || "",
       follow_up_instructions: tpl.follow_up_instructions || "",
       follow_up_date: followUpDate,

@@ -158,7 +158,7 @@ function DischargeForm() {
         data.medicines.map((m) => ({
           id: m.id || crypto.randomUUID(),
           medicine_name: m.medicine_name,
-          dosage: m.dose || m.dosage || "",
+          dosage: m.dose || (m as any).dosage || "",
           duration: m.duration || "",
           instructions: [m.route, m.frequency, m.instructions].filter(Boolean).join(" · ") || (m.instructions || ""),
         }))
