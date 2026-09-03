@@ -50,6 +50,29 @@ type Settings = {
   departments: any;
 };
 
+const DEFAULT_SETTINGS: Settings = {
+  id: SETTINGS_ID,
+  hospital_name: "SBG Arogya Plus",
+  tagline: "Hospital Management Suite",
+  registration_no: "",
+  nabh_no: "",
+  gst_no: "",
+  website: "",
+  email: "",
+  phone: "",
+  address: "",
+  logo_url: null,
+  primary_color: "#0EA5E9",
+  secondary_color: "#0F172A",
+  accent_color: "#22C55E",
+  prescription: {},
+  billing: { gst_percent: 18, invoice_prefix: "INV", receipt_prefix: "RCT", currency: "INR" },
+  printers: {},
+  messaging: {},
+  security: { session_minutes: 60, max_attempts: 5, min_password_length: 8 },
+  departments: [],
+};
+
 function SettingsPage() {
   const { hasAnyRole } = useAuth();
   const canEdit = hasAnyRole(["admin", "super_admin"]);
@@ -62,9 +85,12 @@ function SettingsPage() {
         .from("hospital_settings")
         .select("*")
         .eq("id", SETTINGS_ID)
-        .single();
-      if (error) throw error;
-      return data;
+        .maybeSingle();
+      if (error) {
+        console.warn("Could not fetch hospital_settings row, using defaults:", error.message);
+        return DEFAULT_SETTINGS;
+      }
+      return data ? { ...DEFAULT_SETTINGS, ...data } : DEFAULT_SETTINGS;
     },
   });
 
@@ -195,7 +221,9 @@ function ProfileTab({ settings, canEdit, onSaved }: { settings: Settings; canEdi
   async function save() {
     setSaving(true);
     const before = { ...settings };
-    const { error } = await (supabase as any).from("hospital_settings").update(v).eq("id", SETTINGS_ID);
+    const { error } = await (supabase as any)
+      .from("hospital_settings")
+      .upsert({ id: SETTINGS_ID, ...v }, { onConflict: "id" });
     setSaving(false);
     if (error) return toast.error(error.message);
     await logAudit({ action: "update", entity: "hospital_settings", entityId: SETTINGS_ID, before, after: v });
@@ -253,8 +281,7 @@ function LogoTab({ settings, canEdit, onSaved }: { settings: Settings; canEdit: 
     const url = signed?.signedUrl;
     const { error } = await (supabase as any)
       .from("hospital_settings")
-      .update({ logo_url: url })
-      .eq("id", SETTINGS_ID);
+      .upsert({ id: SETTINGS_ID, logo_url: url }, { onConflict: "id" });
     setUploading(false);
     if (error) return toast.error(error.message);
     await logAudit({ action: "update", entity: "hospital_settings.logo", entityId: SETTINGS_ID, after: { logo_url: url } });
@@ -265,8 +292,7 @@ function LogoTab({ settings, canEdit, onSaved }: { settings: Settings; canEdit: 
   async function remove() {
     const { error } = await (supabase as any)
       .from("hospital_settings")
-      .update({ logo_url: null })
-      .eq("id", SETTINGS_ID);
+      .upsert({ id: SETTINGS_ID, logo_url: null }, { onConflict: "id" });
     if (error) return toast.error(error.message);
     await logAudit({ action: "delete", entity: "hospital_settings.logo", entityId: SETTINGS_ID });
     toast.success("Logo removed");
@@ -316,7 +342,9 @@ function BrandingTab({ settings, canEdit, onSaved }: { settings: Settings; canEd
 
   async function save() {
     setSaving(true);
-    const { error } = await (supabase as any).from("hospital_settings").update(v).eq("id", SETTINGS_ID);
+    const { error } = await (supabase as any)
+      .from("hospital_settings")
+      .upsert({ id: SETTINGS_ID, ...v }, { onConflict: "id" });
     setSaving(false);
     if (error) return toast.error(error.message);
     await logAudit({ action: "update", entity: "hospital_settings.branding", entityId: SETTINGS_ID, after: v });
@@ -367,7 +395,9 @@ function DepartmentsTab({ settings, canEdit, onSaved }: { settings: Settings; ca
   async function save() {
     setSaving(true);
     const departments = MODULE_REGISTRY.map((m) => ({ key: m.key, name: m.name, enabled: enabled.has(m.key) }));
-    const { error } = await (supabase as any).from("hospital_settings").update({ departments }).eq("id", SETTINGS_ID);
+    const { error } = await (supabase as any)
+      .from("hospital_settings")
+      .upsert({ id: SETTINGS_ID, departments }, { onConflict: "id" });
     setSaving(false);
     if (error) return toast.error(error.message);
     await logAudit({ action: "update", entity: "hospital_settings.departments", entityId: SETTINGS_ID, after: { departments } });
@@ -437,8 +467,10 @@ function JsonTab({ field, label, settings, canEdit, fields, onSaved }: {
 
   async function save() {
     setSaving(true);
-    const payload: any = { [field]: v };
-    const { error } = await (supabase as any).from("hospital_settings").update(payload).eq("id", SETTINGS_ID);
+    const payload: any = { id: SETTINGS_ID, [field]: v };
+    const { error } = await (supabase as any)
+      .from("hospital_settings")
+      .upsert(payload, { onConflict: "id" });
     setSaving(false);
     if (error) return toast.error(error.message);
     await logAudit({ action: "update", entity: `hospital_settings.${String(field)}`, entityId: SETTINGS_ID, after: payload });
@@ -490,8 +522,7 @@ function LanguageTab({ settings, canEdit, onSaved }: { settings: Settings & { de
     setSaving(true);
     const { error } = await (supabase as any)
       .from("hospital_settings")
-      .update({ default_language: lang })
-      .eq("id", SETTINGS_ID);
+      .upsert({ id: SETTINGS_ID, default_language: lang }, { onConflict: "id" });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     await applyLanguage(lang);
