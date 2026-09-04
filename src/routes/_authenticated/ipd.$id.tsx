@@ -401,13 +401,6 @@ function RoundsTab({ admissionId, doctorId }: { admissionId: string; doctorId: s
           <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
             <h3 className="font-semibold">New round entry</h3>
             <div className="flex gap-2 items-center">
-              <DoctorDictate
-                onTranscript={(t, mode) => {
-                  if (mode === "replace") setProgress(t);
-                  else setProgress((prev) => mergeSpeechTranscript(prev, t));
-                }}
-                title="Dictate progress"
-              />
               <Select onValueChange={(k) => setProgress(TEMPLATES[k] ?? "")}>
                 <SelectTrigger className="w-48 h-9"><SelectValue placeholder="Quick template…" /></SelectTrigger>
                 <SelectContent>
@@ -420,10 +413,10 @@ function RoundsTab({ admissionId, doctorId }: { admissionId: string; doctorId: s
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1"><Label>Progress notes</Label><Textarea rows={3} value={progress} onChange={(e) => setProgress(e.target.value)} /></div>
-            <div className="space-y-1"><Label>Clinical findings</Label><Textarea rows={3} value={findings} onChange={(e) => setFindings(e.target.value)} /></div>
-            <div className="space-y-1"><Label>Updated diagnosis</Label><Textarea rows={2} value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} /></div>
-            <div className="space-y-1"><Label>Follow-up orders</Label><Textarea rows={2} value={followUp} onChange={(e) => setFollowUp(e.target.value)} /></div>
+            <RoundFieldArea label="Progress notes" value={progress} onChange={setProgress} rows={3} />
+            <RoundFieldArea label="Clinical findings" value={findings} onChange={setFindings} rows={3} />
+            <RoundFieldArea label="Updated diagnosis" value={diagnosis} onChange={setDiagnosis} rows={2} />
+            <RoundFieldArea label="Follow-up orders" value={followUp} onChange={setFollowUp} rows={2} />
           </div>
           <Button className="mt-4" onClick={() => save.mutate()} disabled={save.isPending}>Save round</Button>
         </Card>
@@ -457,6 +450,22 @@ function NoteBlock({ label, value }: { label: string; value: string }) {
     <div className="mt-2">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="text-sm whitespace-pre-wrap">{value}</div>
+    </div>
+  );
+}
+
+function RoundFieldArea({ label, value, onChange, rows }: { label: string; value: string; onChange: (v: string) => void; rows: number }) {
+  const handleDictate = (text: string, mode: "append" | "replace") => {
+    if (mode === "replace") onChange(text);
+    else onChange(mergeSpeechTranscript(value, text));
+  };
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
+        <DoctorDictate onTranscript={handleDictate} contextPrompt={`Field: ${label}.`} title="Dictate" />
+      </div>
+      <Textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows} className="resize-none" />
     </div>
   );
 }

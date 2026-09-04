@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -181,8 +181,8 @@ function OtDetail() {
           <TabsTrigger value="notes"><FileText className="size-4 mr-1" /> Operation Notes</TabsTrigger>
           <TabsTrigger value="billing"><Receipt className="size-4 mr-1" /> Billing</TabsTrigger>
         </TabsList>
-        <TabsContent value="notes"><NotesEditor surgeryId={id} initial={notes} /></TabsContent>
-        <TabsContent value="billing"><BillingSummary s={s} /></TabsContent>
+        <TabsContent value="notes" forceMount className="data-[state=inactive]:hidden"><NotesEditor surgeryId={id} initial={notes} /></TabsContent>
+        <TabsContent value="billing" forceMount className="data-[state=inactive]:hidden"><BillingSummary s={s} /></TabsContent>
       </Tabs>
     </div>
   );
@@ -193,13 +193,18 @@ function NotesEditor({ surgeryId, initial }: { surgeryId: string; initial: any }
   const [n, setN] = useState({
     diagnosis: "", procedure_performed: "", findings: "", complications: "", notes: "", blood_loss_ml: 0, implants_used: "",
   });
+  const initializedRef = useRef(false);
+
   useEffect(() => {
-    if (initial) setN({
-      diagnosis: initial.diagnosis ?? "", procedure_performed: initial.procedure_performed ?? "",
-      findings: initial.findings ?? "", complications: initial.complications ?? "",
-      notes: initial.notes ?? initial.remarks ?? "",
-      blood_loss_ml: Number(initial.blood_loss_ml ?? 0), implants_used: initial.implants_used ?? "",
-    });
+    if (initial && !initializedRef.current) {
+      initializedRef.current = true;
+      setN({
+        diagnosis: initial.diagnosis ?? "", procedure_performed: initial.procedure_performed ?? "",
+        findings: initial.findings ?? "", complications: initial.complications ?? "",
+        notes: initial.notes ?? initial.remarks ?? "",
+        blood_loss_ml: Number(initial.blood_loss_ml ?? 0), implants_used: initial.implants_used ?? "",
+      });
+    }
   }, [initial]);
 
   async function save() {
@@ -213,6 +218,13 @@ function NotesEditor({ surgeryId, initial }: { surgeryId: string; initial: any }
     }
     toast.success("Operation notes saved");
     qc.invalidateQueries({ queryKey: ["ot-notes", surgeryId] });
+  }
+
+  function clearFields() {
+    setN({
+      diagnosis: "", procedure_performed: "", findings: "", complications: "", notes: "", blood_loss_ml: 0, implants_used: "",
+    });
+    toast.message("Notes cleared");
   }
 
   const Field = ({ label, value, onChange, rows = 2 }: any) => (
@@ -239,7 +251,10 @@ function NotesEditor({ surgeryId, initial }: { surgeryId: string; initial: any }
       <div className="md:col-span-2"><Field label="Notes / Remarks" value={n.notes} onChange={(v: string) => setN({ ...n, notes: v })} rows={3} /></div>
       <div><Label>Blood Loss (ml)</Label><Input type="number" value={n.blood_loss_ml} onChange={(e) => setN({ ...n, blood_loss_ml: +e.target.value })} /></div>
       <div><Label>Implants Used</Label><Input value={n.implants_used} onChange={(e) => setN({ ...n, implants_used: e.target.value })} /></div>
-      <div className="md:col-span-2 flex justify-end gap-2"><Button onClick={save}><Save className="size-4" /> Save Notes</Button></div>
+      <div className="md:col-span-2 flex justify-end gap-2">
+        <Button variant="outline" onClick={clearFields}>Clear</Button>
+        <Button onClick={save}><Save className="size-4" /> Save Notes</Button>
+      </div>
     </CardContent></Card>
   );
 }
