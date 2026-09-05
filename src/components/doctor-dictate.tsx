@@ -197,20 +197,36 @@ export function DoctorDictate({
         }
       };
       rec.onerror = (e: any) => {
-        if (e.error === "not-allowed") toast.error("Microphone permission denied.");
-        else if (e.error !== "aborted" && e.error !== "no-speech") toast.error(`Voice error: ${e.error}`);
-        isRecordingRef.current = false;
-        setRecording(false);
+        if (e.error === "not-allowed") {
+          toast.error("Microphone permission denied.");
+          isRecordingRef.current = false;
+          setRecording(false);
+          return;
+        }
+        // If error is no-speech or network or aborted, do NOT stop recording - keep listening
+        if (e.error !== "no-speech" && e.error !== "aborted") {
+          // Non-fatal error; keep session alive if user hasn't clicked stop
+          console.warn(`Voice dictation notice: ${e.error}`);
+        }
       };
       rec.onend = () => {
         if (isRecordingRef.current) {
           lastFinalIndexRef.current = -1;
-          try {
-            rec.start();
-          } catch {
-            isRecordingRef.current = false;
-            setRecording(false);
-          }
+          // Restart immediately so mic stays listening until user clicks Stop
+          setTimeout(() => {
+            if (isRecordingRef.current) {
+              try {
+                rec.start();
+              } catch {
+                // if already started or temporarily busy, retry shortly
+                setTimeout(() => {
+                  if (isRecordingRef.current) {
+                    try { rec.start(); } catch {}
+                  }
+                }, 150);
+              }
+            }
+          }, 50);
         } else {
           setRecording(false);
         }
