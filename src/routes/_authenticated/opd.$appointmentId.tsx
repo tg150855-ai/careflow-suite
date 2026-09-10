@@ -23,6 +23,7 @@ import { PrescriptionSheet } from "@/components/opd/prescription-sheet";
 import { MedicineAutocomplete } from "@/components/opd/medicine-autocomplete";
 import { ConsultationTemplateManager } from "@/components/opd/consultation-template-manager";
 import { PreviousConsultationHistory } from "@/components/opd/previous-consultation-history";
+import { PatientAttachments } from "@/components/patient-attachments";
 import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/opd/$appointmentId")({ component: Consultation });
@@ -706,6 +707,13 @@ function Consultation() {
               </div>
             )}
           </Card>
+
+          {/* Patient Attachments / Photos & Videos */}
+          {patient?.id && (
+            <Card className="p-5">
+              <PatientAttachments patientId={patient.id} patient={patient} defaultDepartment="OPD" />
+            </Card>
+          )}
 
           {/* Digital prescription opens in a modal / full-screen sheet (see header button) */}
           <PrescriptionSheet

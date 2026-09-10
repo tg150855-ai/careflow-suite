@@ -146,104 +146,153 @@ export function DoctorDictate({
   }, [lang]);
   useEffect(() => () => { isRecordingRef.current = false; try { recRef.current?.stop(); } catch {} }, []);
 
-  const start = () => {
-    const SR = getSR();
-    if (!SR) { toast.error("Voice input not supported. Use Chrome for best results."); return; }
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const watchdogRef = useRef<any>(null);
+
+  const stop = () => {
+    isRecordingRef.current = false;
+    if (watchdogRef.current) {
+      clearInterval(watchdogRef.current);
+      watchdogRef.current = null;
+    }
+    if (mediaStreamRef.current) {
+      try {
+        mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      } catch {}
+      mediaStreamRef.current = null;
+    }
     try {
-      const rec = new SR();
-      rec.lang = resolveLang(lang);
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.maxAlternatives = 1;
+      recRef.current?.stop();
+    } catch {}
+    setRecording(false);
+  };
+
+  const start = async () => {
+    const SR = getSR();
+    if (!SR) {
+      toast.error("Voice input not supported in this browser. Use Chrome or Edge.");
+      return;
+    }
+
+    try {
+      // 1. Keep an active getUserMedia track alive in background.
+      // This forces the OS and browser audio engine to NEVER sleep or auto-release the mic on silence.
+      if (!mediaStreamRef.current && navigator.mediaDevices?.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaStreamRef.current = stream;
+        } catch (e) {
+          console.warn("[Dictate] Could not lock audio stream, proceeding with SpeechRecognition alone:", e);
+        }
+      }
+
+      isRecordingRef.current = true;
       finalRef.current = "";
       recentEmissionsRef.current = [];
       lastFinalIndexRef.current = -1;
-      isRecordingRef.current = true;
 
-      rec.onresult = (e: any) => {
-        let delta = "";
-        const startIndex = e.resultIndex ?? 0;
-        for (let i = startIndex; i < e.results.length; i++) {
-          const res = e.results[i];
-          if (res.isFinal && i > lastFinalIndexRef.current) {
-            const t = (res[0]?.transcript || "").trim();
-            if (t) {
-              delta += (delta ? " " : "") + t;
-              lastFinalIndexRef.current = i;
-            }
-          }
-        }
-        if (!delta) return;
+      const createAndRunRecognizer = () => {
+        if (!isRecordingRef.current) return;
+        try {
+          const r = new SR();
+          r.lang = resolveLang(lang);
+          r.continuous = true;
+          r.interimResults = true;
+          r.maxAlternatives = 1;
 
-        delta = cleanConsecutiveDuplicates(delta);
-        if (!delta) return;
-
-        const now = Date.now();
-        recentEmissionsRef.current = recentEmissionsRef.current.filter((item) => now - item.time < 4000);
-        const cleanDelta = delta.toLowerCase().replace(/[.,!?;:]/g, "").trim();
-        const isDupe = recentEmissionsRef.current.some((item) => {
-          const prevClean = item.text.toLowerCase().replace(/[.,!?;:]/g, "").trim();
-          return prevClean === cleanDelta || prevClean.endsWith(cleanDelta);
-        });
-
-        if (isDupe) return;
-        recentEmissionsRef.current.push({ text: delta, time: now });
-
-        finalRef.current = mergeSpeechTranscript(finalRef.current, delta);
-        if (mode === "replace") {
-          onTranscript(finalRef.current, "replace");
-        } else {
-          onTranscript(delta, "append");
-        }
-      };
-      rec.onerror = (e: any) => {
-        if (e.error === "not-allowed") {
-          toast.error("Microphone permission denied.");
-          isRecordingRef.current = false;
-          setRecording(false);
-          return;
-        }
-        // If error is no-speech or network or aborted, do NOT stop recording - keep listening
-        if (e.error !== "no-speech" && e.error !== "aborted") {
-          // Non-fatal error; keep session alive if user hasn't clicked stop
-          console.warn(`Voice dictation notice: ${e.error}`);
-        }
-      };
-      rec.onend = () => {
-        if (isRecordingRef.current) {
-          lastFinalIndexRef.current = -1;
-          // Restart immediately so mic stays listening until user clicks Stop
-          setTimeout(() => {
-            if (isRecordingRef.current) {
-              try {
-                rec.start();
-              } catch {
-                // if already started or temporarily busy, retry shortly
-                setTimeout(() => {
-                  if (isRecordingRef.current) {
-                    try { rec.start(); } catch {}
-                  }
-                }, 150);
+          r.onresult = (e: any) => {
+            let delta = "";
+            const startIndex = e.resultIndex ?? 0;
+            for (let i = startIndex; i < e.results.length; i++) {
+              const res = e.results[i];
+              if (res.isFinal && i > lastFinalIndexRef.current) {
+                const t = (res[0]?.transcript || "").trim();
+                if (t) {
+                  delta += (delta ? " " : "") + t;
+                  lastFinalIndexRef.current = i;
+                }
               }
             }
-          }, 50);
-        } else {
-          setRecording(false);
+            if (!delta) return;
+
+            delta = cleanConsecutiveDuplicates(delta);
+            if (!delta) return;
+
+            const now = Date.now();
+            recentEmissionsRef.current = recentEmissionsRef.current.filter((item) => now - item.time < 4000);
+            const cleanDelta = delta.toLowerCase().replace(/[.,!?;:]/g, "").trim();
+            const isDupe = recentEmissionsRef.current.some((item) => {
+              const prevClean = item.text.toLowerCase().replace(/[.,!?;:]/g, "").trim();
+              return prevClean === cleanDelta || prevClean.endsWith(cleanDelta);
+            });
+
+            if (isDupe) return;
+            recentEmissionsRef.current.push({ text: delta, time: now });
+
+            finalRef.current = mergeSpeechTranscript(finalRef.current, delta);
+            if (mode === "replace") {
+              onTranscript(finalRef.current, "replace");
+            } else {
+              onTranscript(delta, "append");
+            }
+          };
+
+          r.onerror = (e: any) => {
+            if (e.error === "not-allowed") {
+              toast.error("Microphone permission denied.");
+              stop();
+              return;
+            }
+            // Do NOT stop for no-speech, network, or aborted
+            console.debug(`[Dictate] Event: ${e.error}`);
+          };
+
+          r.onend = () => {
+            // If user still wants recording, immediately restart!
+            if (isRecordingRef.current) {
+              lastFinalIndexRef.current = -1;
+              setTimeout(() => {
+                if (isRecordingRef.current) {
+                  createAndRunRecognizer();
+                }
+              }, 40);
+            } else {
+              setRecording(false);
+            }
+          };
+
+          recRef.current = r;
+          r.start();
+        } catch (err: any) {
+          // If already running or momentary glitch, retry in a moment
+          setTimeout(() => {
+            if (isRecordingRef.current) {
+              try { recRef.current?.start(); } catch {}
+            }
+          }, 150);
         }
       };
-      recRef.current = rec;
-      rec.start();
+
+      createAndRunRecognizer();
       setRecording(true);
+
+      // 2. Continuous Watchdog: checks every 1.5 seconds if recognition was silently paused
+      if (watchdogRef.current) clearInterval(watchdogRef.current);
+      watchdogRef.current = setInterval(() => {
+        if (isRecordingRef.current) {
+          try {
+            // If the recognizer stopped silently without onend, restart it
+            recRef.current?.start();
+          } catch {
+            // normal if already actively listening
+          }
+        }
+      }, 1500);
+
     } catch (err: any) {
       toast.error(err?.message ?? "Could not start voice input.");
-      isRecordingRef.current = false;
-      setRecording(false);
+      stop();
     }
-  };
-  const stop = () => {
-    isRecordingRef.current = false;
-    try { recRef.current?.stop(); } catch {}
-    setRecording(false);
   };
 
   if (!supported) return null;

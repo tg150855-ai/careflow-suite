@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, differenceInYears } from "date-fns";
 import { toast } from "sonner";
 import {
   CalendarPlus, CalendarDays, Search, Clock, Pencil, X, Stethoscope,
-  FileText, Activity, History, ChevronRight, User2, AlertCircle,
+  FileText, Activity, History, ChevronRight, User2, AlertCircle, Filter, HeartPulse,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +52,8 @@ function OpdAppointments() {
   const [date, setDate] = useState<string>(() => format(new Date(), "yyyy-MM-dd"));
   const [status, setStatus] = useState<string>("all");
   const [doctorId, setDoctorId] = useState<string>("all");
+  const [ageGroup, setAgeGroup] = useState<string>("all");
+  const [chronicFilter, setChronicFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
@@ -69,7 +71,7 @@ function OpdAppointments() {
       const { data, error } = await supabase
         .from("appointments")
         .select(
-          "id, scheduled_at, status, token_no, notes, doctor_id, patient_id, patients(id, full_name, uhid, mobile), doctors(id, name, specialization)"
+          "id, scheduled_at, status, token_no, notes, doctor_id, patient_id, patients(id, full_name, uhid, mobile, dob, gender, chronic_diseases, allergies), doctors(id, name, specialization)"
         )
         .gte("scheduled_at", start)
         .lte("scheduled_at", end)
@@ -113,11 +115,36 @@ function OpdAppointments() {
     return (appts as any[]).filter((a) => {
       if (doctorId !== "all" && a.doctor_id !== doctorId) return false;
       if (status !== "all" && a.status !== status) return false;
+
+      // Age group filter
+      if (ageGroup !== "all") {
+        const dob = a.patients?.dob;
+        if (!dob) return false;
+        const age = differenceInYears(new Date(), new Date(dob));
+        if (ageGroup === "pediatric" && age >= 18) return false; // 0-17
+        if (ageGroup === "young_adult" && (age < 18 || age > 35)) return false; // 18-35
+        if (ageGroup === "adult" && (age < 36 || age > 59)) return false; // 36-59
+        if (ageGroup === "geriatric" && age < 60) return false; // 60+
+      }
+
+      // Chronic disease filter
+      if (chronicFilter !== "all") {
+        const cd = (a.patients?.chronic_diseases ?? "").toLowerCase();
+        if (chronicFilter === "any") {
+          if (!cd.trim()) return false;
+        } else if (chronicFilter === "none") {
+          if (cd.trim()) return false;
+        } else {
+          // Specific common condition search (e.g. diabetes, hypertension, asthma, thyroid)
+          if (!cd.includes(chronicFilter.toLowerCase())) return false;
+        }
+      }
+
       if (!q) return true;
-      const blob = `${a.patients?.full_name ?? ""} ${a.patients?.uhid ?? ""} ${a.patients?.mobile ?? ""} ${a.doctors?.name ?? ""}`.toLowerCase();
+      const blob = `${a.patients?.full_name ?? ""} ${a.patients?.uhid ?? ""} ${a.patients?.mobile ?? ""} ${a.patients?.chronic_diseases ?? ""} ${a.doctors?.name ?? ""}`.toLowerCase();
       return blob.includes(q);
     });
-  }, [appts, doctorId, status, search]);
+  }, [appts, doctorId, status, ageGroup, chronicFilter, search]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: appts.length };
@@ -208,7 +235,7 @@ function OpdAppointments() {
             </SelectContent>
           </Select>
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-40 h-10">
+            <SelectTrigger className="w-36 h-10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -218,6 +245,37 @@ function OpdAppointments() {
                   {s.replace("_", " ")}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+
+          {/* Age Group Filter */}
+          <Select value={ageGroup} onValueChange={setAgeGroup}>
+            <SelectTrigger className="w-36 h-10 text-xs">
+              <SelectValue placeholder="Age: All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Age: All Ages</SelectItem>
+              <SelectItem value="pediatric">Pediatric (&lt;18y)</SelectItem>
+              <SelectItem value="young_adult">Young Adult (18–35y)</SelectItem>
+              <SelectItem value="adult">Adult (36–59y)</SelectItem>
+              <SelectItem value="geriatric">Geriatric (60+y)</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Chronic Disease Filter */}
+          <Select value={chronicFilter} onValueChange={setChronicFilter}>
+            <SelectTrigger className="w-44 h-10 text-xs">
+              <SelectValue placeholder="Chronic: All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Chronic: All Patients</SelectItem>
+              <SelectItem value="any">With Any Chronic Disease</SelectItem>
+              <SelectItem value="none">No Chronic Disease</SelectItem>
+              <SelectItem value="diabetes">Diabetes</SelectItem>
+              <SelectItem value="hypertension">Hypertension</SelectItem>
+              <SelectItem value="asthma">Asthma / Respiratory</SelectItem>
+              <SelectItem value="cardiac">Cardiac / Heart</SelectItem>
+              <SelectItem value="thyroid">Thyroid</SelectItem>
             </SelectContent>
           </Select>
           <div className="relative flex-1 min-w-[200px]">
@@ -293,7 +351,19 @@ function OpdAppointments() {
                       ) : null}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{a.patients?.full_name ?? "—"}</div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-medium truncate">{a.patients?.full_name ?? "—"}</span>
+                        {a.patients?.dob && (
+                          <span className="text-[11px] px-1.5 py-0.2 rounded bg-muted text-muted-foreground font-mono">
+                            {differenceInYears(new Date(), new Date(a.patients.dob))}y
+                          </span>
+                        )}
+                        {a.patients?.chronic_diseases && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 font-medium truncate max-w-[140px]" title={a.patients.chronic_diseases}>
+                            {a.patients.chronic_diseases}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground truncate">
                         {a.patients?.uhid} · {a.doctors?.name}
                         {a.doctors?.specialization ? ` (${a.doctors.specialization})` : ""}
@@ -826,10 +896,29 @@ function AppointmentDetail({
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-semibold truncate">{patient?.full_name ?? "—"}</h3>
             <Badge variant="secondary">{patient?.uhid}</Badge>
+            {patient?.dob && (
+              <Badge variant="outline" className="text-[10px]">
+                {differenceInYears(new Date(), new Date(patient.dob))}y · {patient?.gender}
+              </Badge>
+            )}
           </div>
           <div className="text-xs text-muted-foreground mt-0.5 truncate">
             {patient?.mobile}
           </div>
+          {(patient?.chronic_diseases || patient?.allergies) && (
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              {patient?.chronic_diseases && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 font-medium flex items-center gap-1">
+                  <HeartPulse className="size-3" /> Chronic: {patient.chronic_diseases}
+                </span>
+              )}
+              {patient?.allergies && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 font-medium">
+                  Allergy: {patient.allergies}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <Button size="sm" variant="outline" onClick={onEdit}>
           <Pencil className="size-3.5" /> Edit

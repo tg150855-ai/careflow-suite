@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Ban } from "lucide-react";
+import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Ban, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { inr } from "@/lib/format";
@@ -17,6 +17,7 @@ import { DoctorDictate, mergeSpeechTranscript } from "@/components/doctor-dictat
 import { PriorityBadge, StatusBadge } from "./ot.index";
 import { useAuth } from "@/lib/auth-context";
 import { can } from "@/lib/permissions";
+import { PatientAttachments } from "@/components/patient-attachments";
 
 export const Route = createFileRoute("/_authenticated/ot/$id")({ component: OtDetail });
 
@@ -179,9 +180,21 @@ function OtDetail() {
       <Tabs defaultValue="notes">
         <TabsList>
           <TabsTrigger value="notes"><FileText className="size-4 mr-1" /> Operation Notes</TabsTrigger>
+          <TabsTrigger value="media"><Camera className="size-4 mr-1" /> Surgery Photos & Videos</TabsTrigger>
           <TabsTrigger value="billing"><Receipt className="size-4 mr-1" /> Billing</TabsTrigger>
         </TabsList>
         <TabsContent value="notes" forceMount className="data-[state=inactive]:hidden"><NotesEditor surgeryId={id} initial={notes} /></TabsContent>
+        <TabsContent value="media" forceMount className="data-[state=inactive]:hidden">
+          <Card>
+            <CardContent className="p-4">
+              {s.patient_id ? (
+                <PatientAttachments patientId={s.patient_id} patient={s.patients} defaultDepartment="OT" />
+              ) : (
+                <div className="text-xs text-muted-foreground py-4 text-center">No patient associated with this surgery.</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
         <TabsContent value="billing" forceMount className="data-[state=inactive]:hidden"><BillingSummary s={s} /></TabsContent>
       </Tabs>
     </div>
