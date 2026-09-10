@@ -240,28 +240,13 @@ function NotesEditor({ surgeryId, initial }: { surgeryId: string; initial: any }
     toast.message("Notes cleared");
   }
 
-  const Field = ({ label, value, onChange, rows = 2 }: any) => (
-    <div>
-      <div className="flex items-center justify-between"><Label>{label}</Label>
-        <DoctorDictate
-          title={`Dictate ${label}`}
-          onTranscript={(t, mode) => {
-            if (mode === "replace") onChange(t);
-            else onChange(mergeSpeechTranscript(value || "", t));
-          }}
-        />
-      </div>
-      <Textarea rows={rows} value={value} onChange={(e) => onChange(e.target.value)} />
-    </div>
-  );
-
   return (
     <Card><CardContent className="p-4 grid md:grid-cols-2 gap-4">
-      <Field label="Diagnosis" value={n.diagnosis} onChange={(v: string) => setN({ ...n, diagnosis: v })} />
-      <Field label="Procedure Performed" value={n.procedure_performed} onChange={(v: string) => setN({ ...n, procedure_performed: v })} />
-      <Field label="Findings" value={n.findings} onChange={(v: string) => setN({ ...n, findings: v })} rows={3} />
-      <Field label="Complications" value={n.complications} onChange={(v: string) => setN({ ...n, complications: v })} rows={3} />
-      <div className="md:col-span-2"><Field label="Notes / Remarks" value={n.notes} onChange={(v: string) => setN({ ...n, notes: v })} rows={3} /></div>
+      <NotesField label="Diagnosis" value={n.diagnosis} onChange={(v: string) => setN({ ...n, diagnosis: v })} />
+      <NotesField label="Procedure Performed" value={n.procedure_performed} onChange={(v: string) => setN({ ...n, procedure_performed: v })} />
+      <NotesField label="Findings" value={n.findings} onChange={(v: string) => setN({ ...n, findings: v })} rows={3} />
+      <NotesField label="Complications" value={n.complications} onChange={(v: string) => setN({ ...n, complications: v })} rows={3} />
+      <div className="md:col-span-2"><NotesField label="Notes / Remarks" value={n.notes} onChange={(v: string) => setN({ ...n, notes: v })} rows={3} /></div>
       <div><Label>Blood Loss (ml)</Label><Input type="number" value={n.blood_loss_ml} onChange={(e) => setN({ ...n, blood_loss_ml: +e.target.value })} /></div>
       <div><Label>Implants Used</Label><Input value={n.implants_used} onChange={(e) => setN({ ...n, implants_used: e.target.value })} /></div>
       <div className="md:col-span-2 flex justify-end gap-2">
@@ -269,6 +254,26 @@ function NotesEditor({ surgeryId, initial }: { surgeryId: string; initial: any }
         <Button onClick={save}><Save className="size-4" /> Save Notes</Button>
       </div>
     </CardContent></Card>
+  );
+}
+
+function NotesField({ label, value, onChange, rows = 2 }: { label: string; value: string; onChange: (v: string) => void; rows?: number }) {
+  const handleTranscript = (t: string, mode: "append" | "replace") => {
+    if (mode === "replace") onChange(t);
+    else onChange(mergeSpeechTranscript(value || "", t));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <Label>{label}</Label>
+        <DoctorDictate
+          title={`Dictate ${label}`}
+          onTranscript={handleTranscript}
+        />
+      </div>
+      <Textarea rows={rows} value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
   );
 }
 

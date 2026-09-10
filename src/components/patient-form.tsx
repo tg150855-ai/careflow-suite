@@ -354,11 +354,42 @@ export function PatientForm({
           <Field label="Emergency contact mobile">
             <Input {...form.register("emergency_contact_mobile")} />
           </Field>
-          <Field label="Known allergies">
-            <Textarea rows={2} {...form.register("allergies")} />
+          <Field label="Known allergies" hint="e.g. Penicillin, Sulfa">
+            <Textarea rows={2} {...form.register("allergies")} placeholder="Enter known drug or food allergies" />
           </Field>
-          <Field label="Chronic diseases">
-            <Textarea rows={2} {...form.register("chronic_diseases")} />
+          <Field label="Chronic diseases" hint="Select or type chronic conditions">
+            <Textarea rows={2} {...form.register("chronic_diseases")} placeholder="e.g. Diabetes, Hypertension, Asthma, Thyroid" />
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {["Diabetes", "Hypertension", "Asthma", "Cardiac", "Thyroid", "Arthritis", "COPD"].map((cond) => {
+                const current = form.watch("chronic_diseases") || "";
+                const isSelected = current.toLowerCase().includes(cond.toLowerCase());
+                return (
+                  <button
+                    key={cond}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        const next = current
+                          .split(/,\s*/)
+                          .filter((c: string) => c.toLowerCase() !== cond.toLowerCase())
+                          .join(", ");
+                        form.setValue("chronic_diseases", next);
+                      } else {
+                        const next = current ? `${current.trim().replace(/,$/, "")}, ${cond}` : cond;
+                        form.setValue("chronic_diseases", next);
+                      }
+                    }}
+                    className={`text-[11px] px-2 py-0.5 rounded-full border transition font-medium ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted/40 hover:bg-muted text-muted-foreground border-border"
+                    }`}
+                  >
+                    + {cond}
+                  </button>
+                );
+              })}
+            </div>
           </Field>
         </div>
       </Card>

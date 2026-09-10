@@ -22,6 +22,7 @@ import { RecordActions } from "@/components/common/record-actions";
 import { shareOnWhatsApp } from "@/lib/share";
 import { fetchUnifiedDoctors, formatDoctorLabel } from "@/lib/doctors";
 import { useMyHospital } from "@/lib/use-my-hospital";
+import { DoctorDictate, mergeSpeechTranscript } from "@/components/doctor-dictate";
 
 export const Route = createFileRoute("/_authenticated/ot/schedule")({ component: OtSchedule });
 
@@ -346,7 +347,21 @@ function OtSchedule() {
                   <div><Label>Consumables</Label><Input type="number" value={form.consumables_charge} onChange={(e) => setForm({ ...form, consumables_charge: +e.target.value })} /></div>
                   <div className="flex items-end"><div className="text-sm">Total: <span className="font-semibold">{inr(form.ot_charge + form.surgeon_charge + form.assistant_charge + form.anesthesia_charge + form.consumables_charge)}</span></div></div>
 
-                  <div className="col-span-2"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+                  <div className="col-span-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Notes</Label>
+                      <DoctorDictate
+                        title="Dictate Notes"
+                        onTranscript={(t, m) => {
+                          setForm((f) => ({
+                            ...f,
+                            notes: m === "replace" ? t : mergeSpeechTranscript(f.notes, t),
+                          }));
+                        }}
+                      />
+                    </div>
+                    <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                  </div>
                 </div>
                 <DialogFooter><Button onClick={save}><Save className="size-4" /> {editId ? "Update" : "Save"}</Button></DialogFooter>
               </DialogContent>

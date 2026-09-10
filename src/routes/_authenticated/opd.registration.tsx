@@ -16,9 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Search, UserPlus, Phone, IdCard, CalendarPlus, PlayCircle,
   Stethoscope, Loader2, ChevronRight, History, ListChecks, Download,
-  MessageCircle, Printer, Eye, ArrowRight, Trash2, Pencil,
+  MessageCircle, Printer, Eye, ArrowRight, Trash2, Pencil, HeartPulse,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, differenceInYears } from "date-fns";
 import { PatientAttachments } from "@/components/patient-attachments";
 import { exportXlsx } from "@/lib/export";
 import { shareOnWhatsApp } from "@/lib/share";
@@ -496,6 +496,13 @@ function OpdListPanel() {
 
   const [doctorId, setDoctorId] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [ageGroup, setAgeGroup] = useState<string>("all");
+  const [chronicInput, setChronicInput] = useState<string>("");
+  const [chronicFilter, setChronicFilter] = useState<string>("");
+  useEffect(() => {
+    const t = setTimeout(() => setChronicFilter(chronicInput.trim().toLowerCase()), 300);
+    return () => clearTimeout(t);
+  }, [chronicInput]);
   const isAdmin = useIsSuperAdmin();
 
   // Realtime subscription for LAN and local updates
@@ -548,7 +555,7 @@ function OpdListPanel() {
 
       const { data, error } = await (supabase as any)
         .from("appointments")
-        .select("id, token_no, scheduled_at, status, notes, patient_id, doctor_id, patients(id, uhid, full_name, mobile, gender, dob), doctors(id, name, specialization)")
+        .select("id, token_no, scheduled_at, status, notes, patient_id, doctor_id, patients(id, uhid, full_name, mobile, gender, dob, chronic_diseases, allergies), doctors(id, name, specialization)")
         .gte("scheduled_at", startIso)
         .lte("scheduled_at", endIso)
         .order("scheduled_at", { ascending: false })
@@ -605,15 +612,34 @@ function OpdListPanel() {
     return (rows as any[]).filter((r) => {
       if (doctorId !== "all" && r.doctor_id !== doctorId) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
+
+      // Age group filter
+      if (ageGroup !== "all") {
+        const dob = r.patients?.dob;
+        if (!dob) return false;
+        const age = differenceInYears(new Date(), new Date(dob));
+        if (ageGroup === "pediatric" && age >= 18) return false;
+        if (ageGroup === "young_adult" && (age < 18 || age > 35)) return false;
+        if (ageGroup === "adult" && (age < 36 || age > 59)) return false;
+        if (ageGroup === "geriatric" && age < 60) return false;
+      }
+
+      // Chronic disease search filter
+      if (chronicFilter) {
+        const cd = (r.patients?.chronic_diseases ?? "").toLowerCase();
+        if (!cd.includes(chronicFilter)) return false;
+      }
+
       if (!s) return true;
       return (
         r.patients?.full_name?.toLowerCase().includes(s) ||
         r.patients?.uhid?.toLowerCase().includes(s) ||
         r.patients?.mobile?.toLowerCase().includes(s) ||
+        (r.patients?.chronic_diseases && r.patients.chronic_diseases.toLowerCase().includes(s)) ||
         (r.token_no !== null && String(r.token_no).includes(s)) ||
         r.doctors?.name?.toLowerCase().includes(s));
     });
-  }, [rows, search, doctorId, statusFilter]);
+  }, [rows, search, doctorId, statusFilter, ageGroup, chronicFilter]);
 
   async function removeVisit(r: any) {
     if (!window.confirm(`Delete OPD visit of ${r.patients?.full_name ?? "patient"}? This cannot be undone.`)) return;
@@ -702,7 +728,7 @@ function OpdListPanel() {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="All statuses" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-[150px]"><SelectValue placeholder="All statuses" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="waiting">Waiting</SelectItem>
@@ -711,6 +737,31 @@ function OpdListPanel() {
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Age Group Filter */}
+          <Select value={ageGroup} onValueChange={setAgeGroup}>
+            <SelectTrigger className="h-9 w-[150px] text-xs">
+              <SelectValue placeholder="Age: All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Age: All</SelectItem>
+              <SelectItem value="pediatric">Pediatric (&lt;18y)</SelectItem>
+              <SelectItem value="young_adult">Young Adult (18–35y)</SelectItem>
+              <SelectItem value="adult">Adult (36–59y)</SelectItem>
+              <SelectItem value="geriatric">Geriatric (60+y)</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Chronic Disease Search Input */}
+          <div className="relative">
+            <HeartPulse className="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={chronicInput}
+              onChange={(e) => setChronicInput(e.target.value)}
+              placeholder="Search chronic disease…"
+              className="h-9 pl-8 w-[190px] text-xs"
+            />
+          </div>
           <div className="ml-auto flex items-center gap-2">
 
             <div className="relative">
@@ -766,10 +817,19 @@ function OpdListPanel() {
                 return (
                   <tr key={r.id} className="hover:bg-muted/40">
                     <td className="px-3 py-2 font-mono text-xs">#{r.token_no ?? "—"}</td>
-                    <td className="px-3 py-2 font-medium truncate max-w-[200px]">{r.patients?.full_name ?? "—"}</td>
+                    <td className="px-3 py-2 font-medium max-w-[220px]">
+                      <div className="truncate">{r.patients?.full_name ?? "—"}</div>
+                      {r.patients?.chronic_diseases && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 font-medium truncate max-w-[180px]" title={r.patients.chronic_diseases}>
+                            <HeartPulse className="size-2.5 inline mr-1" />{r.patients.chronic_diseases}
+                          </span>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{r.patients?.uhid ?? "—"}</td>
                     <td className="px-3 py-2">{r.patients?.mobile ?? "—"}</td>
-                    <td className="px-3 py-2 capitalize">{ageYears(r.patients?.dob)}/{r.patients?.gender ?? "—"}</td>
+                    <td className="px-3 py-2 capitalize font-mono text-xs">{ageYears(r.patients?.dob)}y / {r.patients?.gender ?? "—"}</td>
                     <td className="px-3 py-2 truncate max-w-[160px]">{r.doctors?.name ?? "—"}</td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs">{format(new Date(r.scheduled_at), "dd MMM HH:mm")}</td>
                     <td className="px-3 py-2"><Badge variant={consultLabel === "Completed" ? "default" : "secondary"} className="text-[10px]">{consultLabel}</Badge></td>
