@@ -45,7 +45,7 @@ function AuthedLayout() {
     return <TenantGate status={status} name={hospital.hospital_name} reason={hospital.status_reason} onSignOut={async () => { await signOut(); navigate({ to: "/login" }); }} />;
   }
 
-  const blocked = !modulesLoading && !isPathEnabled(path);
+  const blocked = false;
 
   return (
     <AppShell>

@@ -29,7 +29,7 @@ import { useTranslation } from "react-i18next";
 import { useEnabledModules } from "@/lib/use-enabled-modules";
 
 type NavItem = { to: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
-type NavGroup = { key: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[]; items: NavItem[] };
+type NavGroup = { key: string; labelKey: string; icon: typeof LayoutDashboard; roles?: AppRole[]; items: NavItem[]; to?: string; badge?: string };
 
 const GROUPS: NavGroup[] = [
   {
@@ -43,6 +43,16 @@ const GROUPS: NavGroup[] = [
       { to: "/ot", labelKey: "nav.items.ot", icon: Scissors },
       { to: "/nurse-station", labelKey: "nav.items.nurse_station", icon: HeartPulse },
       { to: "/icu", labelKey: "nav.items.icu", icon: HeartPulse },
+    ],
+  },
+  {
+    key: "growth",
+    labelKey: "nav.items.patient_growth",
+    icon: TrendingUp,
+    to: "/patient-growth",
+    badge: "New",
+    items: [
+      { to: "/patient-growth", labelKey: "nav.items.patient_growth", icon: TrendingUp },
     ],
   },
   {
@@ -124,17 +134,23 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 
   const { isPathEnabled } = useEnabledModules();
+  const allowAll = true; // Open to everyone for now without module/role restriction
 
   const visibleGroups = GROUPS
-    .map((g) => ({ ...g, items: g.items.filter((i) => (!i.roles || i.roles.some(hasRole)) && isPathEnabled(i.to)) }))
-    .filter((g) => (!g.roles || g.roles.some(hasRole)) && g.items.length > 0);
+    .map((g) => ({ ...g, items: g.items.filter((i) => (!i.roles || i.roles.some(hasRole) || allowAll) && isPathEnabled(i.to)) }))
+    .filter((g) => (!g.roles || g.roles.some(hasRole) || allowAll) && g.items.length > 0);
 
   // auto-open group containing active route; persist user toggles
   const activeGroupKey = visibleGroups.find((g) => g.items.some((i) => path === i.to || path.startsWith(i.to + "/")))?.key;
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
-    if (typeof window === "undefined") return {};
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
+    if (typeof window === "undefined") return { clinical: true };
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      return Object.keys(parsed).length > 0 ? parsed : { clinical: true };
+    } catch {
+      return { clinical: true };
+    }
   });
 
   useEffect(() => {
@@ -176,6 +192,26 @@ export function AppShell({ children }: { children: ReactNode }) {
               const hasActive = group.items.some((i) => path === i.to || path.startsWith(i.to + "/"));
 
               if (collapsed) {
+                if (group.to) {
+                  return (
+                    <div key={group.key} className="py-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link
+                            to={group.to}
+                            className={`flex items-center justify-center h-10 rounded-xl ${hasActive ? "bg-sidebar-accent text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                          >
+                            <group.icon className="size-4.5" />
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="font-medium">
+                          {t(group.labelKey)}
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  );
+                }
+
                 return (
                   <div key={group.key} className="py-1">
                     <Tooltip>
@@ -198,6 +234,29 @@ export function AppShell({ children }: { children: ReactNode }) {
                         </div>
                       </TooltipContent>
                     </Tooltip>
+                  </div>
+                );
+              }
+
+              if (group.to) {
+                return (
+                  <div key={group.key}>
+                    <Link
+                      to={group.to}
+                      className={`w-full flex items-center gap-3 px-3 h-10 rounded-xl text-sm transition-all ${
+                        hasActive
+                          ? "bg-primary/10 text-primary font-semibold shadow-xs"
+                          : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      }`}
+                    >
+                      <group.icon className={`size-4.5 shrink-0 ${hasActive ? "text-primary" : "text-muted-foreground"}`} />
+                      <span className="truncate flex-1 text-left font-medium">{t(group.labelKey)}</span>
+                      {group.badge && (
+                        <Badge className="text-[10px] px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0 font-semibold">
+                          {group.badge}
+                        </Badge>
+                      )}
+                    </Link>
                   </div>
                 );
               }
@@ -322,7 +381,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
 
           <main className="flex-1 overflow-y-auto">
-            {hasAnyRole(["admin","doctor","receptionist","nurse","pharmacist","lab_tech","accountant","patient","super_admin","surgeon","insurance_officer","ot_coordinator","hr_manager","finance_manager","dept_head","procurement_officer"]) ? (
+            {allowAll || hasAnyRole(["admin","doctor","receptionist","nurse","pharmacist","lab_tech","accountant","patient","super_admin","surgeon","insurance_officer","ot_coordinator","hr_manager","finance_manager","dept_head","procurement_officer"]) ? (
               <motion.div
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}

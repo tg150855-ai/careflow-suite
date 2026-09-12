@@ -1,31 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
-import { ALL_MODULE_KEYS, enabledKeysFrom, fetchDepartmentSettings, moduleForPath, type ModuleKey } from "@/lib/modules";
-import { useMyHospital } from "@/lib/use-my-hospital";
+import { ALL_MODULE_KEYS, type ModuleKey } from "@/lib/modules";
 
 /**
- * Modules the current user may actually reach:
- * super-admin allowance for the hospital tenant ∩ hospital's own Settings → Departments.
+ * Modules are open to everyone without module allocation or plan restrictions.
  */
 export function useEnabledModules() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["hospital-settings", "departments"],
-    queryFn: fetchDepartmentSettings,
-    staleTime: 60_000,
-  });
-  const { allowedModules, loading: hospitalLoading } = useMyHospital();
-
-  const local = data ? enabledKeysFrom(data) : new Set<ModuleKey>(ALL_MODULE_KEYS);
-  const enabled = allowedModules
-    ? new Set<ModuleKey>([...local].filter((k) => allowedModules.has(k)))
-    : local;
+  const enabled = new Set<ModuleKey>(ALL_MODULE_KEYS);
 
   return {
-    loading: isLoading || hospitalLoading,
+    loading: false,
     enabled,
-    isEnabled: (key: ModuleKey | null) => (key ? enabled.has(key) : true),
-    isPathEnabled: (path: string) => {
-      const key = moduleForPath(path);
-      return key ? enabled.has(key) : true;
-    },
+    isEnabled: (_key: ModuleKey | null) => true,
+    isPathEnabled: (_path: string) => true,
   };
 }
+

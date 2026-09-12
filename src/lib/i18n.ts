@@ -21,7 +21,7 @@ const en = {
       finance: "Finance", hr: "HR", admin: "Admin",
     },
     items: {
-      dashboard: "Dashboard", emergency: "Emergency", patients: "Patients", opd: "OPD",
+      dashboard: "Dashboard", emergency: "Emergency", patients: "Patients", patient_growth: "Patient Growth", opd: "OPD",
       ipd: "IPD", discharge: "Discharge", billing_center: "Billing", ot: "OT / Surgery",
       nurse_station: "Nurse Station", icu: "ICU / Critical Care",
       laboratory: "Laboratory", radiology: "Radiology", blood_bank: "Blood Bank",
@@ -76,7 +76,7 @@ const hi: typeof en = {
       finance: "वित्त", hr: "मानव संसाधन", admin: "प्रशासन",
     },
     items: {
-      dashboard: "डैशबोर्ड", emergency: "आपातकाल", patients: "मरीज़", opd: "ओपीडी",
+      dashboard: "डैशबोर्ड", emergency: "आपातकाल", patients: "मरीज़", patient_growth: "मरीज़ विकास एवं प्रचार", opd: "ओपीडी",
       ipd: "आईपीडी", discharge: "छुट्टी", billing_center: "बिलिंग", ot: "ओटी / सर्जरी",
       nurse_station: "नर्स स्टेशन", icu: "आईसीयू / गहन चिकित्सा",
       laboratory: "प्रयोगशाला", radiology: "रेडियोलॉजी", blood_bank: "ब्लड बैंक",
@@ -131,7 +131,7 @@ const mr: typeof en = {
       finance: "अर्थ", hr: "मानव संसाधन", admin: "प्रशासन",
     },
     items: {
-      dashboard: "डॅशबोर्ड", emergency: "आपत्कालीन", patients: "रुग्ण", opd: "ओपीडी",
+      dashboard: "डॅशबोर्ड", emergency: "आपत्कालीन", patients: "रुग्ण", patient_growth: "रुग्ण विकास व प्रसिद्धी", opd: "ओपीडी",
       ipd: "आयपीडी", discharge: "डिस्चार्ज", billing_center: "बिलिंग", ot: "ओटी / शस्त्रक्रिया",
       nurse_station: "नर्स स्टेशन", icu: "आयसीयू / अतिदक्षता",
       laboratory: "प्रयोगशाळा", radiology: "रेडिओलॉजी", blood_bank: "रक्तपेढी",
