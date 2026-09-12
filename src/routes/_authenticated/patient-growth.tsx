@@ -38,6 +38,10 @@ import {
   Eye,
   Check,
   SlidersHorizontal,
+  Paperclip,
+  FileText,
+  PlusCircle,
+  ImageIcon,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { differenceInYears, format } from "date-fns";
@@ -327,12 +331,19 @@ function PatientGrowthPage() {
   const [campaignModalOpen, setCampaignModalOpen] = useState(false);
   const [activeChannel, setActiveChannel] = useState<"whatsapp" | "sms">("whatsapp");
   const [selectedTemplateId, setSelectedTemplateId] = useState("diabetes_camp");
-  const [messageBody, setMessageBody] = useState("");
-  const [promoCode, setPromoCode] = useState("GROWTH2026");
+  const [messageBody, setMessageBody] = useState(CAMPAIGN_TEMPLATES[0].body);
+  const [promoCode, setPromoCode] = useState(CAMPAIGN_TEMPLATES[0].code || "DIABCARE2026");
   const [campDate, setCampDate] = useState(format(new Date(Date.now() + 6 * 86400000), "dd MMM yyyy"));
   const [isSending, setIsSending] = useState(false);
   const [sendProgress, setSendProgress] = useState(0);
   const [sentCount, setSentCount] = useState<number | null>(null);
+  
+  // Custom templates & attachments state
+  const [customTemplates, setCustomTemplates] = useState<any[]>([]);
+  const [isCustomTemplateOpen, setIsCustomTemplateOpen] = useState(false);
+  const [customTitle, setCustomTitle] = useState("");
+  const [customBody, setCustomBody] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
 
   // Fetch Live Patients from Supabase with graceful fallback/enrichment
   const { data: dbPatients = [] } = useQuery({
@@ -477,14 +488,19 @@ function PatientGrowthPage() {
     return filteredPatients;
   }, [dbPatients, selectedPatientIds, filteredPatients]);
 
+  // Combined templates list (built-in + user-created custom templates)
+  const allTemplates = useMemo(() => {
+    return [...CAMPAIGN_TEMPLATES, ...customTemplates];
+  }, [customTemplates]);
+
   // Open Campaign modal
   const handleOpenCampaignModal = (channel: "whatsapp" | "sms") => {
     setActiveChannel(channel);
     const template =
-      CAMPAIGN_TEMPLATES.find((t) => t.channel === channel) || CAMPAIGN_TEMPLATES[0];
-    setSelectedTemplateId(template.id);
-    setMessageBody(template.body);
-    setPromoCode(template.code);
+      allTemplates.find((t) => t.channel === channel) || allTemplates[0];
+    setSelectedTemplateId(template?.id || "diabetes_camp");
+    setMessageBody(template?.body || "");
+    setPromoCode(template?.code || "GROWTH2026");
     setIsSending(false);
     setSendProgress(0);
     setSentCount(null);
@@ -493,8 +509,15 @@ function PatientGrowthPage() {
 
   // Change selected template
   const handleSelectTemplate = (templateId: string) => {
+    if (templateId === "CREATE_CUSTOM") {
+      setCustomTitle("");
+      setCustomBody(messageBody || "");
+      setIsCustomTemplateOpen(true);
+      return;
+    }
+
     setSelectedTemplateId(templateId);
-    const tmpl = CAMPAIGN_TEMPLATES.find((t) => t.id === templateId);
+    const tmpl = allTemplates.find((t) => t.id === templateId);
     if (tmpl) {
       setMessageBody(tmpl.body);
       setPromoCode(tmpl.code);
@@ -502,6 +525,33 @@ function PatientGrowthPage() {
         setActiveChannel(tmpl.channel);
       }
     }
+  };
+
+  // Save newly created custom template
+  const handleSaveCustomTemplate = () => {
+    if (!customTitle.trim()) {
+      toast.error("Please provide a template title");
+      return;
+    }
+    if (!customBody.trim()) {
+      toast.error("Please provide message body content");
+      return;
+    }
+
+    const newTemplate = {
+      id: `custom_${Date.now()}`,
+      title: customTitle.trim(),
+      target: "Custom Template",
+      channel: activeChannel,
+      body: customBody.trim(),
+      code: promoCode || "OFFER2026",
+    };
+
+    setCustomTemplates((prev) => [newTemplate, ...prev]);
+    setSelectedTemplateId(newTemplate.id);
+    setMessageBody(newTemplate.body);
+    setIsCustomTemplateOpen(false);
+    toast.success(`Custom template "${newTemplate.title}" created!`);
   };
 
   const samplePatient = targetPatients[0] || {
@@ -541,10 +591,15 @@ function PatientGrowthPage() {
 
     setIsSending(false);
     setSentCount(total);
+    const campaignTitle = allTemplates.find((t) => t.id === selectedTemplateId)?.title || "Promotion";
+    const attachmentNote = activeChannel === "whatsapp" && attachments.length > 0 
+      ? ` • Included ${attachments.length} attachment(s)` 
+      : "";
+
     toast.success(
       `🎉 ${activeChannel.toUpperCase()} Promotion Broadcast sent to ${total} patients!`,
       {
-        description: `Campaign: ${CAMPAIGN_TEMPLATES.find((t) => t.id === selectedTemplateId)?.title || "Promotion"}`,
+        description: `Campaign: ${campaignTitle}${attachmentNote}`,
         duration: 5000,
       }
     );
@@ -561,8 +616,9 @@ function PatientGrowthPage() {
           .replace(/\[DATE\]/g, campDate)
       : `Dear ${patient.full_name}, greetings from ${BRAND.name}! We invite you to our upcoming health wellness camp. For inquiries, reply to this message.`;
 
+    const campaignTitle = allTemplates.find((t) => t.id === selectedTemplateId)?.title || "Promotion";
     shareOnWhatsApp(text, undefined, patient.mobile);
-    toast.info(`Opening WhatsApp chat for ${patient.full_name}`);
+    toast.info(`Opening WhatsApp with "${campaignTitle}" for ${patient.full_name}`);
   };
 
 
@@ -757,6 +813,63 @@ function PatientGrowthPage() {
           </div>
         </div>
 
+        {/* Selected Campaign Template Quick Bar */}
+        <div className="px-4 py-2.5 bg-primary/5 border-b flex items-center justify-between flex-wrap gap-3 text-xs">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-foreground flex items-center gap-1.5">
+              <Send className="size-3.5 text-emerald-600" /> Active Template for Outreach:
+            </span>
+            <div className="w-64">
+              <Select value={selectedTemplateId} onValueChange={handleSelectTemplate}>
+                <SelectTrigger className="h-7 text-xs bg-background">
+                  <SelectValue placeholder="Select campaign template" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CREATE_CUSTOM" className="text-xs text-primary font-medium focus:bg-primary/10">
+                    <div className="flex items-center gap-1.5 py-0.5">
+                      <PlusCircle className="size-3 text-primary" />
+                      <span>+ Create Custom Template</span>
+                    </div>
+                  </SelectItem>
+
+                  {customTemplates.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                        Custom Templates
+                      </div>
+                      {customTemplates.map((tmpl) => (
+                        <SelectItem key={tmpl.id} value={tmpl.id} className="text-xs">
+                          <span className="font-medium">{tmpl.title}</span>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+
+                  <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                    Built-in Templates
+                  </div>
+                  {CAMPAIGN_TEMPLATES.map((tmpl) => (
+                    <SelectItem key={tmpl.id} value={tmpl.id} className="text-xs">
+                      <span className="font-medium">{tmpl.title}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Badge variant="outline" className="text-[10px] bg-background text-muted-foreground font-mono">
+              Code: {promoCode}
+            </Badge>
+          </div>
+
+          <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <span>Clicking</span>
+            <span className="inline-flex items-center justify-center size-5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600 font-bold">
+              <Send className="size-2.5" />
+            </span>
+            <span>on any patient sends this template on WhatsApp</span>
+          </div>
+        </div>
+
         {/* Table Content */}
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left border-collapse">
@@ -877,7 +990,7 @@ function PatientGrowthPage() {
                             size="icon"
                             variant="ghost"
                             className="size-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950"
-                            title="Direct 1-on-1 WhatsApp promotion"
+                            title={`Send active template (${allTemplates.find((t) => t.id === selectedTemplateId)?.title || "Campaign"}) to ${patient.full_name}`}
                             onClick={() => handleSingleWhatsApp(patient)}
                           >
                             <Send className="size-3.5" />
@@ -971,12 +1084,55 @@ function PatientGrowthPage() {
 
             {/* Campaign Preset Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-foreground">Select Campaign Template</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground">Select Campaign Template</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomTitle("");
+                    setCustomBody(messageBody || "");
+                    setIsCustomTemplateOpen(true);
+                  }}
+                  className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium"
+                >
+                  <PlusCircle className="size-3" />
+                  + Create Custom Template
+                </button>
+              </div>
               <Select value={selectedTemplateId} onValueChange={handleSelectTemplate}>
                 <SelectTrigger className="h-9 text-xs">
                   <SelectValue placeholder="Choose a ready health package template" />
                 </SelectTrigger>
                 <SelectContent>
+                  {/* Action Item to Create Custom Template */}
+                  <SelectItem value="CREATE_CUSTOM" className="text-xs text-primary font-medium focus:bg-primary/10">
+                    <div className="flex items-center gap-2 py-0.5">
+                      <PlusCircle className="size-3.5 text-primary" />
+                      <span>+ Create Custom Template</span>
+                    </div>
+                  </SelectItem>
+                  
+                  {/* User Created Custom Templates (if any) */}
+                  {customTemplates.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                        Custom Templates
+                      </div>
+                      {customTemplates.map((tmpl) => (
+                        <SelectItem key={tmpl.id} value={tmpl.id} className="text-xs">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="font-medium">{tmpl.title}</span>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">(Custom)</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Built-in Pre-made Hospital Templates */}
+                  <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                    Built-in Templates
+                  </div>
                   {CAMPAIGN_TEMPLATES.map((tmpl) => (
                     <SelectItem key={tmpl.id} value={tmpl.id} className="text-xs">
                       <div className="flex items-center justify-between gap-4">
@@ -1048,6 +1204,58 @@ function PatientGrowthPage() {
                   </button>
                 ))}
               </div>
+
+              {/* Attachments Section - Bulk WhatsApp only */}
+              {activeChannel === "whatsapp" && (
+                <div className="pt-2 border-t mt-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Paperclip className="size-3.5 text-emerald-600" /> WhatsApp Attachments
+                    </label>
+                    <label className="text-[11px] text-emerald-600 hover:text-emerald-700 font-medium cursor-pointer flex items-center gap-1">
+                      <span>+ Attach File / Image</span>
+                      <input
+                        type="file"
+                        multiple
+                        className="hidden"
+                        accept="image/*,.pdf,.doc,.docx"
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            const newFiles = Array.from(e.target.files);
+                            setAttachments((prev) => [...prev, ...newFiles]);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {attachments.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {attachments.map((file, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded text-[11px] text-emerald-800 dark:text-emerald-300"
+                        >
+                          <FileText className="size-3 text-emerald-600" />
+                          <span className="max-w-[150px] truncate">{file.name}</span>
+                          <span className="text-[9px] text-muted-foreground">({(file.size / 1024).toFixed(0)} KB)</span>
+                          <button
+                            type="button"
+                            onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
+                            className="text-muted-foreground hover:text-destructive ml-0.5"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-muted-foreground italic bg-muted/20 px-2.5 py-1.5 rounded border border-dashed">
+                      Optional: Attach promotional flyer image, PDF brochure, or prescription voucher for bulk WhatsApp recipients.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Live Smartphone Chat Mockup Preview */}
@@ -1080,6 +1288,55 @@ function PatientGrowthPage() {
 
                   {/* Message Bubble */}
                   <div className="bg-white dark:bg-[#1f2c34] text-slate-800 dark:text-slate-100 rounded-lg rounded-tl-none p-3 shadow-xs text-xs whitespace-pre-wrap leading-relaxed max-w-[95%]">
+                    {/* Attached files preview in bubble */}
+                    {attachments.length > 0 && (
+                      <div className="mb-2 pb-2 border-b border-slate-200 dark:border-slate-700/80 space-y-1.5">
+                        {attachments.map((file, i) => {
+                          const isImage = file.type.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name);
+                          const blobUrl = isImage ? URL.createObjectURL(file) : null;
+
+                          return isImage ? (
+                            <div key={i} className="overflow-hidden rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                              <img
+                                src={blobUrl!}
+                                alt={file.name}
+                                className="w-full h-36 object-cover hover:opacity-95 transition"
+                                onLoad={() => {
+                                  // Clean up object URL after loading
+                                  if (blobUrl) URL.revokeObjectURL(blobUrl);
+                                }}
+                              />
+                              <div className="px-2 py-1 bg-black/40 text-white text-[10px] flex items-center justify-between backdrop-blur-xs">
+                                <span className="truncate max-w-[200px] flex items-center gap-1">
+                                  <ImageIcon className="size-3 text-emerald-400" />
+                                  {file.name}
+                                </span>
+                                <span className="text-[9px] text-slate-300 font-mono">
+                                  {(file.size / 1024).toFixed(0)} KB
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              key={i}
+                              className="flex items-center gap-2 p-2 rounded-md bg-emerald-50/80 dark:bg-[#111b21] border border-emerald-200/80 dark:border-emerald-900/50"
+                            >
+                              <div className="size-8 rounded bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
+                                <FileText className="size-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-[11px] truncate text-slate-800 dark:text-slate-200">
+                                  {file.name}
+                                </div>
+                                <div className="text-[9px] text-muted-foreground">
+                                  {file.name.split(".").pop()?.toUpperCase()} Document · {(file.size / 1024).toFixed(0)} KB
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                     {previewFormattedText}
                     <div className="mt-2 flex items-center justify-end gap-1 text-[10px] text-slate-400">
                       <span>{format(new Date(), "hh:mm a")}</span>
@@ -1158,6 +1415,85 @@ function PatientGrowthPage() {
                   Dispatch Campaign ({targetPatients.length})
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Custom Template Dialog */}
+      <Dialog open={isCustomTemplateOpen} onOpenChange={setIsCustomTemplateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <PlusCircle className="size-4 text-primary" />
+              Create Custom Campaign Template
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Define a reusable message template with dynamic tags for bulk outreach.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Template Title</label>
+              <Input
+                placeholder="e.g. Monsoon Health Checkup 2026"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                className="text-xs"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground">Message Body Content</label>
+                <span className="text-[10px] text-muted-foreground">Supports tags like [NAME], [CODE]</span>
+              </div>
+              <Textarea
+                rows={5}
+                placeholder="Write your custom message text here..."
+                value={customBody}
+                onChange={(e) => setCustomBody(e.target.value)}
+                className="text-xs resize-y"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] text-muted-foreground font-medium">Quick tags:</span>
+              {[
+                { tag: "[NAME]", label: "Name" },
+                { tag: "[HOSPITAL_NAME]", label: "Hospital" },
+                { tag: "[PHONE]", label: "Phone" },
+                { tag: "[CODE]", label: "Offer Code" },
+                { tag: "[DATE]", label: "Camp Date" },
+              ].map((item) => (
+                <button
+                  key={item.tag}
+                  type="button"
+                  onClick={() => setCustomBody((prev) => `${prev} ${item.tag}`)}
+                  className="text-[9px] px-1.5 py-0.5 rounded border bg-muted/40 hover:bg-muted font-mono"
+                >
+                  + {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 pt-2 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCustomTemplateOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveCustomTemplate}
+              className="gap-1.5"
+            >
+              <Check className="size-3.5" />
+              Save & Use Template
             </Button>
           </DialogFooter>
         </DialogContent>
