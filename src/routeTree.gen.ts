@@ -40,6 +40,7 @@ import { Route as AuthenticatedInsuranceRouteImport } from './routes/_authentica
 import { Route as AuthenticatedIpdRouteImport } from './routes/_authenticated/ipd'
 import { Route as AuthenticatedLaboratoryRouteImport } from './routes/_authenticated/laboratory'
 import { Route as AuthenticatedMobileApiRouteImport } from './routes/_authenticated/mobile-api'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedNurseStationRouteImport } from './routes/_authenticated/nurse-station'
 import { Route as AuthenticatedOpdRouteImport } from './routes/_authenticated/opd'
 import { Route as AuthenticatedOtRouteImport } from './routes/_authenticated/ot'
@@ -264,6 +265,12 @@ const AuthenticatedMobileApiRoute = AuthenticatedMobileApiRouteImport.update({
   path: '/mobile-api',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedNurseStationRoute =
   AuthenticatedNurseStationRouteImport.update({
     id: '/nurse-station',
@@ -656,6 +663,7 @@ export interface FileRoutesByFullPath {
   '/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
   '/mobile-api': typeof AuthenticatedMobileApiRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/nurse-station': typeof AuthenticatedNurseStationRoute
   '/opd': typeof AuthenticatedOpdRouteWithChildren
   '/ot': typeof AuthenticatedOtRouteWithChildren
@@ -750,6 +758,7 @@ export interface FileRoutesByTo {
   '/finance': typeof AuthenticatedFinanceRoute
   '/insurance': typeof AuthenticatedInsuranceRoute
   '/mobile-api': typeof AuthenticatedMobileApiRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/nurse-station': typeof AuthenticatedNurseStationRoute
   '/opd': typeof AuthenticatedOpdRouteWithChildren
   '/pacs': typeof AuthenticatedPacsRoute
@@ -847,6 +856,7 @@ export interface FileRoutesById {
   '/_authenticated/ipd': typeof AuthenticatedIpdRouteWithChildren
   '/_authenticated/laboratory': typeof AuthenticatedLaboratoryRouteWithChildren
   '/_authenticated/mobile-api': typeof AuthenticatedMobileApiRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/nurse-station': typeof AuthenticatedNurseStationRoute
   '/_authenticated/opd': typeof AuthenticatedOpdRouteWithChildren
   '/_authenticated/ot': typeof AuthenticatedOtRouteWithChildren
@@ -947,6 +957,7 @@ export interface FileRouteTypes {
     | '/ipd'
     | '/laboratory'
     | '/mobile-api'
+    | '/notifications'
     | '/nurse-station'
     | '/opd'
     | '/ot'
@@ -1041,6 +1052,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/insurance'
     | '/mobile-api'
+    | '/notifications'
     | '/nurse-station'
     | '/opd'
     | '/pacs'
@@ -1137,6 +1149,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ipd'
     | '/_authenticated/laboratory'
     | '/_authenticated/mobile-api'
+    | '/_authenticated/notifications'
     | '/_authenticated/nurse-station'
     | '/_authenticated/opd'
     | '/_authenticated/ot'
@@ -1434,6 +1447,13 @@ declare module '@tanstack/react-router' {
       path: '/mobile-api'
       fullPath: '/mobile-api'
       preLoaderRoute: typeof AuthenticatedMobileApiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/nurse-station': {
@@ -2108,6 +2128,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIpdRoute: typeof AuthenticatedIpdRouteWithChildren
   AuthenticatedLaboratoryRoute: typeof AuthenticatedLaboratoryRouteWithChildren
   AuthenticatedMobileApiRoute: typeof AuthenticatedMobileApiRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedNurseStationRoute: typeof AuthenticatedNurseStationRoute
   AuthenticatedOpdRoute: typeof AuthenticatedOpdRouteWithChildren
   AuthenticatedOtRoute: typeof AuthenticatedOtRouteWithChildren
@@ -2158,6 +2179,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIpdRoute: AuthenticatedIpdRouteWithChildren,
   AuthenticatedLaboratoryRoute: AuthenticatedLaboratoryRouteWithChildren,
   AuthenticatedMobileApiRoute: AuthenticatedMobileApiRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedNurseStationRoute: AuthenticatedNurseStationRoute,
   AuthenticatedOpdRoute: AuthenticatedOpdRouteWithChildren,
   AuthenticatedOtRoute: AuthenticatedOtRouteWithChildren,

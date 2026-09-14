@@ -43,6 +43,7 @@ const GROUPS: NavGroup[] = [
       { to: "/ot", labelKey: "nav.items.ot", icon: Scissors },
       { to: "/nurse-station", labelKey: "nav.items.nurse_station", icon: HeartPulse },
       { to: "/icu", labelKey: "nav.items.icu", icon: HeartPulse },
+      { to: "/notifications", labelKey: "nav.items.notifications", icon: Bell },
     ],
   },
   {
