@@ -1172,7 +1172,6 @@ function BillingTab({ admission, days }: { admission: any; days: number }) {
             title={`Delete IPD Bill #${bill.bill_no}`}
             description="Are you sure you want to delete this IPD bill? This action cannot be undone."
             onConfirm={() => deleteBill.mutate()}
-            loading={deleteBill.isPending}
           />
         </>
       )}

@@ -18,6 +18,7 @@ import {
   CheckCircle2, Clock, FileText, Pencil, Share2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useIsSuperAdmin } from "@/lib/use-super-admin";
 import { shareOnWhatsApp } from "@/lib/share";
 import { inr } from "@/lib/format";
 import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";

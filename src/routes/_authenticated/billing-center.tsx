@@ -14,6 +14,7 @@ import { inr } from "@/lib/format";
 import { format } from "date-fns";
 import { exportXlsx } from "@/lib/export";
 import { Search, Receipt, Users, AlertTriangle, CheckCircle2, LogOut } from "lucide-react";
+import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 import { BillEditorDialog } from "@/components/billing/bill-editor-dialog";
 import { toast } from "sonner";
 
@@ -41,8 +42,6 @@ export function BillingCenterContent({ initialPatient }: { initialPatient?: stri
     setSelectedId(patientParam);
   }
 
-  const [editBillId, setEditBillId] = useState<string | null>(null);
-  const [editorOpen, setEditorOpen] = useState(false);
 
 
   const searchRes = useQuery({
@@ -131,6 +130,8 @@ export function BillingCenterContent({ initialPatient }: { initialPatient?: stri
 
 function PatientBillingPanel({ patientId }: { patientId: string }) {
   const navigate = useNavigate();
+  const [editBillId, setEditBillId] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["billing-summary", patientId],
     queryFn: () => getPatientBillingSummary(patientId),

@@ -420,7 +420,6 @@ function BillingSummary({ s }: { s: any }) {
               title={`Delete Bill #${bill.bill_no}`}
               description="Are you sure you want to delete this bill? This action cannot be undone."
               onConfirm={() => deleteBill.mutate()}
-              loading={deleteBill.isPending}
             />
           </>
         )}

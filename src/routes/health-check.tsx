@@ -7,6 +7,8 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+declare const process: any;
+
 export const Route = createFileRoute("/health-check")({
   component: HealthCheckPage,
 });
@@ -42,7 +44,7 @@ function HealthCheckPage() {
       const start = performance.now();
       const projectUrl =
         import.meta.env.VITE_SUPABASE_URL ||
-        (typeof process !== "undefined" && process.env?.SUPABASE_URL) ||
+        (typeof process !== "undefined" && (process as any).env?.SUPABASE_URL) ||
         "";
 
       try {

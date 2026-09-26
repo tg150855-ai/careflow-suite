@@ -7,6 +7,7 @@ export const BRAND = {
   shortName: "SBG Arogya+",
   tagline: "Hospital Management Suite",
   logoUrl: logoAsset.url,
+  phone: "+91 8000 123 456",
 } as const;
 
 /** Reads the active hospital_settings row (logo + branding). Cached app-wide. */
