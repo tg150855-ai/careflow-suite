@@ -1,15 +1,18 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Plus, Pencil, Trash2, Save, Download, Printer, FileSpreadsheet, Settings, Share2,
 } from "lucide-react";
+import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
 
-type Handler = () => void;
+type Handler = () => void | Promise<void>;
 
 export type ModuleActionBarProps = {
   /** Each handler is opt-in — buttons only appear when a handler is provided, so we never duplicate existing UI. */
   onAdd?: Handler;
   onEdit?: Handler;
   onDelete?: Handler;
+  deleteLabel?: string;
   onSave?: Handler;
   onDownloadReport?: Handler;
   onPrint?: Handler;
@@ -31,9 +34,10 @@ export type ModuleActionBarProps = {
  * so pages can adopt the bar incrementally without duplicating existing controls.
  */
 export function ModuleActionBar({
-  onAdd, onEdit, onDelete, onSave, onDownloadReport, onPrint, onExport, onSettings, onWhatsAppShare,
+  onAdd, onEdit, onDelete, deleteLabel = "selected record", onSave, onDownloadReport, onPrint, onExport, onSettings, onWhatsAppShare,
   extra, leading, size = "sm", className, disabled,
 }: ModuleActionBarProps) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const btn = size === "sm" ? "h-9" : "";
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className ?? ""}`}>
@@ -55,9 +59,23 @@ export function ModuleActionBar({
           </Button>
         )}
         {onDelete && (
-          <Button size={size} variant="outline" onClick={onDelete} disabled={disabled} className={`gap-1.5 ${btn} text-destructive hover:text-destructive`}>
-            <Trash2 className="size-4" /> Delete
-          </Button>
+          <>
+            <Button
+              size={size}
+              variant="outline"
+              onClick={() => setDeleteOpen(true)}
+              disabled={disabled}
+              className={`gap-1.5 ${btn} text-destructive hover:text-destructive`}
+            >
+              <Trash2 className="size-4" /> Delete
+            </Button>
+            <SecureDeleteDialog
+              open={deleteOpen}
+              onOpenChange={setDeleteOpen}
+              onConfirm={onDelete}
+              deleteLabel={deleteLabel}
+            />
+          </>
         )}
         {onDownloadReport && (
           <Button size={size} variant="outline" onClick={onDownloadReport} disabled={disabled} className={`gap-1.5 ${btn}`}>

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Receipt, Clock, CheckCircle2, TrendingUp, FileBarChart, Package, AlertTriangle, Eye, IndianRupee, MessageCircle, Printer, Search } from "lucide-react";
+import { Plus, Receipt, Clock, CheckCircle2, TrendingUp, FileBarChart, Package, AlertTriangle, Eye, IndianRupee, MessageCircle, Printer, Search, Pencil, Trash2 } from "lucide-react";
 import { format, startOfDay, startOfMonth, subMonths } from "date-fns";
 import { inr } from "@/lib/format";
 import { motion } from "framer-motion";
@@ -16,6 +16,10 @@ import { shareOnWhatsApp } from "@/lib/share";
 import { useHospitalProfile } from "@/components/print-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BillingCenterContent } from "@/routes/_authenticated/billing-center";
+import { BillEditorDialog } from "@/components/billing/bill-editor-dialog";
+import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/billing/")({ component: BillingDashboard });
 
@@ -196,6 +200,11 @@ function PendingBillsSection() {
     refetchInterval: 30000,
   });
 
+  const qc = useQueryClient();
+  const [selectedBillForEdit, setSelectedBillForEdit] = useState<string | null>(null);
+  const [billEditorOpen, setBillEditorOpen] = useState(false);
+  const [billPendingDelete, setBillPendingDelete] = useState<any | null>(null);
+
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
     const fromT = from ? new Date(from).getTime() : 0;
@@ -366,9 +375,35 @@ function PendingBillsSection() {
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
                       <Button size="icon" variant="ghost" title="View Bills" onClick={goPatient}><Eye className="size-4" /></Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Edit Bill"
+                        onClick={() => {
+                          const b = r.bills[0];
+                          if (b) {
+                            setSelectedBillForEdit(b.id);
+                            setBillEditorOpen(true);
+                          }
+                        }}
+                      >
+                        <Pencil className="size-4 text-blue-600" />
+                      </Button>
                       <Button size="icon" variant="ghost" title="Collect Payment" onClick={goPatient}><IndianRupee className="size-4 text-emerald-600" /></Button>
                       <Button size="icon" variant="ghost" title="WhatsApp reminder" onClick={() => whatsAppRemind(r)}><MessageCircle className="size-4 text-green-600" /></Button>
                       <Button size="icon" variant="ghost" title="Print" onClick={() => { const b = r.bills[0]; if (b) window.open(`/billing/${b.id}`, "_blank"); }}><Printer className="size-4" /></Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Delete Bill"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          const b = r.bills[0];
+                          if (b) setBillPendingDelete(b);
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -382,6 +417,35 @@ function PendingBillsSection() {
           </TableBody>
         </Table>
       </div>
+      <BillEditorDialog
+        open={billEditorOpen}
+        onOpenChange={setBillEditorOpen}
+        billId={selectedBillForEdit}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["billing-dashboard"] })}
+      />
+
+      <SecureDeleteDialog
+        open={!!billPendingDelete}
+        onOpenChange={(o) => !o && setBillPendingDelete(null)}
+        deleteLabel={`bill ${billPendingDelete?.bill_no ?? ""}`}
+        onConfirm={async () => {
+          if (!billPendingDelete) return;
+          if (Number(billPendingDelete.paid || 0) > 0) {
+            toast.error(
+              `Financial Safety: Bill ${billPendingDelete.bill_no} has recorded payments of ${inr(billPendingDelete.paid)}. Please void or refund payments before deleting to preserve financial audit trail.`
+            );
+            return;
+          }
+          await supabase.from("bill_items").delete().eq("bill_id", billPendingDelete.id);
+          const { error } = await supabase.from("bills").delete().eq("id", billPendingDelete.id);
+          if (error) {
+            toast.error(error.message);
+            return;
+          }
+          toast.success("Bill deleted successfully");
+          qc.invalidateQueries({ queryKey: ["billing-dashboard"] });
+        }}
+      />
     </Card>
   );
 }

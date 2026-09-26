@@ -17,10 +17,11 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import {
   Paperclip, Upload, Download, Trash2, MessageCircle, FileText, FileImage, FileType2,
-  Video, Camera, Play, Loader2, Eye, ExternalLink,
+  Video, Camera, Play, Loader2, Eye, ExternalLink, Printer, Pencil,
 } from "lucide-react";
 import { shareOnWhatsApp } from "@/lib/share";
 import { MediaCaptureModal } from "@/components/opd/media-capture-modal";
+import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
 
 const BUCKET = "patient-documents";
 const MAX_MB = 50; // Increased to 50MB to support short OPD videos
@@ -136,6 +137,10 @@ export function PatientAttachments({
   const [department, setDepartment] = useState(defaultDepartment);
   const [description, setDescription] = useState("");
   const [pendingDelete, setPendingDelete] = useState<PatientDoc | null>(null);
+  const [editingDoc, setEditingDoc] = useState<PatientDoc | null>(null);
+  const [editDept, setEditDept] = useState("OPD");
+  const [editDesc, setEditDesc] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Capture modal states
   const [captureModalOpen, setCaptureModalOpen] = useState(false);
@@ -241,6 +246,49 @@ export function PatientAttachments({
     const { data } = await supabase.storage.from(BUCKET).createSignedUrl(doc.storage_path, 60 * 60 * 24);
     const text = `Document/Media from hospital: ${doc.file_name}`;
     shareOnWhatsApp(text, data?.signedUrl ?? undefined, patient?.mobile ?? undefined);
+  }
+
+  async function printDoc(doc: PatientDoc) {
+    try {
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(doc.storage_path, 3600);
+      if (!data?.signedUrl) return toast.error("Could not load file for printing");
+      if (isImageType(doc.file_type, doc.file_name)) {
+        const w = window.open("", "_blank");
+        if (!w) return;
+        w.document.write(`<html><head><title>${doc.file_name}</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh}img{max-width:100%;max-height:100vh;object-fit:contain}</style></head><body><img src="${data.signedUrl}" onload="window.print()"/></body></html>`);
+        w.document.close();
+      } else {
+        window.open(data.signedUrl, "_blank");
+      }
+    } catch (err: any) {
+      toast.error(err.message ?? "Print failed");
+    }
+  }
+
+  function openEdit(doc: PatientDoc) {
+    setEditingDoc(doc);
+    setEditDept(doc.department || "OPD");
+    setEditDesc(doc.description || "");
+  }
+
+  async function saveEdit() {
+    if (!editingDoc) return;
+    setSavingEdit(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("patient_documents")
+        .update({ department: editDept, description: editDesc })
+        .eq("id", editingDoc.id);
+      if (error) throw error;
+      toast.success("Document updated");
+      setEditingDoc(null);
+      qc.invalidateQueries({ queryKey: ["patient-documents"] });
+      qc.invalidateQueries({ queryKey: ["patient-documents-index"] });
+    } catch (err: any) {
+      toast.error(err.message ?? "Update failed");
+    } finally {
+      setSavingEdit(false);
+    }
   }
 
   async function confirmDelete() {
@@ -427,6 +475,24 @@ export function PatientAttachments({
                   <Button
                     size="icon"
                     variant="ghost"
+                    className="size-8 text-blue-600 hover:text-blue-700"
+                    onClick={() => openEdit(d)}
+                    title="Edit document notes / department"
+                  >
+                    <Pencil className="size-3.5" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-8"
+                    onClick={() => printDoc(d)}
+                    title="Print"
+                  >
+                    <Printer className="size-3.5" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
                     className="size-8"
                     onClick={() => download(d)}
                     title="Download"
@@ -442,17 +508,15 @@ export function PatientAttachments({
                   >
                     <MessageCircle className="size-3.5" />
                   </Button>
-                  {canDelete && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="size-8 text-destructive"
-                      onClick={() => setPendingDelete(d)}
-                      title="Delete (Admin)"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  )}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="size-8 text-destructive"
+                    onClick={() => setPendingDelete(d)}
+                    title="Delete"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
                 </div>
               </div>
             );
@@ -527,23 +591,58 @@ export function PatientAttachments({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Modal */}
-      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this document or media?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove <b>{pendingDelete?.file_name}</b> from storage. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Edit Document Modal */}
+      <Dialog open={!!editingDoc} onOpenChange={(o) => !o && setEditingDoc(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="size-4 text-primary" />
+              Edit Document: {editingDoc?.file_name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Department</Label>
+              <Select value={editDept} onValueChange={setEditDept}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DEPARTMENTS.map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Clinical Note / Description</Label>
+              <Input
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                placeholder="Add clinical observation or description"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingDoc(null)} disabled={savingEdit}>
+              Cancel
+            </Button>
+            <Button onClick={saveEdit} disabled={savingEdit}>
+              {savingEdit ? "Saving…" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Secure Delete Confirmation Modal */}
+      <SecureDeleteDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => !o && setPendingDelete(null)}
+        onConfirm={confirmDelete}
+        deleteLabel={`document ${pendingDelete?.file_name ?? ""}`}
+      />
     </div>
   );
 }

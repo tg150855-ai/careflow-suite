@@ -1,17 +1,13 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Printer, Save, Download, Share2, FileDown } from "lucide-react";
-import { useIsSuperAdmin } from "@/lib/use-super-admin";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Pencil, Printer, Save, Download, Share2, FileDown, Trash2 } from "lucide-react";
+import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
 
-type Handler = () => void;
+type Handler = () => void | Promise<void>;
 
 export type RecordActionsProps = {
   onEdit?: Handler;
-  /** Shown only to super_admin. Confirms via AlertDialog before firing. */
+  /** Delete action protected by SecureDeleteDialog (super_admin direct, others password-verified). */
   onDelete?: Handler;
   onPrint?: Handler;
   onSave?: Handler;
@@ -26,14 +22,14 @@ export type RecordActionsProps = {
 
 /**
  * Standard per-record action row: Edit · Delete · Print · Save · Download · WhatsApp.
- * Delete is auto-hidden unless the active user is a super_admin.
+ * Deletion is protected: Super Admin deletes directly, other users must verify account password.
  */
 export function RecordActions({
   onEdit, onDelete, onPrint, onSave, onDownload, onDownloadPdf, onWhatsApp,
   size = "sm", deleteLabel = "this record", className,
 }: RecordActionsProps) {
-  const isSuperAdmin = useIsSuperAdmin();
-  const showDelete = !!onDelete && isSuperAdmin;
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${className ?? ""}`}>
       {onEdit && (
@@ -66,29 +62,26 @@ export function RecordActions({
           <Share2 className="size-4" />{size !== "icon" && "WhatsApp"}
         </Button>
       )}
-      {showDelete && (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button size={size} variant="outline" className="gap-1.5 text-destructive hover:text-destructive">
-              <Trash2 className="size-4" />{size !== "icon" && "Delete"}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete {deleteLabel}?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. Only super-admins can delete records.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={onDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      {onDelete && (
+        <>
+          <Button
+            size={size}
+            variant="outline"
+            onClick={() => setDeleteOpen(true)}
+            className="gap-1.5 text-destructive hover:text-destructive"
+            title={`Delete ${deleteLabel}`}
+          >
+            <Trash2 className="size-4" />{size !== "icon" && "Delete"}
+          </Button>
+          <SecureDeleteDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            onConfirm={onDelete}
+            deleteLabel={deleteLabel}
+          />
+        </>
       )}
     </div>
   );
 }
+

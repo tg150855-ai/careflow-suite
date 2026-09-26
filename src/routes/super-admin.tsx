@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Activity, Building2, CheckCircle2, Loader2, LogOut, Pause, Plus, Search,
-  Settings2, ShieldCheck, Trash2, Users, XCircle, KeyRound, Pencil,
+  Settings2, ShieldCheck, Trash2, Users, XCircle, KeyRound, Pencil, Copy, Check, Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -540,6 +540,15 @@ function UserRowActions({ user, onDone }: { user: UserRow; onDone: () => void })
   );
 }
 
+function generateSecurePassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let pwd = "";
+  for (let i = 0; i < 8; i++) {
+    pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `Sbg#${pwd}!`;
+}
+
 function HospitalDialog({ hospital, onClose, onSaved }: { hospital: HospitalRow | null; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({
     hospital_name: hospital?.hospital_name ?? "",
@@ -554,7 +563,14 @@ function HospitalDialog({ hospital, onClose, onSaved }: { hospital: HospitalRow 
     expiry_date: hospital?.expiry_date ?? "",
     notes: hospital?.notes ?? "",
   });
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState(() => (hospital ? "" : generateSecurePassword()));
+  const [createdCreds, setCreatedCreds] = useState<{
+    hospitalName: string;
+    email: string;
+    password?: string;
+    loginUrl: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -570,29 +586,120 @@ function HospitalDialog({ hospital, onClose, onSaved }: { hospital: HospitalRow 
         ...(password ? { admin_password: password } : {}),
       });
     },
-    onSuccess: () => { toast.success(hospital ? "Hospital updated" : "Hospital created"); onSaved(); onClose(); },
+    onSuccess: () => {
+      if (!hospital) {
+        toast.success("Hospital created with admin credentials");
+        setCreatedCreds({
+          hospitalName: form.hospital_name,
+          email: form.email,
+          password: password || undefined,
+          loginUrl: `${window.location.origin}/login`,
+        });
+        onSaved();
+      } else {
+        toast.success("Hospital updated");
+        onSaved();
+        onClose();
+      }
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const set = (k: string, v: string | number) => setForm((f) => ({ ...f, [k]: v }));
 
+  const copyCredsText = () => {
+    if (!createdCreds) return;
+    const txt = [
+      `*SBG Arogya Plus — Hospital Client Credentials*`,
+      `Hospital: ${createdCreds.hospitalName}`,
+      `Login URL: ${createdCreds.loginUrl}`,
+      `User ID (Email): ${createdCreds.email}`,
+      createdCreds.password ? `Password: ${createdCreds.password}` : "",
+      `Role: Hospital Administrator (admin)`,
+      ``,
+      `Please log in and update your password if desired.`,
+    ].filter(Boolean).join("\n");
+    navigator.clipboard.writeText(txt);
+    setCopied(true);
+    toast.success("Credentials copied to clipboard");
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  if (createdCreds) {
+    return (
+      <Dialog open onOpenChange={(o) => !o && onClose()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-700">
+              <CheckCircle2 className="size-5 text-emerald-600" /> Hospital Client Created
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-xs text-muted-foreground">
+              A new hospital client account and administrator login have been securely provisioned in Supabase Auth.
+            </p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">Hospital Name:</span>
+                <span className="font-semibold text-slate-900">{createdCreds.hospitalName}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">Login URL:</span>
+                <span className="font-mono text-indigo-600 truncate max-w-[240px]">{createdCreds.loginUrl}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">User ID (Email):</span>
+                <span className="font-mono font-medium text-slate-900">{createdCreds.email}</span>
+              </div>
+              {createdCreds.password && (
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Temporary Password:</span>
+                  <span className="font-mono font-bold text-slate-900 bg-amber-100 px-2 py-0.5 rounded text-[11px]">{createdCreds.password}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Initial Role:</span>
+                <Badge variant="outline" className="text-[10px] bg-indigo-50 text-indigo-700 border-indigo-200">admin</Badge>
+              </div>
+            </div>
+            <p className="text-[11px] text-amber-600 bg-amber-50 p-2.5 rounded border border-amber-200">
+              Important: Please copy and share these credentials securely with the client. Plaintext passwords are never stored in database tables and cannot be viewed again.
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={copyCredsText} className="gap-1.5">
+              {copied ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
+              {copied ? "Copied!" : "Copy credentials"}
+            </Button>
+            <Button onClick={onClose}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader><DialogTitle>{hospital ? "Edit hospital" : "New hospital"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{hospital ? "Edit hospital" : "New hospital & Client Account"}</DialogTitle></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2 max-h-[60vh] overflow-y-auto pr-1">
-          <Field label="Hospital name"><Input value={form.hospital_name} onChange={(e) => set("hospital_name", e.target.value)} /></Field>
-          <Field label="Owner / admin name"><Input value={form.owner_name ?? ""} onChange={(e) => set("owner_name", e.target.value)} /></Field>
-          <Field label="Admin email"><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} disabled={!!hospital} /></Field>
-          <Field label="Phone"><Input value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} /></Field>
+          <Field label="Hospital name *"><Input value={form.hospital_name} onChange={(e) => set("hospital_name", e.target.value)} placeholder="e.g. Apollo Memorial Hospital" /></Field>
+          <Field label="Owner / admin name"><Input value={form.owner_name ?? ""} onChange={(e) => set("owner_name", e.target.value)} placeholder="Dr. John Doe" /></Field>
+          <Field label="Admin email (User ID) *"><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} disabled={!!hospital} placeholder="admin@hospital.com" /></Field>
+          <Field label="Phone"><Input value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} placeholder="+91 9876543210" /></Field>
           <Field label="City"><Input value={form.city ?? ""} onChange={(e) => set("city", e.target.value)} /></Field>
           <Field label="State"><Input value={form.state ?? ""} onChange={(e) => set("state", e.target.value)} /></Field>
           <Field label="Plan"><Input value={form.subscription_plan ?? ""} onChange={(e) => set("subscription_plan", e.target.value)} /></Field>
           <Field label="Max users"><Input type="number" value={form.max_users} onChange={(e) => set("max_users", e.target.value)} /></Field>
           <Field label="Expiry date"><Input type="date" value={form.expiry_date ?? ""} onChange={(e) => set("expiry_date", e.target.value)} /></Field>
           {!hospital && (
-            <Field label="Admin login password (optional)">
-              <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Creates the hospital admin login" />
+            <Field label="Admin Login Password">
+              <div className="flex gap-2">
+                <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Client admin password" />
+                <Button type="button" variant="outline" size="sm" onClick={() => setPassword(generateSecurePassword())} title="Generate strong password">
+                  <Sparkles className="size-3.5 mr-1 text-indigo-600" /> Gen
+                </Button>
+              </div>
             </Field>
           )}
           <div className="sm:col-span-2">
@@ -605,7 +712,7 @@ function HospitalDialog({ hospital, onClose, onSaved }: { hospital: HospitalRow 
         <DialogFooter>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => save.mutate()} disabled={!form.hospital_name || !form.email || save.isPending}>
-            {save.isPending && <Loader2 className="size-4 mr-2 animate-spin" />} Save
+            {save.isPending && <Loader2 className="size-4 mr-2 animate-spin" />} {hospital ? "Save changes" : "Create Hospital & Account"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -691,19 +798,68 @@ function ModulesDialog({ hospital, onClose, onSaved }: { hospital: HospitalRow; 
   );
 }
 
-
 function HospitalUsersDialog({ hospital, users, onClose, onSaved }: { hospital: HospitalRow; users: UserRow[]; onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", role: "admin" });
+  const [form, setForm] = useState({ full_name: "", email: "", password: generateSecurePassword(), role: "admin" });
+  const [lastCreated, setLastCreated] = useState<{ full_name: string; email: string; password: string; role: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const create = useMutation({
     mutationFn: () => superAdminOps({ action: "create_user", hospital_id: hospital.id, ...form }),
-    onSuccess: () => { toast.success("Login created"); setForm({ full_name: "", email: "", password: "", role: "admin" }); onSaved(); },
+    onSuccess: () => {
+      toast.success("User login created successfully");
+      setLastCreated({
+        full_name: form.full_name,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+      });
+      setForm({ full_name: "", email: "", password: generateSecurePassword(), role: "admin" });
+      onSaved();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const copyUserCreds = () => {
+    if (!lastCreated) return;
+    const txt = [
+      `*CareFlow Suite User Credentials*`,
+      `Hospital: ${hospital.hospital_name}`,
+      `Login URL: ${window.location.origin}/login`,
+      `Name: ${lastCreated.full_name || "Staff Member"}`,
+      `User ID (Email): ${lastCreated.email}`,
+      `Password: ${lastCreated.password}`,
+      `Assigned Role: ${lastCreated.role}`,
+    ].join("\n");
+    navigator.clipboard.writeText(txt);
+    setCopied(true);
+    toast.success("Credentials copied");
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader><DialogTitle>Logins — {hospital.hospital_name}</DialogTitle></DialogHeader>
-        <div className="space-y-2 max-h-[35vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Client Logins — {hospital.hospital_name}</DialogTitle></DialogHeader>
+
+        {lastCreated && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 text-xs space-y-2">
+            <div className="flex items-center justify-between font-semibold text-emerald-800">
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="size-4 text-emerald-600" /> Newly Created Credentials</span>
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1 bg-white hover:bg-slate-50" onClick={copyUserCreds}>
+                {copied ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-slate-700 font-mono text-[11px]">
+              <div><span className="text-slate-500 font-sans">User ID:</span> {lastCreated.email}</div>
+              <div><span className="text-slate-500 font-sans">Password:</span> <span className="bg-white px-1.5 py-0.5 rounded border border-emerald-200 font-bold">{lastCreated.password}</span></div>
+              <div><span className="text-slate-500 font-sans">Role:</span> {lastCreated.role}</div>
+              <div><span className="text-slate-500 font-sans">Name:</span> {lastCreated.full_name || "—"}</div>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-2 max-h-[30vh] overflow-y-auto">
           {users.length === 0 && <p className="text-sm text-muted-foreground">No logins yet.</p>}
           {users.map((u) => (
             <div key={u.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
@@ -716,9 +872,16 @@ function HospitalUsersDialog({ hospital, users, onClose, onSaved }: { hospital: 
           ))}
         </div>
         <div className="border-t pt-3 grid gap-3 sm:grid-cols-2">
-          <Field label="Full name"><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></Field>
-          <Field label="Email"><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
-          <Field label="Password"><Input value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></Field>
+          <Field label="Full name"><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Dr. Sarah Jenkins" /></Field>
+          <Field label="User ID (Email) *"><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@hospital.com" /></Field>
+          <Field label="Password *">
+            <div className="flex gap-2">
+              <Input value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Temporary password" />
+              <Button type="button" variant="outline" size="sm" onClick={() => setForm({ ...form, password: generateSecurePassword() })}>
+                <Sparkles className="size-3.5 mr-1 text-indigo-600" /> Gen
+              </Button>
+            </div>
+          </Field>
           <Field label="Role">
             <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>

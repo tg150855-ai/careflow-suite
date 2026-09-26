@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Activity, Stethoscope, Pill, ClipboardList, AlertCircle, ArrowLeftRight, FlaskConical, Scan, Syringe, Receipt, Printer, Trash2, Plus, Skull, FileSpreadsheet, Package as PackageIcon, Paperclip } from "lucide-react";
+import { ArrowLeft, Activity, Stethoscope, Pill, ClipboardList, AlertCircle, ArrowLeftRight, FlaskConical, Scan, Syringe, Receipt, Printer, Trash2, Plus, Skull, FileSpreadsheet, Package as PackageIcon, Paperclip, Pencil, MessageSquare, FileText } from "lucide-react";
 import { exportXlsx } from "@/lib/export";
 import { format, differenceInDays } from "date-fns";
 import { useState, useMemo } from "react";
@@ -23,6 +23,9 @@ import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 import { DischargeDialog } from "@/components/ipd/discharge-dialog";
 import { EditAdmissionDialog } from "@/components/ipd/edit-admission-dialog";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { shareOnWhatsApp } from "@/lib/share";
+import { BillEditorDialog } from "@/components/billing/bill-editor-dialog";
+import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
 
 export const Route = createFileRoute("/_authenticated/ipd/$id")({ component: AdmissionDetail });
 
@@ -58,13 +61,27 @@ function AdmissionDetail() {
             {adm.patients?.uhid} · {adm.patients?.mobile} · {adm.patients?.gender} · Bed {adm.beds?.bed_number ?? "—"} ({adm.wards?.name}) · Day {days}
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/ipd-dossier/$id/print" params={{ id }}>
+              <FileText className="size-4 mr-1.5 text-primary" />
+              Complete Patient File
+            </Link>
+          </Button>
           <EditAdmissionDialog admission={adm} />
           {adm.status === "active" && (
             <>
               <TransferDialog admission={adm} />
               <DischargeDialog admission={adm} />
             </>
+          )}
+          {adm.status === "discharged" && (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/ipd/$id/discharge" params={{ id }}>
+                <Pencil className="size-3.5 mr-1.5" />
+                Discharge Summary
+              </Link>
+            </Button>
           )}
         </div>
       </div>
@@ -922,6 +939,46 @@ function BillingTab({ admission, days }: { admission: any; days: number }) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const [editingBill, setEditingBill] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const deleteBill = useMutation({
+    mutationFn: async () => {
+      if (!bill?.id) return;
+      if (Number(bill.paid || 0) > 0) {
+        throw new Error(`Cannot delete bill #${bill.bill_no} because it has ₹${bill.paid} recorded payments. Please void or refund payments first.`);
+      }
+      const { error: itemsErr } = await supabase.from("bill_items").delete().eq("bill_id", bill.id);
+      if (itemsErr) throw itemsErr;
+      const { error: billErr } = await supabase.from("bills").delete().eq("id", bill.id);
+      if (billErr) throw billErr;
+    },
+    onSuccess: () => {
+      toast.success("Bill deleted successfully");
+      refetchBill();
+      qc.invalidateQueries({ queryKey: ["ipd-bill", admissionId] });
+      setDeleteOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message || "Failed to delete bill"),
+  });
+
+  const handleWhatsApp = () => {
+    if (!bill) return;
+    const patient = admission.patients;
+    const msg = `*IPD Hospital Bill — ${bill.bill_no}*\n` +
+      `Patient: ${patient?.full_name ?? "Patient"}\n` +
+      `UHID: ${patient?.uhid ?? "—"}\n` +
+      `Admission: #${admission.admission_no}\n` +
+      `Ward/Bed: ${admission.wards?.name ?? "—"} / Bed ${admission.beds?.bed_number ?? "—"}\n` +
+      `Doctor: Dr. ${admission.doctors?.name ?? "—"}\n` +
+      `Total Amount: ₹${Number(bill.total).toLocaleString("en-IN")}\n` +
+      `Paid: ₹${Number(bill.paid).toLocaleString("en-IN")}\n` +
+      `Pending Balance: ₹${Number(bill.pending).toLocaleString("en-IN")}\n` +
+      `Status: ${bill.status?.toUpperCase()}\n\n` +
+      `Thank you.`;
+    shareOnWhatsApp(msg, undefined, patient?.mobile);
+  };
+
   return (
     <div className="space-y-4 mt-4">
       <Card className="p-6 print:shadow-none print:border-0 print:p-0">
@@ -951,8 +1008,29 @@ function BillingTab({ admission, days }: { admission: any; days: number }) {
             <h3 className="font-semibold">IPD bill summary</h3>
             {bill && <div className="text-xs text-muted-foreground mt-0.5">Invoice <span className="font-mono">{bill.bill_no}</span> · <Badge variant="outline" className="capitalize">{bill.status}</Badge></div>}
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {bill && <Button asChild variant="outline" size="sm"><Link to="/billing/$id" params={{ id: bill.id }}><Receipt className="size-3.5 mr-1.5" />Open invoice</Link></Button>}
+          <div className="flex gap-2 flex-wrap items-center">
+            {bill && (
+              <>
+                <Button size="sm" variant="outline" onClick={() => setEditingBill(true)}>
+                  <Pencil className="size-3.5 mr-1.5" />Edit bill
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleWhatsApp}>
+                  <MessageSquare className="size-3.5 mr-1.5 text-emerald-600" />WhatsApp
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/billing/$id" params={{ id: bill.id }}><Receipt className="size-3.5 mr-1.5" />Open invoice</Link>
+                </Button>
+                <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={() => {
+                  if (Number(bill.paid || 0) > 0) {
+                    toast.error(`Cannot delete bill #${bill.bill_no} with ₹${bill.paid} recorded payments. Void payments first.`);
+                    return;
+                  }
+                  setDeleteOpen(true);
+                }}>
+                  <Trash2 className="size-3.5 mr-1.5" />Delete
+                </Button>
+              </>
+            )}
             <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="size-3.5 mr-1.5" />Print</Button>
             <Button size="sm" variant="outline" onClick={() => {
               const patient = admission.patients;
@@ -1075,6 +1153,28 @@ function BillingTab({ admission, days }: { admission: any; days: number }) {
             </div>
           )}
         </Card>
+      )}
+
+      {bill && (
+        <>
+          <BillEditorDialog
+            billId={bill.id}
+            open={editingBill}
+            onOpenChange={setEditingBill}
+            onSaved={() => {
+              refetchBill();
+              qc.invalidateQueries({ queryKey: ["ipd-bill", admissionId] });
+            }}
+          />
+          <SecureDeleteDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            title={`Delete IPD Bill #${bill.bill_no}`}
+            description="Are you sure you want to delete this IPD bill? This action cannot be undone."
+            onConfirm={() => deleteBill.mutate()}
+            loading={deleteBill.isPending}
+          />
+        </>
       )}
       <div className="hidden print:block"><PrintFooter /></div>
     </div>

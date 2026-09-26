@@ -13,8 +13,9 @@ import { getPatientBillingSummary, type BillingSummary } from "@/lib/billing-agg
 import { inr } from "@/lib/format";
 import { format } from "date-fns";
 import { exportXlsx } from "@/lib/export";
-import { shareOnWhatsApp, summarizeRecord } from "@/lib/share";
 import { Search, Receipt, Users, AlertTriangle, CheckCircle2, LogOut } from "lucide-react";
+import { BillEditorDialog } from "@/components/billing/bill-editor-dialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/billing-center")({
   component: BillingCenter,
@@ -39,6 +40,9 @@ export function BillingCenterContent({ initialPatient }: { initialPatient?: stri
   if (patientParam && patientParam !== selectedId) {
     setSelectedId(patientParam);
   }
+
+  const [editBillId, setEditBillId] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
 
 
   const searchRes = useQuery({
@@ -355,11 +359,21 @@ function PatientBillingPanel({ patientId }: { patientId: string }) {
                     <TableCell>
                       <RecordActions
                         size="icon"
+                        onEdit={() => {
+                          setEditBillId(b.id);
+                          setEditorOpen(true);
+                        }}
                         onPrint={() => window.open(`/billing/${b.id}`, "_blank")}
                         onWhatsApp={() => shareOnWhatsApp(`Bill ${b.bill_no} — ${inr(b.total)} (Pending ${inr(b.pending)})`, `${window.location.origin}/billing/${b.id}`, patient.mobile ?? undefined)}
                         deleteLabel={`bill ${b.bill_no}`}
                         onDelete={async () => {
+                          if (Number(b.paid || 0) > 0) {
+                            toast.error(`Financial Safety: Cannot delete bill ${b.bill_no} with recorded payments of ${inr(b.paid)}. Void or refund payments first.`);
+                            return;
+                          }
+                          await supabase.from("bill_items").delete().eq("bill_id", b.id);
                           await supabase.from("bills").delete().eq("id", b.id);
+                          toast.success("Bill deleted");
                           refetch();
                         }}
                       />
@@ -369,6 +383,13 @@ function PatientBillingPanel({ patientId }: { patientId: string }) {
               </TableBody>
             </Table>
           )}
+
+          <BillEditorDialog
+            open={editorOpen}
+            onOpenChange={setEditorOpen}
+            billId={editBillId}
+            onSaved={() => refetch()}
+          />
         </CardContent>
       </Card>
 

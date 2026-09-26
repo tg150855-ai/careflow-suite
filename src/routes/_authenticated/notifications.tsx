@@ -13,10 +13,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell, CalendarClock, Phone, CalendarPlus, CheckCircle2, Clock,
   AlertTriangle, CalendarCheck, Search, Filter, ChevronRight,
-  Stethoscope, FileText, Eye, CheckCheck, Loader2,
+  Stethoscope, FileText, Eye, CheckCheck, Loader2, MessageSquare,
 } from "lucide-react";
 import { format, formatDistanceToNow, isToday, isBefore, isAfter, addDays, startOfDay, differenceInDays } from "date-fns";
 import { toast } from "sonner";
+import { shareOnWhatsApp } from "@/lib/share";
 
 /** Shared localStorage key — also used by NotificationBell */
 export const FOLLOWUP_READ_KEY = "careflow.followup.read_ids";
@@ -43,8 +44,13 @@ type Notif = {
 };
 
 type FollowUp = {
-  id: string; follow_up_date: string; diagnosis: string | null;
-  chief_complaints: string | null; notes: string | null; created_at: string;
+  id: string;
+  source: "opd" | "ipd";
+  follow_up_date: string;
+  diagnosis: string | null;
+  chief_complaints: string | null;
+  notes: string | null;
+  created_at: string;
   patient_id: string;
   patients: { full_name: string; uhid: string; mobile: string | null } | null;
   doctors: { name: string } | null;
@@ -128,7 +134,7 @@ function NotificationsPage() {
   }, []);
 
   function markAllFollowUpsRead() {
-    const allIds = [...grouped.today, ...grouped.upcoming, ...grouped.overdue].map(f => f.id);
+    const allIds = [...grouped.today, ...grouped.tomorrow, ...grouped.upcoming, ...grouped.overdue].map(f => f.id);
     if (!allIds.length) return;
     setReadIds(prev => {
       const next = new Set(prev);
@@ -143,12 +149,48 @@ function NotificationsPage() {
     queryKey: ["followup-reminders"],
     enabled: !!user,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("opd_visits")
-        .select("id, follow_up_date, diagnosis, chief_complaints, notes, created_at, patient_id, patients(full_name, uhid, mobile), doctors(name)")
-        .not("follow_up_date", "is", null)
-        .order("follow_up_date", { ascending: true });
-      return (data ?? []) as unknown as FollowUp[];
+      const [opdRes, ipdRes] = await Promise.all([
+        supabase
+          .from("opd_visits")
+          .select("id, follow_up_date, diagnosis, chief_complaints, notes, created_at, patient_id, patients(full_name, uhid, mobile), doctors(name)")
+          .not("follow_up_date", "is", null)
+          .order("follow_up_date", { ascending: true }),
+        supabase
+          .from("discharge_summaries")
+          .select("id, follow_up_date, final_diagnosis, follow_up_instructions, advice, created_at, admissions(patient_id, patients(full_name, uhid, mobile), doctors(name))")
+          .not("follow_up_date", "is", null)
+          .order("follow_up_date", { ascending: true }),
+      ]);
+
+      const opdList: FollowUp[] = (opdRes.data ?? []).map((o: any) => ({
+        id: o.id,
+        source: "opd",
+        follow_up_date: o.follow_up_date,
+        diagnosis: o.diagnosis,
+        chief_complaints: o.chief_complaints,
+        notes: o.notes,
+        created_at: o.created_at,
+        patient_id: o.patient_id,
+        patients: o.patients,
+        doctors: o.doctors,
+      }));
+
+      const ipdList: FollowUp[] = (ipdRes.data ?? []).map((d: any) => ({
+        id: `ipd-${d.id}`,
+        source: "ipd",
+        follow_up_date: d.follow_up_date,
+        diagnosis: d.final_diagnosis,
+        chief_complaints: null,
+        notes: d.follow_up_instructions || d.advice,
+        created_at: d.created_at,
+        patient_id: d.admissions?.patient_id,
+        patients: d.admissions?.patients ?? null,
+        doctors: d.admissions?.doctors ?? null,
+      }));
+
+      return [...opdList, ...ipdList].sort(
+        (a, b) => new Date(a.follow_up_date).getTime() - new Date(b.follow_up_date).getTime()
+      );
     },
   });
 
@@ -168,25 +210,35 @@ function NotificationsPage() {
     }
     const overdue: FollowUp[] = [];
     const todayItems: FollowUp[] = [];
+    const tomorrowItems: FollowUp[] = [];
     const upcoming: FollowUp[] = [];
 
     for (const f of items) {
       if (readIds.has(f.id)) continue;
       const d = startOfDay(new Date(f.follow_up_date));
-      if (isToday(d)) todayItems.push(f);
-      else if (isBefore(d, today)) overdue.push(f);
-      else if (isAfter(d, today) && !isAfter(d, next7)) upcoming.push(f);
+      const diff = differenceInDays(d, today);
+      if (isToday(d)) {
+        todayItems.push(f);
+      } else if (diff === 1) {
+        tomorrowItems.push(f);
+      } else if (diff < 0) {
+        overdue.push(f);
+      } else if (diff > 1 && !isAfter(d, next7)) {
+        upcoming.push(f);
+      }
     }
 
     // sort overdue: most overdue first
     overdue.sort((a, b) => new Date(a.follow_up_date).getTime() - new Date(b.follow_up_date).getTime());
 
-    return { overdue, today: todayItems, upcoming };
+    return { overdue, today: todayItems, tomorrow: tomorrowItems, upcoming };
   }, [followUps, fuSearch, readIds, today, next7]);
 
   const overdueCount = grouped.overdue.length;
   const todayCount = grouped.today.length;
-  const totalFollowUp = overdueCount + todayCount + grouped.upcoming.length;
+  const tomorrowCount = grouped.tomorrow.length;
+  const totalFollowUp = overdueCount + todayCount + tomorrowCount + grouped.upcoming.length;
+  const urgentCount = overdueCount + todayCount + tomorrowCount;
 
   /* ─────────── render ─────────── */
   return (
@@ -210,9 +262,9 @@ function NotificationsPage() {
           <TabsTrigger value="followups" className="gap-2 data-[state=active]:shadow-md px-5">
             <CalendarClock className="size-4" />
             Follow-up Reminders
-            {(overdueCount + todayCount) > 0 && (
+            {urgentCount > 0 && (
               <Badge variant="destructive" className="ml-1 h-5 min-w-[20px] px-1.5 text-[10px]">
-                {overdueCount + todayCount}
+                {urgentCount}
               </Badge>
             )}
           </TabsTrigger>
@@ -265,7 +317,7 @@ function NotificationsPage() {
               {/* Today */}
               {grouped.today.length > 0 && (
                 <FollowUpSection
-                  title="Today"
+                  title="Due Today"
                   subtitle="Patients due for follow-up today"
                   icon={<Clock className="size-5" />}
                   color="warning"
@@ -275,14 +327,14 @@ function NotificationsPage() {
                 />
               )}
 
-              {/* Upcoming */}
-              {grouped.upcoming.length > 0 && (
+              {/* Tomorrow (1 Day Before Reminder) */}
+              {grouped.tomorrow.length > 0 && (
                 <FollowUpSection
-                  title="Upcoming (7 days)"
-                  subtitle="Patients with follow-ups in the next week"
+                  title="Follow-up Tomorrow (1 Day Before)"
+                  subtitle="Upcoming follow-ups tomorrow — 1 day prior notification"
                   icon={<CalendarClock className="size-5" />}
-                  color="success"
-                  items={grouped.upcoming}
+                  color="warning"
+                  items={grouped.tomorrow}
                   today={today}
                   onContact={markFollowUpRead}
                 />
@@ -296,6 +348,19 @@ function NotificationsPage() {
                   icon={<AlertTriangle className="size-5" />}
                   color="destructive"
                   items={grouped.overdue}
+                  today={today}
+                  onContact={markFollowUpRead}
+                />
+              )}
+
+              {/* Upcoming */}
+              {grouped.upcoming.length > 0 && (
+                <FollowUpSection
+                  title="Upcoming (Next 2-7 days)"
+                  subtitle="Patients with follow-ups in the next week"
+                  icon={<CalendarClock className="size-5" />}
+                  color="success"
+                  items={grouped.upcoming}
                   today={today}
                   onContact={markFollowUpRead}
                 />
@@ -479,21 +544,34 @@ function FollowUpCard({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 pt-1">
+        <div className="flex items-center gap-1.5 pt-1 flex-wrap">
           {mobile && (
-            <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5 flex-1">
-              <a href={`tel:+91${mobile}`}>
-                <Phone className="size-3" /> Call
-              </a>
-            </Button>
+            <>
+              <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1 flex-1">
+                <a href={`tel:+91${mobile}`}>
+                  <Phone className="size-3" /> Call
+                </a>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 flex-1"
+                onClick={() => {
+                  const msg = `Hello ${item.patients?.full_name}, this is a reminder from SBG Arogya Plus that your follow-up appointment with Dr. ${item.doctors?.name ?? "your doctor"} is scheduled for ${format(new Date(item.follow_up_date), "dd MMM yyyy")}. Please visit the hospital or reply to confirm.`;
+                  shareOnWhatsApp(msg, undefined, mobile);
+                }}
+              >
+                <MessageSquare className="size-3" /> WhatsApp
+              </Button>
+            </>
           )}
-          <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5 flex-1">
+          <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1 flex-1">
             <Link to="/opd/appointments">
               <CalendarPlus className="size-3" /> Book
             </Link>
           </Button>
-          <Button size="sm" variant="default" className="h-7 text-xs gap-1.5" onClick={() => onContact(item.id)}>
-            <CheckCircle2 className="size-3" /> Mark as read
+          <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={() => onContact(item.id)}>
+            <CheckCircle2 className="size-3" /> Read
           </Button>
         </div>
       </CardContent>

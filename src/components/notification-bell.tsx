@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { formatDistanceToNow, startOfDay } from "date-fns";
+import { formatDistanceToNow, startOfDay, addDays } from "date-fns";
 import { toast } from "sonner";
 import { getReadFollowUpIds, saveReadFollowUpIds, FOLLOWUP_READ_KEY } from "@/routes/_authenticated/notifications";
 
@@ -31,13 +31,23 @@ export function NotificationBell() {
 
   async function loadFollowUpCount() {
     if (!user) return;
-    const today = startOfDay(new Date());
-    const { data } = await supabase
-      .from("opd_visits")
-      .select("id, follow_up_date")
-      .not("follow_up_date", "is", null)
-      .lte("follow_up_date", today.toISOString().split("T")[0]);
-    const allIds = (data ?? []).map((d: any) => d.id);
+    const tomorrow = addDays(startOfDay(new Date()), 1);
+    const tomorrowIso = tomorrow.toISOString().split("T")[0];
+    const [opdRes, ipdRes] = await Promise.all([
+      supabase
+        .from("opd_visits")
+        .select("id, follow_up_date")
+        .not("follow_up_date", "is", null)
+        .lte("follow_up_date", tomorrowIso),
+      supabase
+        .from("discharge_summaries")
+        .select("id, follow_up_date")
+        .not("follow_up_date", "is", null)
+        .lte("follow_up_date", tomorrowIso),
+    ]);
+    const opdIds = (opdRes.data ?? []).map((d: any) => d.id);
+    const ipdIds = (ipdRes.data ?? []).map((d: any) => `ipd-${d.id}`);
+    const allIds = [...opdIds, ...ipdIds];
     const readIds = getReadFollowUpIds();
     const unreadCount = allIds.filter((id: string) => !readIds.has(id)).length;
     setFollowUpTotal(allIds.length);
@@ -98,22 +108,29 @@ export function NotificationBell() {
   }
 
   // Mark ALL follow-ups as read
-  function markAllFollowUpsRead(e: React.MouseEvent) {
+  async function markAllFollowUpsRead(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    // Load all current IDs from DB and mark them all
-    supabase
-      .from("opd_visits")
-      .select("id")
-      .not("follow_up_date", "is", null)
-      .lte("follow_up_date", startOfDay(new Date()).toISOString().split("T")[0])
-      .then(({ data }) => {
-        const readIds = getReadFollowUpIds();
-        (data ?? []).forEach((d: any) => readIds.add(d.id));
-        saveReadFollowUpIds(readIds);
-        setFollowUpReadCount(followUpTotal);
-        toast.success("All follow-ups marked as read");
-      });
+    const tomorrow = addDays(startOfDay(new Date()), 1);
+    const tomorrowIso = tomorrow.toISOString().split("T")[0];
+    const [opdRes, ipdRes] = await Promise.all([
+      supabase
+        .from("opd_visits")
+        .select("id")
+        .not("follow_up_date", "is", null)
+        .lte("follow_up_date", tomorrowIso),
+      supabase
+        .from("discharge_summaries")
+        .select("id")
+        .not("follow_up_date", "is", null)
+        .lte("follow_up_date", tomorrowIso),
+    ]);
+    const readIds = getReadFollowUpIds();
+    (opdRes.data ?? []).forEach((d: any) => readIds.add(d.id));
+    (ipdRes.data ?? []).forEach((d: any) => readIds.add(`ipd-${d.id}`));
+    saveReadFollowUpIds(readIds);
+    setFollowUpReadCount(followUpTotal);
+    toast.success("All follow-ups marked as read");
   }
 
   return (
@@ -153,7 +170,7 @@ export function NotificationBell() {
                   {followUpCount} follow-up{followUpCount > 1 ? "s" : ""} due
                 </div>
                 <div className="text-[10px] text-amber-600/70 dark:text-amber-500/70">
-                  Patients overdue or due today
+                  Overdue, today & tomorrow (OPD/IPD)
                 </div>
               </div>
             </Link>

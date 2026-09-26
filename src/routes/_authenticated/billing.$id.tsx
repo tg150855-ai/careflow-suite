@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -8,13 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Printer, Plus, Receipt } from "lucide-react";
+import { ArrowLeft, Printer, Plus, Receipt, Share2, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { inr } from "@/lib/format";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { PrintHeader, PrintFooter } from "@/components/print-header";
+import { shareOnWhatsApp } from "@/lib/share";
+import { BillEditorDialog } from "@/components/billing/bill-editor-dialog";
+import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
 
 export const Route = createFileRoute("/_authenticated/billing/$id")({ component: BillView });
 
@@ -22,12 +25,15 @@ const METHODS = ["cash", "upi", "card", "bank_transfer", "insurance", "credit"] 
 
 function BillView() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(0);
   const [method, setMethod] = useState<typeof METHODS[number]>("cash");
   const [reference, setReference] = useState("");
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["bill", id],
@@ -71,7 +77,21 @@ function BillView() {
             <p className="text-sm text-muted-foreground">{format(new Date(bill.created_at), "dd MMM yyyy · HH:mm")}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => {
+              const billNo = bill.bill_no ?? "Bill";
+              const msg = `*Hospital Bill — ${billNo}*\nPatient: ${bill.patients?.full_name} (${bill.patients?.uhid})\nTotal: ${inr(bill.total)}\nPaid: ${inr(bill.paid)}\nPending: ${inr(bill.pending)}`;
+              shareOnWhatsApp(msg, window.location.href, bill.patients?.mobile ?? undefined);
+            }}
+            className="text-emerald-700 hover:text-emerald-800"
+          >
+            <Share2 className="size-4 mr-2" />WhatsApp
+          </Button>
+          <Button variant="outline" onClick={() => setEditorOpen(true)}>
+            <Pencil className="size-4 mr-2" />Edit Bill
+          </Button>
           {Number(bill.pending) > 0 && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button><Plus className="size-4 mr-2" />Record payment</Button></DialogTrigger>
@@ -87,6 +107,9 @@ function BillView() {
             </Dialog>
           )}
           <Button variant="outline" onClick={() => window.print()}><Printer className="size-4 mr-2" />Print</Button>
+          <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => setDeleteOpen(true)}>
+            <Trash2 className="size-4 mr-2" />Delete
+          </Button>
         </div>
       </div>
 
@@ -171,6 +194,35 @@ function BillView() {
         )}
         <PrintFooter />
       </Card>
+
+      <BillEditorDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        billId={id}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["bill", id] })}
+      />
+
+      <SecureDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        deleteLabel={`bill ${bill.bill_no}`}
+        onConfirm={async () => {
+          if (Number(bill.paid || 0) > 0) {
+            toast.error(
+              `Financial Safety: Bill ${bill.bill_no} has recorded payments of ${inr(bill.paid)}. Please void or refund payments before deleting to preserve financial audit trail.`
+            );
+            return;
+          }
+          await supabase.from("bill_items").delete().eq("bill_id", id);
+          const { error } = await supabase.from("bills").delete().eq("id", id);
+          if (error) {
+            toast.error(error.message);
+            return;
+          }
+          toast.success("Bill deleted successfully");
+          navigate({ to: "/billing" });
+        }}
+      />
     </div>
   );
 }

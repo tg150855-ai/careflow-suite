@@ -21,6 +21,7 @@ import {
   CartesianGrid, PieChart, Pie, Cell, Legend, AreaChart, Area,
 } from "recharts";
 import { RouteGuard } from "@/components/route-guard";
+import { ClinicalReportsManager } from "@/components/clinical-reports-manager";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   component: () => (
@@ -435,8 +436,9 @@ function ReportsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="revenue">
+      <Tabs defaultValue="clinical_reports">
         <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="clinical_reports" className="font-semibold text-primary">Clinical Plans & Reports</TabsTrigger>
           <TabsTrigger value="revenue">Revenue</TabsTrigger>
           <TabsTrigger value="patients">Patients</TabsTrigger>
           <TabsTrigger value="appointments">Appointments</TabsTrigger>
@@ -451,6 +453,10 @@ function ReportsPage() {
           <TabsTrigger value="beds">Beds</TabsTrigger>
           <TabsTrigger value="hr">HR</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="clinical_reports" className="mt-4">
+          <ClinicalReportsManager />
+        </TabsContent>
 
         <TabsContent value="revenue" className="mt-4 space-y-4">
           <div className="grid lg:grid-cols-2 gap-4">

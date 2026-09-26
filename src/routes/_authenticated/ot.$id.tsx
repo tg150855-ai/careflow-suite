@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Ban, Camera } from "lucide-react";
+import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Ban, Camera, Printer, Trash2, Pencil, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { inr } from "@/lib/format";
@@ -18,6 +18,9 @@ import { PriorityBadge, StatusBadge } from "./ot.index";
 import { useAuth } from "@/lib/auth-context";
 import { can } from "@/lib/permissions";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { shareOnWhatsApp } from "@/lib/share";
+import { BillEditorDialog } from "@/components/billing/bill-editor-dialog";
+import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
 
 export const Route = createFileRoute("/_authenticated/ot/$id")({ component: OtDetail });
 
@@ -278,19 +281,150 @@ function NotesField({ label, value, onChange, rows = 2 }: { label: string; value
 }
 
 function BillingSummary({ s }: { s: any }) {
+  const qc = useQueryClient();
+  const [editingBill, setEditingBill] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  // Check if there is an active bill for this patient or admission
+  const { data: bill, refetch: refetchBill } = useQuery({
+    queryKey: ["ot-bill", s.admission_id, s.patient_id],
+    enabled: !!(s.admission_id || s.patient_id),
+    queryFn: async () => {
+      let q = (supabase as any).from("bills").select("*, bill_items(*), payments(*)");
+      if (s.admission_id) {
+        q = q.eq("admission_id", s.admission_id);
+      } else {
+        q = q.eq("patient_id", s.patient_id);
+      }
+      return (await q.order("created_at", { ascending: false }).limit(1).maybeSingle()).data;
+    },
+  });
+
+  const deleteBill = useMutation({
+    mutationFn: async () => {
+      if (!bill?.id) return;
+      if (Number(bill.paid || 0) > 0) {
+        throw new Error(`Cannot delete bill #${bill.bill_no} because it has ₹${bill.paid} recorded payments.`);
+      }
+      const { error: itemsErr } = await (supabase as any).from("bill_items").delete().eq("bill_id", bill.id);
+      if (itemsErr) throw itemsErr;
+      const { error: billErr } = await (supabase as any).from("bills").delete().eq("id", bill.id);
+      if (billErr) throw billErr;
+      await (supabase as any).from("surgeries").update({ billed: false }).eq("id", s.id);
+    },
+    onSuccess: () => {
+      toast.success("Bill deleted successfully");
+      refetchBill();
+      qc.invalidateQueries({ queryKey: ["ot-detail", s.id] });
+      setDeleteOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message || "Failed to delete bill"),
+  });
+
   const total = Number(s.ot_charge ?? 0) + Number(s.surgeon_charge ?? 0) + Number(s.assistant_charge ?? 0) + Number(s.anesthesia_charge ?? 0) + Number(s.consumables_charge ?? 0);
   const Row = ({ l, v }: any) => <div className="flex justify-between py-1.5 border-b last:border-0"><span className="text-sm text-muted-foreground">{l}</span><span className="font-medium">{inr(v)}</span></div>;
+
+  const handleWhatsApp = () => {
+    const patient = s.patients;
+    const msg = `*OT Surgery Charges Estimate*\n` +
+      `Procedure: ${s.procedure_name}\n` +
+      `Surgery No: ${s.surgery_no}\n` +
+      `Patient: ${patient?.full_name ?? "Patient"} (${patient?.uhid ?? "—"})\n` +
+      `Primary Surgeon: Dr. ${s.primary?.name ?? "—"}\n` +
+      `OT Room Charge: ${inr(s.ot_charge)}\n` +
+      `Surgeon Fee: ${inr(s.surgeon_charge)}\n` +
+      `Assistant Fee: ${inr(s.assistant_charge)}\n` +
+      `Anesthesia: ${inr(s.anesthesia_charge)}\n` +
+      `Consumables: ${inr(s.consumables_charge)}\n` +
+      `Total Charges: ${inr(bill ? Number(bill.total) : total)}\n` +
+      (bill ? `Paid: ${inr(bill.paid)} | Pending: ${inr(bill.pending)}\n` : "") +
+      `\nThank you.`;
+    shareOnWhatsApp(msg, undefined, patient?.mobile);
+  };
+
   return (
-    <Card><CardContent className="p-4">
-      <Row l="OT Room Charge" v={s.ot_charge} />
-      <Row l="Surgeon Fee" v={s.surgeon_charge} />
-      <Row l="Assistant Surgeon Fee" v={s.assistant_charge} />
-      <Row l="Anesthesia Charge" v={s.anesthesia_charge} />
-      <Row l="Consumables" v={s.consumables_charge} />
-      <div className="flex justify-between mt-3 pt-3 border-t"><span className="font-semibold">Total OT Charges</span><span className="text-lg font-semibold">{inr(total)}</span></div>
-      <div className="text-xs text-muted-foreground mt-3">
-        {s.admission_id ? (s.billed ? "✓ Already synced to IPD Billing." : "Click 'Complete & Bill' or 'Push to IPD Bill' to add these charges to the linked IPD admission's bill.") : "No IPD admission linked. Charges are tracked here only."}
-      </div>
-    </CardContent></Card>
+    <Card>
+      <CardContent className="p-4 space-y-4">
+        <div>
+          <Row l="OT Room Charge" v={s.ot_charge} />
+          <Row l="Surgeon Fee" v={s.surgeon_charge} />
+          <Row l="Assistant Surgeon Fee" v={s.assistant_charge} />
+          <Row l="Anesthesia Charge" v={s.anesthesia_charge} />
+          <Row l="Consumables" v={s.consumables_charge} />
+          <div className="flex justify-between mt-3 pt-3 border-t"><span className="font-semibold">Total OT Charges</span><span className="text-lg font-semibold">{inr(total)}</span></div>
+        </div>
+
+        {bill && (
+          <div className="p-3 bg-muted/40 rounded border text-xs space-y-1">
+            <div className="font-medium text-foreground flex items-center justify-between">
+              <span>Linked Bill: <span className="font-mono">{bill.bill_no}</span></span>
+              <Badge variant="outline" className="capitalize">{bill.status}</Badge>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Total: {inr(bill.total)}</span>
+              <span>Paid: {inr(bill.paid)}</span>
+              <span className="font-medium text-foreground">Pending: {inr(bill.pending)}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2 flex-wrap items-center pt-2 border-t">
+          {bill && (
+            <Button size="sm" variant="outline" onClick={() => setEditingBill(true)}>
+              <Pencil className="size-3.5 mr-1.5" />Edit bill
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={handleWhatsApp}>
+            <MessageSquare className="size-3.5 mr-1.5 text-emerald-600" />WhatsApp
+          </Button>
+          {bill ? (
+            <Button asChild size="sm" variant="outline">
+              <Link to="/billing/$id" params={{ id: bill.id }}><Printer className="size-3.5 mr-1.5" />Print</Link>
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => window.print()}>
+              <Printer className="size-3.5 mr-1.5" />Print
+            </Button>
+          )}
+          {bill && (
+            <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={() => {
+              if (Number(bill.paid || 0) > 0) {
+                toast.error(`Cannot delete bill #${bill.bill_no} with ₹${bill.paid} recorded payments. Void payments first.`);
+                return;
+              }
+              setDeleteOpen(true);
+            }}>
+              <Trash2 className="size-3.5 mr-1.5" />Delete
+            </Button>
+          )}
+        </div>
+
+        <div className="text-xs text-muted-foreground">
+          {s.admission_id ? (s.billed ? "✓ Already synced to IPD Billing." : "Click 'Complete & Bill' or 'Push to IPD Bill' to add these charges to the linked IPD admission's bill.") : "No IPD admission linked. Charges are tracked here."}
+        </div>
+
+        {bill && (
+          <>
+            <BillEditorDialog
+              billId={bill.id}
+              open={editingBill}
+              onOpenChange={setEditingBill}
+              onSaved={() => {
+                refetchBill();
+                qc.invalidateQueries({ queryKey: ["ot-detail", s.id] });
+              }}
+            />
+            <SecureDeleteDialog
+              open={deleteOpen}
+              onOpenChange={setDeleteOpen}
+              title={`Delete Bill #${bill.bill_no}`}
+              description="Are you sure you want to delete this bill? This action cannot be undone."
+              onConfirm={() => deleteBill.mutate()}
+              loading={deleteBill.isPending}
+            />
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

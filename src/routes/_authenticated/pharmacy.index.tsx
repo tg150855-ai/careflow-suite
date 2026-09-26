@@ -13,6 +13,7 @@ import { inr } from "@/lib/format";
 import { addDays, format } from "date-fns";
 import { RecordActions } from "@/components/common/record-actions";
 import { SearchBox } from "@/components/common/search-box";
+import { shareOnWhatsApp } from "@/lib/share";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/pharmacy/")({ component: PharmacyDashboard });
@@ -32,7 +33,7 @@ function PharmacyDashboard() {
         supabase.from("medicines").select("id, minimum_stock"),
         supabase.from("medicine_batches").select("id, medicine_id, quantity, expiry_date, medicines(name)"),
         supabase.from("pharmacy_sales").select("total").gte("created_at", new Date().setHours(0, 0, 0, 0) as any),
-        supabase.from("pharmacy_sales").select("id, invoice_no, total, created_at, patients(full_name, uhid, mobile)").order("created_at", { ascending: false }).limit(200),
+        supabase.from("pharmacy_sales").select("id, invoice_no, total, created_at, patients(full_name, uhid, mobile), pharmacy_sale_items(id, quantity, unit_price, medicines(name))").order("created_at", { ascending: false }).limit(200),
       ]);
       const stockByMed: Record<string, number> = {};
       (batches.data ?? []).forEach((b: any) => { stockByMed[b.medicine_id] = (stockByMed[b.medicine_id] ?? 0) + b.quantity; });
@@ -117,11 +118,20 @@ function PharmacyDashboard() {
                 <RecordActions
                   onPrint={() => {
                     const w = window.open("", "_blank"); if (!w) return;
-                    w.document.write(`<html><head><title>${s.invoice_no}</title><style>body{font-family:system-ui;padding:24px;max-width:520px;margin:auto}h1{font-size:16px}p{font-size:13px;color:#555}</style></head><body><h1>Pharmacy Invoice ${s.invoice_no}</h1><p>Patient: ${s.patients?.full_name ?? "Walk-in"}</p><p>Date: ${format(new Date(s.created_at), "dd MMM yyyy HH:mm")}</p><p>Total: ${inr(Number(s.total))}</p><script>window.print()</script></body></html>`); w.document.close();
+                    const items = (s.pharmacy_sale_items ?? []).map((it: any) => `<tr><td style="padding:4px 0;border-bottom:1px dashed #ddd">${it.medicines?.name ?? "Medicine"}</td><td style="padding:4px 0;border-bottom:1px dashed #ddd;text-align:center">${it.quantity}</td><td style="padding:4px 0;border-bottom:1px dashed #ddd;text-align:right">${inr(Number(it.unit_price) * Number(it.quantity))}</td></tr>`).join("");
+                    w.document.write(`<html><head><title>${s.invoice_no}</title><style>body{font-family:system-ui;padding:24px;max-width:520px;margin:auto}h1{font-size:16px;margin-bottom:4px}p{font-size:13px;color:#555;margin:2px 0}table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}</style></head><body><h1>Pharmacy Cash Receipt</h1><p><b>Invoice:</b> ${s.invoice_no}</p><p><b>Patient:</b> ${s.patients?.full_name ?? "Walk-in"}${s.patients?.uhid ? ` (${s.patients.uhid})` : ""}</p><p><b>Date:</b> ${format(new Date(s.created_at), "dd MMM yyyy HH:mm")}</p><table><thead><tr style="border-bottom:1px solid #333"><th style="text-align:left;padding:4px 0">Medicine</th><th style="text-align:center;padding:4px 0">Qty</th><th style="text-align:right;padding:4px 0">Amount</th></tr></thead><tbody>${items}</tbody></table><h2 style="font-size:15px;text-align:right;margin-top:8px">Total: ${inr(Number(s.total))}</h2><script>window.print()</script></body></html>`); w.document.close();
                   }}
                   onWhatsApp={() => {
-                    const msg = `Pharmacy Invoice ${s.invoice_no}\nPatient: ${s.patients?.full_name ?? "Walk-in"}\nTotal: ${inr(Number(s.total))}`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+                    const itemsText = (s.pharmacy_sale_items ?? [])
+                      .map((it: any) => `• ${it.medicines?.name ?? "Medicine"} x${it.quantity} — ${inr(Number(it.unit_price) * Number(it.quantity))}`)
+                      .join("\n");
+                    const msg = `*Pharmacy Receipt — ${s.invoice_no}*\n` +
+                      `Patient: ${s.patients?.full_name ?? "Walk-in"}${s.patients?.uhid ? ` (${s.patients.uhid})` : ""}\n` +
+                      `Date: ${format(new Date(s.created_at), "dd MMM yyyy, HH:mm")}\n` +
+                      (itemsText ? `\n*Medicines:*\n${itemsText}\n` : "") +
+                      `\n*Total Amount:* ${inr(Number(s.total))}\n` +
+                      `\nThank you for choosing our pharmacy!`;
+                    shareOnWhatsApp(msg, undefined, s.patients?.mobile);
                   }}
                   onDelete={async () => {
                     const { error } = await supabase.from("pharmacy_sales").delete().eq("id", s.id);

@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Users } from "lucide-react";
+import { Plus, Search, Users, Copy, Check, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { createStaff } from "@/lib/staff.functions";
 import { syncEmployeeToDoctor } from "@/lib/doctors";
@@ -215,6 +215,8 @@ function CreateStaffDialog({ open, setOpen, onCreate }: { open: boolean; setOpen
     dob: "", address: "", joining_date: "", reporting_manager: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [createdCreds, setCreatedCreds] = useState<{ name: string; email: string; password: string; role: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   function up<K extends keyof typeof form>(k: K, v: (typeof form)[K]) { setForm((f) => ({ ...f, [k]: v })); }
 
@@ -223,74 +225,144 @@ function CreateStaffDialog({ open, setOpen, onCreate }: { open: boolean; setOpen
     setSubmitting(true);
     try {
       await onCreate(form);
+      setCreatedCreds({
+        name: form.full_name,
+        email: form.email,
+        password: form.password,
+        role: form.role,
+      });
     } finally { setSubmitting(false); }
   }
 
+  const copyCreds = () => {
+    if (!createdCreds) return;
+    const txt = [
+      `*CareFlow Suite Staff Login Credentials*`,
+      `Name: ${createdCreds.name}`,
+      `Login URL: ${window.location.origin}/login`,
+      `User ID (Email): ${createdCreds.email}`,
+      `Temporary Password: ${createdCreds.password}`,
+      `Role: ${createdCreds.role}`,
+      ``,
+      `Please log in and change your password.`,
+    ].join("\n");
+    navigator.clipboard.writeText(txt);
+    setCopied(true);
+    toast.success("Credentials copied");
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleClose = () => {
+    setCreatedCreds(null);
+    setOpen(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(o) => (!o ? handleClose() : setOpen(true))}>
       <DialogTrigger asChild>
-        <Button onClick={() => setForm((f) => ({ ...f, password: tempPassword() }))}><Plus className="size-4 mr-2" /> Add staff</Button>
+        <Button onClick={() => { setCreatedCreds(null); setForm((f) => ({ ...f, password: tempPassword() })); }}><Plus className="size-4 mr-2" /> Add staff</Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Add staff member</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{createdCreds ? "Staff Account Created" : "Add staff member"}</DialogTitle>
+        </DialogHeader>
 
-        <div className="space-y-5">
-          <section>
-            <h3 className="text-sm font-semibold mb-2">Personal details</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <Fld l="Full name *"><Input value={form.full_name} onChange={(e) => up("full_name", e.target.value)} /></Fld>
-              <Fld l="Gender">
-                <Select value={form.gender} onValueChange={(v) => up("gender", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{["male", "female", "other"].map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
-                </Select>
-              </Fld>
-              <Fld l="Date of birth"><Input type="date" value={form.dob} onChange={(e) => up("dob", e.target.value)} /></Fld>
-              <Fld l="Mobile"><Input value={form.mobile} onChange={(e) => up("mobile", e.target.value)} /></Fld>
-              <Fld l="Address" wide><Input value={form.address} onChange={(e) => up("address", e.target.value)} /></Fld>
+        {createdCreds ? (
+          <div className="space-y-4 py-3">
+            <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 p-3 rounded-lg text-sm font-medium">
+              <CheckCircle2 className="size-5 text-emerald-600 shrink-0" />
+              <span>Staff profile and Supabase login account successfully created!</span>
             </div>
-          </section>
-
-          <section>
-            <h3 className="text-sm font-semibold mb-2">Employment</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <Fld l="Department *">
-                <Select value={form.department} onValueChange={(v) => up("department", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{DEPARTMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-                </Select>
-              </Fld>
-              <Fld l="Designation"><Input value={form.designation} onChange={(e) => up("designation", e.target.value)} /></Fld>
-              <Fld l="Joining date"><Input type="date" value={form.joining_date} onChange={(e) => up("joining_date", e.target.value)} /></Fld>
-              <Fld l="Reporting manager"><Input value={form.reporting_manager} onChange={(e) => up("reporting_manager", e.target.value)} /></Fld>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">Full Name:</span>
+                <span className="font-semibold text-slate-900">{createdCreds.name}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">User ID (Email):</span>
+                <span className="font-mono font-medium text-slate-900">{createdCreds.email}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">Temporary Password:</span>
+                <span className="font-mono font-bold text-slate-900 bg-amber-100 px-2 py-0.5 rounded text-[11px]">{createdCreds.password}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Role:</span>
+                <Badge variant="outline" className="text-[10px] bg-indigo-50 text-indigo-700 border-indigo-200">{createdCreds.role}</Badge>
+              </div>
             </div>
-          </section>
-
-          <section>
-            <h3 className="text-sm font-semibold mb-2">System access</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <Fld l="Role *">
-                <Select value={form.role} onValueChange={(v) => up("role", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{ROLES.map((r) => <SelectItem key={r.v} value={r.v}>{r.l}</SelectItem>)}</SelectContent>
-                </Select>
-              </Fld>
-              <Fld l="Login email *"><Input type="email" value={form.email} onChange={(e) => up("email", e.target.value)} /></Fld>
-              <Fld l="Temporary password *" wide>
-                <div className="flex gap-2">
-                  <Input value={form.password} onChange={(e) => up("password", e.target.value)} />
-                  <Button type="button" variant="outline" onClick={() => up("password", tempPassword())}>Regenerate</Button>
+            <p className="text-xs text-muted-foreground">
+              Please share these credentials securely with the staff member. They will be prompted to reset their password upon initial login.
+            </p>
+            <DialogFooter className="gap-2 sm:gap-0 pt-2">
+              <Button variant="outline" onClick={copyCreds} className="gap-1.5">
+                {copied ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4" />}
+                {copied ? "Copied!" : "Copy credentials"}
+              </Button>
+              <Button onClick={handleClose}>Done</Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-5">
+              <section>
+                <h3 className="text-sm font-semibold mb-2">Personal details</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <Fld l="Full name *"><Input value={form.full_name} onChange={(e) => up("full_name", e.target.value)} /></Fld>
+                  <Fld l="Gender">
+                    <Select value={form.gender} onValueChange={(v) => up("gender", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{["male", "female", "other"].map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </Fld>
+                  <Fld l="Date of birth"><Input type="date" value={form.dob} onChange={(e) => up("dob", e.target.value)} /></Fld>
+                  <Fld l="Mobile"><Input value={form.mobile} onChange={(e) => up("mobile", e.target.value)} /></Fld>
+                  <Fld l="Address" wide><Input value={form.address} onChange={(e) => up("address", e.target.value)} /></Fld>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Share securely. User will be forced to change on first login.</p>
-              </Fld>
-            </div>
-          </section>
-        </div>
+              </section>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={submit} disabled={submitting}>{submitting ? "Creating…" : "Create staff & account"}</Button>
-        </DialogFooter>
+              <section>
+                <h3 className="text-sm font-semibold mb-2">Employment</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <Fld l="Department *">
+                    <Select value={form.department} onValueChange={(v) => up("department", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{DEPARTMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </Fld>
+                  <Fld l="Designation"><Input value={form.designation} onChange={(e) => up("designation", e.target.value)} /></Fld>
+                  <Fld l="Joining date"><Input type="date" value={form.joining_date} onChange={(e) => up("joining_date", e.target.value)} /></Fld>
+                  <Fld l="Reporting manager"><Input value={form.reporting_manager} onChange={(e) => up("reporting_manager", e.target.value)} /></Fld>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="text-sm font-semibold mb-2">System access</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <Fld l="Role *">
+                    <Select value={form.role} onValueChange={(v) => up("role", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{ROLES.map((r) => <SelectItem key={r.v} value={r.v}>{r.l}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </Fld>
+                  <Fld l="Login email *"><Input type="email" value={form.email} onChange={(e) => up("email", e.target.value)} /></Fld>
+                  <Fld l="Temporary password *" wide>
+                    <div className="flex gap-2">
+                      <Input value={form.password} onChange={(e) => up("password", e.target.value)} />
+                      <Button type="button" variant="outline" onClick={() => up("password", tempPassword())}>Regenerate</Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Share securely. User will be forced to change on first login.</p>
+                  </Fld>
+                </div>
+              </section>
+            </div>
+
+            <DialogFooter>
+              <Button variant="ghost" onClick={handleClose}>Cancel</Button>
+              <Button onClick={submit} disabled={submitting}>{submitting ? "Creating…" : "Create staff & account"}</Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -15,10 +15,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Receipt, Plus, Trash2, Save, Printer, Pill, Search, IndianRupee,
-  CheckCircle2, Clock, FileText, Pencil,
+  CheckCircle2, Clock, FileText, Pencil, Share2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useIsSuperAdmin } from "@/lib/use-super-admin";
+import { shareOnWhatsApp } from "@/lib/share";
+import { inr } from "@/lib/format";
+import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -48,9 +50,15 @@ function BillingPage() {
 
   async function confirmDeleteBill() {
     if (!pendingDelete) return;
+    if (Number(pendingDelete.paid || 0) > 0) {
+      toast.error(
+        `Financial Safety: Invoice ${pendingDelete.bill_no} has recorded payments of ₹${Number(pendingDelete.paid).toFixed(2)}. Void or refund payments first.`
+      );
+      setPendingDelete(null);
+      return;
+    }
     try {
       const id = pendingDelete.id;
-      await supabase.from("payments").delete().eq("bill_id", id);
       await supabase.from("bill_items").delete().eq("bill_id", id);
       const { error } = await supabase.from("bills").delete().eq("id", id);
       if (error) throw error;
@@ -221,12 +229,10 @@ function BillingPage() {
                         onClick={(e) => { e.stopPropagation(); setDraftVisit(null); setSelectedBillId(b.id); }}>
                         <Pencil className="size-3.5" />
                       </Button>
-                      {canDelete && (
-                        <Button size="icon" variant="ghost" className="size-7 text-destructive" title="Delete invoice (Admin)"
-                          onClick={(e) => { e.stopPropagation(); setPendingDelete(b); }}>
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      )}
+                      <Button size="icon" variant="ghost" className="size-7 text-destructive" title="Delete invoice"
+                        onClick={(e) => { e.stopPropagation(); setPendingDelete(b); }}>
+                        <Trash2 className="size-3.5" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -247,20 +253,12 @@ function BillingPage() {
         </div>
       </div>
 
-      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this bill?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete invoice <b>{pendingDelete?.bill_no}</b>? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteBill} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <SecureDeleteDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => !o && setPendingDelete(null)}
+        deleteLabel={`invoice ${pendingDelete?.bill_no ?? ""}`}
+        onConfirm={confirmDeleteBill}
+      />
     </div>
   );
 }
@@ -492,11 +490,24 @@ function BillEditor({ billId, visit, userId, onSaved, onClose }: { billId?: stri
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 pt-3 border-t">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t flex-wrap">
           {billId && (
-            <Button variant="outline" onClick={() => window.open(`/prescriptions/${billId}/print`, "_blank")}>
-              <Printer className="size-4 mr-2" />Print
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const billNo = bill?.bill_no ?? "OPD Bill";
+                  const msg = `*OPD Invoice — ${billNo}*\nPatient: ${patient.full_name} (${patient.uhid})\nTotal: ${inr(total)}\nPaid: ${inr(bill?.paid || 0)}\nPending: ${inr(Math.max(0, total - Number(bill?.paid || 0)))}`;
+                  shareOnWhatsApp(msg, `${window.location.origin}/billing/${billId}`, patient.mobile ?? undefined);
+                }}
+                className="text-emerald-700 hover:text-emerald-800"
+              >
+                <Share2 className="size-4 mr-2" />WhatsApp
+              </Button>
+              <Button variant="outline" onClick={() => window.open(`/billing/${billId}`, "_blank")}>
+                <Printer className="size-4 mr-2" />Print
+              </Button>
+            </>
           )}
           <Button onClick={save} disabled={saving}>
             <Save className="size-4 mr-2" />{billId ? "Update invoice" : "Create invoice"}

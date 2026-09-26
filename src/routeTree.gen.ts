@@ -103,6 +103,7 @@ import { Route as AuthenticatedPharmacyMedicinesRouteImport } from './routes/_au
 import { Route as AuthenticatedStaffIdRouteImport } from './routes/_authenticated/staff.$id'
 import { Route as ConsentIdPrintRouteImport } from './routes/consent.$id.print'
 import { Route as DischargeIdPrintRouteImport } from './routes/discharge.$id.print'
+import { Route as IpdDossierIdPrintRouteImport } from './routes/ipd-dossier.$id.print'
 import { Route as PatientCardIdPrintRouteImport } from './routes/patient-card.$id.print'
 import { Route as PrescriptionsIdPrintRouteImport } from './routes/prescriptions.$id.print'
 import { Route as AuthenticatedIpdIdDischargeRouteImport } from './routes/_authenticated/ipd.$id.discharge'
@@ -609,6 +610,11 @@ const DischargeIdPrintRoute = DischargeIdPrintRouteImport.update({
   path: '/discharge/$id/print',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IpdDossierIdPrintRoute = IpdDossierIdPrintRouteImport.update({
+  id: '/ipd-dossier/$id/print',
+  path: '/ipd-dossier/$id/print',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PatientCardIdPrintRoute = PatientCardIdPrintRouteImport.update({
   id: '/patient-card/$id/print',
   path: '/patient-card/$id/print',
@@ -719,6 +725,7 @@ export interface FileRoutesByFullPath {
   '/staff/$id': typeof AuthenticatedStaffIdRoute
   '/consent/$id/print': typeof ConsentIdPrintRoute
   '/discharge/$id/print': typeof DischargeIdPrintRoute
+  '/ipd-dossier/$id/print': typeof IpdDossierIdPrintRoute
   '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/billing/': typeof AuthenticatedBillingIndexRoute
@@ -811,6 +818,7 @@ export interface FileRoutesByTo {
   '/staff/$id': typeof AuthenticatedStaffIdRoute
   '/consent/$id/print': typeof ConsentIdPrintRoute
   '/discharge/$id/print': typeof DischargeIdPrintRoute
+  '/ipd-dossier/$id/print': typeof IpdDossierIdPrintRoute
   '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/billing': typeof AuthenticatedBillingIndexRoute
@@ -912,6 +920,7 @@ export interface FileRoutesById {
   '/_authenticated/staff/$id': typeof AuthenticatedStaffIdRoute
   '/consent/$id/print': typeof ConsentIdPrintRoute
   '/discharge/$id/print': typeof DischargeIdPrintRoute
+  '/ipd-dossier/$id/print': typeof IpdDossierIdPrintRoute
   '/patient-card/$id/print': typeof PatientCardIdPrintRoute
   '/prescriptions/$id/print': typeof PrescriptionsIdPrintRoute
   '/_authenticated/billing/': typeof AuthenticatedBillingIndexRoute
@@ -1013,6 +1022,7 @@ export interface FileRouteTypes {
     | '/staff/$id'
     | '/consent/$id/print'
     | '/discharge/$id/print'
+    | '/ipd-dossier/$id/print'
     | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
     | '/billing/'
@@ -1105,6 +1115,7 @@ export interface FileRouteTypes {
     | '/staff/$id'
     | '/consent/$id/print'
     | '/discharge/$id/print'
+    | '/ipd-dossier/$id/print'
     | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
     | '/billing'
@@ -1205,6 +1216,7 @@ export interface FileRouteTypes {
     | '/_authenticated/staff/$id'
     | '/consent/$id/print'
     | '/discharge/$id/print'
+    | '/ipd-dossier/$id/print'
     | '/patient-card/$id/print'
     | '/prescriptions/$id/print'
     | '/_authenticated/billing/'
@@ -1226,6 +1238,7 @@ export interface RootRouteChildren {
   SuperAdminRoute: typeof SuperAdminRoute
   ConsentIdPrintRoute: typeof ConsentIdPrintRoute
   DischargeIdPrintRoute: typeof DischargeIdPrintRoute
+  IpdDossierIdPrintRoute: typeof IpdDossierIdPrintRoute
   PatientCardIdPrintRoute: typeof PatientCardIdPrintRoute
   PrescriptionsIdPrintRoute: typeof PrescriptionsIdPrintRoute
 }
@@ -1890,6 +1903,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DischargeIdPrintRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ipd-dossier/$id/print': {
+      id: '/ipd-dossier/$id/print'
+      path: '/ipd-dossier/$id/print'
+      fullPath: '/ipd-dossier/$id/print'
+      preLoaderRoute: typeof IpdDossierIdPrintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/patient-card/$id/print': {
       id: '/patient-card/$id/print'
       path: '/patient-card/$id/print'
@@ -2215,6 +2235,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuperAdminRoute: SuperAdminRoute,
   ConsentIdPrintRoute: ConsentIdPrintRoute,
   DischargeIdPrintRoute: DischargeIdPrintRoute,
+  IpdDossierIdPrintRoute: IpdDossierIdPrintRoute,
   PatientCardIdPrintRoute: PatientCardIdPrintRoute,
   PrescriptionsIdPrintRoute: PrescriptionsIdPrintRoute,
 }
