@@ -73,11 +73,28 @@ function LoginPage() {
             city: city || null,
           },
         });
+        if (error) {
+          let msg = error.message;
+          if ("context" in error && error.context) {
+            try {
+              const body = await (error.context as Response).json();
+              if (body?.error) {
+                if (typeof body.error === "string") {
+                  msg = body.error;
+                } else if (typeof body.error === "object") {
+                  const fieldErrors = (body.error as any).fieldErrors || body.error;
+                  const firstKey = Object.keys(fieldErrors)[0];
+                  const val = fieldErrors[firstKey];
+                  msg = `${firstKey}: ${Array.isArray(val) ? val.join(", ") : val}`;
+                }
+              }
+            } catch {}
+          }
+          throw new Error(msg);
+        }
         const failure = (data as { error?: unknown } | null)?.error;
-        if (error || failure) {
-          throw new Error(
-            typeof failure === "string" ? failure : error?.message ?? "Registration failed",
-          );
+        if (failure) {
+          throw new Error(typeof failure === "string" ? failure : "Registration failed");
         }
         await supabase.auth.signInWithPassword({ email, password });
         toast.success("Hospital registered — awaiting super admin approval");
