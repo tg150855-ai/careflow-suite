@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { PatientTabNotesSection } from "@/components/tab-notes/patient-tab-notes-section";
 import { MedicineAutocomplete } from "@/components/opd/medicine-autocomplete";
 import { ConsultationTemplateManager } from "@/components/opd/consultation-template-manager";
 import { PreviousConsultationHistory } from "@/components/opd/previous-consultation-history";
@@ -646,6 +647,19 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
           ))}
         </div>
       </div>
+
+      {/* Tab Note Pages (Handwriting on Page with Pen) */}
+      {p?.id && (
+        <div className="pt-3 border-t">
+          <PatientTabNotesSection
+            patientId={p.id}
+            patient={p}
+            department="OPD"
+            contextId={appt.id}
+            doctorName={appt.doctors?.name}
+          />
+        </div>
+      )}
 
       {/* Attachments */}
       {p?.id && (

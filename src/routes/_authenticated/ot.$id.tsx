@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Ban, Camera, Printer, Trash2, Pencil, MessageSquare } from "lucide-react";
+import { ArrowLeft, Save, Play, CheckCircle2, Activity, FileText, Receipt, Ban, Camera, Printer, Trash2, Pencil, MessageSquare, PenTool } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { inr } from "@/lib/format";
@@ -18,6 +18,7 @@ import { PriorityBadge, StatusBadge } from "./ot.index";
 import { useAuth } from "@/lib/auth-context";
 import { can } from "@/lib/permissions";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { PatientTabNotesSection } from "@/components/tab-notes/patient-tab-notes-section";
 import { shareOnWhatsApp } from "@/lib/share";
 import { BillEditorDialog } from "@/components/billing/bill-editor-dialog";
 import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
@@ -183,10 +184,28 @@ function OtDetail() {
       <Tabs defaultValue="notes">
         <TabsList>
           <TabsTrigger value="notes"><FileText className="size-4 mr-1" /> Operation Notes</TabsTrigger>
+          <TabsTrigger value="tab-notes"><PenTool className="size-4 mr-1 text-primary" /> Tab Notes (Pen)</TabsTrigger>
           <TabsTrigger value="media"><Camera className="size-4 mr-1" /> Surgery Photos & Videos</TabsTrigger>
           <TabsTrigger value="billing"><Receipt className="size-4 mr-1" /> Billing</TabsTrigger>
         </TabsList>
         <TabsContent value="notes" forceMount className="data-[state=inactive]:hidden"><NotesEditor surgeryId={id} initial={notes} /></TabsContent>
+        <TabsContent value="tab-notes" forceMount className="data-[state=inactive]:hidden">
+          <Card>
+            <CardContent className="p-4">
+              {s.patient_id ? (
+                <PatientTabNotesSection
+                  patientId={s.patient_id}
+                  patient={s.patients}
+                  department="OT"
+                  contextId={id}
+                  doctorName={s.primary?.name}
+                />
+              ) : (
+                <div className="text-xs text-muted-foreground py-4 text-center">No patient associated with this surgery.</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
         <TabsContent value="media" forceMount className="data-[state=inactive]:hidden">
           <Card>
             <CardContent className="p-4">

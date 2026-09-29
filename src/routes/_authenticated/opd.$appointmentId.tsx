@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft, Plus, Trash2, Save, Printer, FlaskConical, Stethoscope, Pill,
-  Receipt, MessageCircle, History, Activity, FileSignature,
+  Receipt, MessageCircle, History, Activity, FileSignature, PenTool,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,6 +24,7 @@ import { MedicineAutocomplete } from "@/components/opd/medicine-autocomplete";
 import { ConsultationTemplateManager } from "@/components/opd/consultation-template-manager";
 import { PreviousConsultationHistory } from "@/components/opd/previous-consultation-history";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { PatientTabNotesSection } from "@/components/tab-notes/patient-tab-notes-section";
 import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/opd/$appointmentId")({ component: Consultation });
@@ -503,6 +504,17 @@ function Consultation() {
           <Button variant="outline" size="sm" onClick={() => setRxOpen(true)} className="shrink-0 h-8 text-xs">
             <FileSignature className="size-3.5 mr-1.5" />Digital Rx
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const el = document.getElementById("opd-tab-notes-section");
+              el?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="shrink-0 h-8 text-xs bg-primary/5 hover:bg-primary/10 text-primary border-primary/20"
+          >
+            <PenTool className="size-3.5 mr-1.5" />Tab Pen Notes
+          </Button>
           {existingBill?.bill?.bill_no && (
             <Badge variant="outline" className="font-mono text-[10px]"><Receipt className="size-3 mr-1" />{existingBill.bill.bill_no}</Badge>
           )}
@@ -707,6 +719,21 @@ function Consultation() {
               </div>
             )}
           </Card>
+
+          {/* Patient Tab Notes / Handwritten Page with Pen */}
+          {patient?.id && (
+            <div id="opd-tab-notes-section">
+              <Card className="p-5">
+                <PatientTabNotesSection
+                  patientId={patient.id}
+                  patient={patient}
+                  department="OPD"
+                  contextId={appt?.id}
+                  doctorName={(appt as any)?.doctors?.name}
+                />
+              </Card>
+            </div>
+          )}
 
           {/* Patient Attachments / Photos & Videos */}
           {patient?.id && (

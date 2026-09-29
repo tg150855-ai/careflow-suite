@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Activity, Stethoscope, Pill, ClipboardList, AlertCircle, ArrowLeftRight, FlaskConical, Scan, Syringe, Receipt, Printer, Trash2, Plus, Skull, FileSpreadsheet, Package as PackageIcon, Paperclip, Pencil, MessageSquare, FileText } from "lucide-react";
+import { ArrowLeft, Activity, Stethoscope, Pill, ClipboardList, AlertCircle, ArrowLeftRight, FlaskConical, Scan, Syringe, Receipt, Printer, Trash2, Plus, Skull, FileSpreadsheet, Package as PackageIcon, Paperclip, Pencil, MessageSquare, FileText, PenTool } from "lucide-react";
 import { exportXlsx } from "@/lib/export";
 import { format, differenceInDays } from "date-fns";
 import { useState, useMemo } from "react";
@@ -23,6 +23,7 @@ import { patientPhotoPublicUrl } from "@/components/patient-photo-field";
 import { DischargeDialog } from "@/components/ipd/discharge-dialog";
 import { EditAdmissionDialog } from "@/components/ipd/edit-admission-dialog";
 import { PatientAttachments } from "@/components/patient-attachments";
+import { PatientTabNotesSection } from "@/components/tab-notes/patient-tab-notes-section";
 import { shareOnWhatsApp } from "@/lib/share";
 import { BillEditorDialog } from "@/components/billing/bill-editor-dialog";
 import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
@@ -105,6 +106,7 @@ function AdmissionDetail() {
           <TabsTrigger value="vaccinations"><Syringe className="size-3.5 mr-1.5" />Vaccinations</TabsTrigger>
           <TabsTrigger value="transfers"><ArrowLeftRight className="size-3.5 mr-1.5" />Transfers</TabsTrigger>
           <TabsTrigger value="billing"><Receipt className="size-3.5 mr-1.5" />Billing</TabsTrigger>
+          <TabsTrigger value="tab-notes"><PenTool className="size-3.5 mr-1.5 text-primary" />Tab Notes (Pen)</TabsTrigger>
           <TabsTrigger value="media"><Paperclip className="size-3.5 mr-1.5" />Photos & Videos</TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
         </TabsList>
@@ -118,6 +120,17 @@ function AdmissionDetail() {
         <TabsContent value="vaccinations"><VaccinationsTab patientId={adm.patient_id} /></TabsContent>
         <TabsContent value="transfers"><TransfersTab admissionId={id} /></TabsContent>
         <TabsContent value="billing"><BillingTab admission={adm} days={days} /></TabsContent>
+        <TabsContent value="tab-notes">
+          <Card className="p-5">
+            <PatientTabNotesSection
+              patientId={adm.patient_id}
+              patient={adm.patients}
+              department="IPD"
+              contextId={adm.id}
+              doctorName={adm.doctors?.name}
+            />
+          </Card>
+        </TabsContent>
         <TabsContent value="media">
           <Card className="p-5">
             <PatientAttachments patientId={adm.patient_id} patient={adm.patients} defaultDepartment="IPD" />
