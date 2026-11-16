@@ -14,15 +14,60 @@ export const BRAND = {
 export function useHospitalBrand() {
   return useQuery({
     queryKey: ["hospital-settings", "brand"],
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("hospital_settings")
-        .select("hospital_name, tagline, logo_url, primary_color, secondary_color, accent_color")
-        .eq("id", "00000000-0000-0000-0000-000000000001")
-        .maybeSingle();
+      let tenantHospital: any = null;
+      try {
+        const { data: authData } = await supabase.auth.getSession();
+        const userId = authData?.session?.user?.id;
+        if (userId) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("hospital_id")
+            .eq("id", userId)
+            .maybeSingle();
+
+          const hospitalId = (prof as { hospital_id?: string | null } | null)?.hospital_id;
+          if (hospitalId) {
+            const { data: hRow } = await supabase
+              .from("hospitals")
+              .select("id, hospital_name")
+              .eq("id", hospitalId)
+              .maybeSingle();
+            tenantHospital = hRow;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch tenant hospital for brand:", err);
+      }
+
+      let data: any = null;
+      if (tenantHospital?.id) {
+        const { data: tenantSettings } = await (supabase as any)
+          .from("hospital_settings")
+          .select("hospital_name, tagline, logo_url, primary_color, secondary_color, accent_color")
+          .eq("id", tenantHospital.id)
+          .maybeSingle();
+        data = tenantSettings;
+      }
+
+      if (!data) {
+        const { data: defaultSettings } = await (supabase as any)
+          .from("hospital_settings")
+          .select("hospital_name, tagline, logo_url, primary_color, secondary_color, accent_color")
+          .eq("id", "00000000-0000-0000-0000-000000000001")
+          .maybeSingle();
+        data = defaultSettings;
+      }
+
+      const resolvedName =
+        (data?.hospital_name && data.hospital_name !== "SBG Arogya Plus" ? data.hospital_name : null) ||
+        tenantHospital?.hospital_name ||
+        data?.hospital_name ||
+        BRAND.name;
+
       return {
-        name: data?.hospital_name || BRAND.name,
+        name: resolvedName,
         tagline: data?.tagline || BRAND.tagline,
         logoUrl: data?.logo_url || BRAND.logoUrl,
         primaryColor: data?.primary_color || "#0EA5E9",

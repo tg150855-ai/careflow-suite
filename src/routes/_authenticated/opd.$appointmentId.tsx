@@ -26,6 +26,7 @@ import { PreviousConsultationHistory } from "@/components/opd/previous-consultat
 import { PatientAttachments } from "@/components/patient-attachments";
 import { PatientTabNotesSection } from "@/components/tab-notes/patient-tab-notes-section";
 import { useMyHospital } from "@/lib/use-my-hospital";
+import { syncPrescribedMedicinesToPharmacy } from "@/lib/pharmacy-sync";
 
 export const Route = createFileRoute("/_authenticated/opd/$appointmentId")({ component: Consultation });
 
@@ -76,6 +77,8 @@ function Consultation() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
 
   // -------------- queries --------------
   const { data: appt } = useQuery({
@@ -276,6 +279,16 @@ function Consultation() {
           position: idx,
         })));
         if (e3) throw e3;
+
+        // Auto-sync newly prescribed medicines to pharmacy inventory so they can be reused across hospital
+        await syncPrescribedMedicinesToPharmacy(
+          validItems.map((it) => ({
+            name: it.medicine_name,
+            generic_name: it.strength ? `Strength: ${it.strength}` : undefined,
+          })),
+          hospitalId,
+          qc
+        );
       }
 
       // 3b. inline prescription extras (handwriting / signature / Rx-only advice)
@@ -414,9 +427,6 @@ function Consultation() {
     investigations: investigations.filter((i) => i.name.trim()).map((i) => `${i.name}${i.priority !== "Routine" ? ` [${i.priority}]` : ""}`),
     procedures: procedures.filter((p) => p.name.trim()).map((p) => p.name),
   }), [appt, chief, diagnosis, findings, followUp, vitals, items, investigations, procedures]);
-
-  const { hospital } = useMyHospital();
-  const hospitalId = hospital?.id ?? null;
 
   function applyConsultationTemplate(tpl: any) {
     if (tpl.chief_complaint) setChief(tpl.chief_complaint);
@@ -614,6 +624,7 @@ function Consultation() {
                   <div className="grid grid-cols-12 gap-2">
                     <MedicineAutocomplete
                       className="col-span-6"
+                      hospitalId={hospitalId}
                       value={it.medicine_name}
                       onChange={(v) => updateItem(i, "medicine_name", v)}
                       onSelect={(s) => setItems(items.map((row, x) => x === i ? {

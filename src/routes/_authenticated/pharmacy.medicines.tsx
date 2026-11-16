@@ -13,19 +13,31 @@ import { inr } from "@/lib/format";
 import { toast } from "sonner";
 import { format, addDays } from "date-fns";
 import { DataImportDialog, ImportColumn, ImportSummary } from "@/components/data-import-dialog";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/pharmacy/medicines")({ component: MedicinesPage });
 
 function MedicinesPage() {
   const qc = useQueryClient();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const [q, setQ] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
 
   const { data: meds = [] } = useQuery({
-    queryKey: ["medicines", q],
+    queryKey: ["medicines", hospitalId, q],
     queryFn: async () => {
-      let query = supabase.from("medicines").select("*, medicine_batches(id, batch_no, expiry_date, purchase_price, mrp, quantity)").eq("active", true).order("name").limit(200);
+      let query = supabase
+        .from("medicines")
+        .select("*, medicine_batches(id, batch_no, expiry_date, purchase_price, mrp, quantity)")
+        .eq("active", true)
+        .order("name")
+        .limit(300);
+
+      if (hospitalId) {
+        query = query.or(`hospital_id.eq.${hospitalId},hospital_id.is.null`);
+      }
       if (q.length >= 2) query = query.or(`name.ilike.%${q}%,generic_name.ilike.%${q}%,manufacturer.ilike.%${q}%`);
       const { data, error } = await query;
       if (error) throw error;
@@ -35,10 +47,18 @@ function MedicinesPage() {
 
   const createMed = useMutation({
     mutationFn: async (m: any) => {
-      const { error } = await supabase.from("medicines").insert(m);
+      const { error } = await supabase.from("medicines").insert({
+        ...m,
+        hospital_id: hospitalId || null,
+      });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Medicine added"); qc.invalidateQueries({ queryKey: ["medicines"] }); },
+    onSuccess: () => {
+      toast.success("Medicine added");
+      qc.invalidateQueries({ queryKey: ["medicines"] });
+      qc.invalidateQueries({ queryKey: ["medicine-suggestions"] });
+      qc.invalidateQueries({ queryKey: ["pharm-dashboard"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -85,6 +105,7 @@ function MedicinesPage() {
           gst_percent: Number(r["gst"] ?? r["tax"] ?? 12),
           minimum_stock: Number(r["min stock"] ?? r["minimum stock"] ?? 10),
           active: true,
+          hospital_id: hospitalId || null,
         }).select("id").single();
         if (mErr) throw mErr;
 
@@ -107,6 +128,8 @@ function MedicinesPage() {
       }
     }
     qc.invalidateQueries({ queryKey: ["medicines"] });
+    qc.invalidateQueries({ queryKey: ["medicine-suggestions"] });
+    qc.invalidateQueries({ queryKey: ["pharm-dashboard"] });
     return { inserted, skipped, failed, errors };
   };
 

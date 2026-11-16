@@ -18,6 +18,7 @@ import {
 import { format, formatDistanceToNow, isToday, isBefore, isAfter, addDays, startOfDay, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { shareOnWhatsApp } from "@/lib/share";
+import { useHospitalProfile } from "@/components/print-header";
 
 /** Shared localStorage key — also used by NotificationBell */
 export const FOLLOWUP_READ_KEY = "careflow.followup.read_ids";
@@ -490,6 +491,8 @@ function FollowUpCard({
 }: {
   item: FollowUp; today: Date; borderColor: string; onContact: (id: string) => void;
 }) {
+  const { data: hospital } = useHospitalProfile();
+  const hospitalName = hospital?.hospital_name || "the hospital";
   const fuDate = startOfDay(new Date(item.follow_up_date));
   const daysDiff = differenceInDays(fuDate, today);
   const isOverdue = daysDiff < 0;
@@ -557,7 +560,7 @@ function FollowUpCard({
                 variant="outline"
                 className="h-7 text-xs gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 flex-1"
                 onClick={() => {
-                  const msg = `Hello ${item.patients?.full_name}, this is a reminder from SBG Arogya Plus that your follow-up appointment with Dr. ${item.doctors?.name ?? "your doctor"} is scheduled for ${format(new Date(item.follow_up_date), "dd MMM yyyy")}. Please visit the hospital or reply to confirm.`;
+                  const msg = `Hello ${item.patients?.full_name}, this is a reminder from ${hospitalName} that your follow-up appointment with Dr. ${item.doctors?.name ?? "your doctor"} is scheduled for ${format(new Date(item.follow_up_date), "dd MMM yyyy")}. Please visit the hospital or reply to confirm.`;
                   shareOnWhatsApp(msg, undefined, mobile);
                 }}
               >

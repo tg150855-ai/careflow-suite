@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { inr } from "@/lib/format";
 import { RecordActions } from "@/components/common/record-actions";
 import { SearchBox } from "@/components/common/search-box";
+import { useHospitalProfile } from "@/components/print-header";
 
 export const Route = createFileRoute("/_authenticated/radiology")({ component: RadiologyPage });
 
@@ -26,6 +27,8 @@ type TestMaster = { id: string; name: string; modality: string; body_part: strin
 type ReportTemplate = { id: string; name: string; modality: string; body_part: string | null; findings: string | null; impression: string | null };
 
 function RadiologyPage() {
+  const { data: hospital } = useHospitalProfile();
+  const hospitalName = hospital?.hospital_name || "Hospital";
   const [orders, setOrders] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [doctors, setDoctors] = useState<any[]>([]);
@@ -75,7 +78,24 @@ function RadiologyPage() {
 
   const printOrder = (o: any) => {
     const w = window.open("", "_blank"); if (!w) return;
-    w.document.write(`<html><head><title>Radiology Order</title><style>body{font-family:system-ui;padding:24px;max-width:640px;margin:auto}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:12px}td{padding:6px 8px;border-bottom:1px solid #eee;font-size:13px}td:first-child{color:#666;width:40%}</style></head><body>
+    const contact = [hospital?.phone && `Ph: ${hospital.phone}`, hospital?.email].filter(Boolean).join(" · ");
+    w.document.write(`<html><head><title>${hospitalName} - Radiology Order</title><style>
+      body{font-family:system-ui;padding:24px;max-width:640px;margin:auto}
+      .hdr{text-align:center;padding-bottom:10px;margin-bottom:12px;border-bottom:2px solid #0EA5E9}
+      .h-name{font-size:18px;font-weight:800;color:#0EA5E9}
+      .h-sub{font-size:11px;color:#555;margin-top:2px}
+      h1{font-size:16px;margin:6px 0 10px;text-transform:uppercase;letter-spacing:.05em}
+      table{width:100%;border-collapse:collapse;margin-top:12px}
+      td{padding:6px 8px;border-bottom:1px solid #eee;font-size:13px}
+      td:first-child{color:#666;width:40%}
+      .foot{margin-top:20px;padding-top:8px;border-top:1px solid #ddd;font-size:10px;color:#666;text-align:center}
+    </style></head><body>
+      <div class="hdr">
+        <div class="h-name">${hospitalName}</div>
+        ${hospital?.tagline ? `<div class="h-sub" style="font-style:italic">${hospital.tagline}</div>` : ""}
+        ${hospital?.address ? `<div class="h-sub">${hospital.address}</div>` : ""}
+        ${contact ? `<div class="h-sub">${contact}</div>` : ""}
+      </div>
       <h1>Radiology Order</h1>
       <table><tbody>
         <tr><td>Patient</td><td>${o.patients?.full_name ?? ""} (${o.patients?.uhid ?? ""})</td></tr>
@@ -87,13 +107,14 @@ function RadiologyPage() {
         <tr><td>Amount</td><td>${inr(Number(o.amount || 0))}</td></tr>
         <tr><td>Ordered</td><td>${format(new Date(o.created_at), "dd MMM yyyy HH:mm")}</td></tr>
       </tbody></table>
+      <div class="foot">${hospitalName} · Computer Generated Radiology Requisition</div>
       <script>window.print()</script></body></html>`);
     w.document.close();
   };
 
   const whatsAppOrder = async (o: any) => {
     const { data: p } = await supabase.from("patients").select("mobile").eq("id", o.patient_id).maybeSingle();
-    const msg = `Radiology Order\nPatient: ${o.patients?.full_name} (${o.patients?.uhid})\n${o.modality} - ${o.investigation}\nStatus: ${o.status}\nAmount: ${inr(Number(o.amount || 0))}`;
+    const msg = `*${hospitalName} — Radiology Order*\nPatient: ${o.patients?.full_name} (${o.patients?.uhid})\n${o.modality} - ${o.investigation}\nStatus: ${o.status}\nAmount: ${inr(Number(o.amount || 0))}`;
     const phone = (p?.mobile ?? "").replace(/\D/g, "");
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };

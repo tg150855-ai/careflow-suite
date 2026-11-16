@@ -27,17 +27,21 @@ function unpack(notes: string | null) {
 }
 
 /** Previously-prescribed medicines (ranked by usage) + pharmacy stock, cached app-wide. */
-export function useMedicineSuggestions() {
+export function useMedicineSuggestions(hospitalId?: string | null) {
   return useQuery({
-    queryKey: ["medicine-suggestions"],
+    queryKey: ["medicine-suggestions", hospitalId ?? null],
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<MedicineSuggestion[]> => {
+      let stockQuery = supabase.from("medicines").select("name, generic_name").eq("active", true);
+      if (hospitalId) {
+        stockQuery = stockQuery.or(`hospital_id.eq.${hospitalId},hospital_id.is.null`);
+      }
       const [rxRes, stockRes] = await Promise.all([
         supabase
           .from("prescription_items")
           .select("medicine_name, dosage, food_instruction, notes, prescriptions(created_at)")
           .limit(1500),
-        supabase.from("medicines").select("name, generic_name").eq("active", true).limit(1000),
+        stockQuery.limit(1000),
       ]);
 
       const map = new Map<string, MedicineSuggestion>();
@@ -89,11 +93,12 @@ type Props = {
   onSelect: (s: MedicineSuggestion) => void;
   className?: string;
   placeholder?: string;
+  hospitalId?: string | null;
 };
 
 /** Medicine name input with debounced autocomplete from history + pharmacy stock. */
-export function MedicineAutocomplete({ value, onChange, onSelect, className, placeholder = "Medicine name" }: Props) {
-  const { data: all = [] } = useMedicineSuggestions();
+export function MedicineAutocomplete({ value, onChange, onSelect, className, placeholder = "Medicine name", hospitalId }: Props) {
+  const { data: all = [] } = useMedicineSuggestions(hospitalId);
   const [focused, setFocused] = useState(false);
   const [term, setTerm] = useState(value);
   const boxRef = useRef<HTMLDivElement>(null);

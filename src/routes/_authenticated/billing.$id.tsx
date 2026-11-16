@@ -14,7 +14,7 @@ import { inr } from "@/lib/format";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
-import { PrintHeader, PrintFooter } from "@/components/print-header";
+import { PrintHeader, PrintFooter, useHospitalProfile } from "@/components/print-header";
 import { shareOnWhatsApp } from "@/lib/share";
 import { BillEditorDialog } from "@/components/billing/bill-editor-dialog";
 import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
@@ -64,8 +64,11 @@ function BillView() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const { data: hospital } = useHospitalProfile();
+
   if (!data) return <div className="text-sm text-muted-foreground">Loading…</div>;
   const { bill, items, payments } = data;
+  const hospitalName = hospital?.hospital_name || "Hospital";
 
   return (
     <div className="space-y-6 max-w-5xl print:max-w-none">
@@ -82,7 +85,7 @@ function BillView() {
             variant="outline"
             onClick={() => {
               const billNo = bill.bill_no ?? "Bill";
-              const msg = `*Hospital Bill — ${billNo}*\nPatient: ${bill.patients?.full_name} (${bill.patients?.uhid})\nTotal: ${inr(bill.total)}\nPaid: ${inr(bill.paid)}\nPending: ${inr(bill.pending)}`;
+              const msg = `*${hospitalName} Bill — ${billNo}*\nPatient: ${bill.patients?.full_name} (${bill.patients?.uhid})\nTotal: ${inr(bill.total)}\nPaid: ${inr(bill.paid)}\nPending: ${inr(bill.pending)}`;
               shareOnWhatsApp(msg, window.location.href, bill.patients?.mobile ?? undefined);
             }}
             className="text-emerald-700 hover:text-emerald-800"

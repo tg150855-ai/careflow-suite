@@ -20,6 +20,7 @@ import { MedicineAutocomplete } from "@/components/opd/medicine-autocomplete";
 import { ConsultationTemplateManager } from "@/components/opd/consultation-template-manager";
 import { PreviousConsultationHistory } from "@/components/opd/previous-consultation-history";
 import { useMyHospital } from "@/lib/use-my-hospital";
+import { syncPrescribedMedicinesToPharmacy } from "@/lib/pharmacy-sync";
 import { toast } from "sonner";
 import { differenceInMinutes, format, formatDistanceToNow } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -257,6 +258,8 @@ function ConsultationPage() {
 function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: string; onSaved: () => void }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
   const p = appt.patients;
 
   const [running, setRunning] = useState(true);
@@ -412,6 +415,13 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
           position: idx,
         })));
         if (e3) throw e3;
+
+        // Auto-sync newly prescribed medicines to pharmacy inventory so they can be reused across hospital
+        await syncPrescribedMedicinesToPharmacy(
+          valid.map((it) => ({ name: it.medicine_name })),
+          hospitalId,
+          qc
+        );
       }
 
       // vitals snapshot into the vitals table (persisted, not just JSON on the visit)
@@ -480,9 +490,6 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
       setSaving(false);
     }
   }
-
-  const { hospital } = useMyHospital();
-  const hospitalId = hospital?.id ?? null;
 
   function applyConsultationTemplate(tpl: any) {
     if (tpl.chief_complaint) setChief(tpl.chief_complaint);
@@ -628,6 +635,7 @@ function ConsultationWorkspace({ appt, userId, onSaved }: { appt: any; userId?: 
             <div key={i} className="rounded-lg border p-2.5 grid grid-cols-12 gap-2 items-center">
               <MedicineAutocomplete
                 className="col-span-5"
+                hospitalId={hospitalId}
                 value={it.medicine_name}
                 onChange={(v) => updateItem(i, "medicine_name", v)}
                 onSelect={(s) => setItems((arr) => arr.map((row, x) => x === i ? {

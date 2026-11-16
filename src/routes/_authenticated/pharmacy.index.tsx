@@ -15,11 +15,14 @@ import { RecordActions } from "@/components/common/record-actions";
 import { SearchBox } from "@/components/common/search-box";
 import { shareOnWhatsApp } from "@/lib/share";
 import { toast } from "sonner";
+import { useHospitalProfile } from "@/components/print-header";
 
 export const Route = createFileRoute("/_authenticated/pharmacy/")({ component: PharmacyDashboard });
 
 function PharmacyDashboard() {
   const qc = useQueryClient();
+  const { data: hospital } = useHospitalProfile();
+  const hospitalName = hospital?.hospital_name || "Hospital";
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -119,18 +122,44 @@ function PharmacyDashboard() {
                   onPrint={() => {
                     const w = window.open("", "_blank"); if (!w) return;
                     const items = (s.pharmacy_sale_items ?? []).map((it: any) => `<tr><td style="padding:4px 0;border-bottom:1px dashed #ddd">${it.medicines?.name ?? "Medicine"}</td><td style="padding:4px 0;border-bottom:1px dashed #ddd;text-align:center">${it.quantity}</td><td style="padding:4px 0;border-bottom:1px dashed #ddd;text-align:right">${inr(Number(it.unit_price) * Number(it.quantity))}</td></tr>`).join("");
-                    w.document.write(`<html><head><title>${s.invoice_no}</title><style>body{font-family:system-ui;padding:24px;max-width:520px;margin:auto}h1{font-size:16px;margin-bottom:4px}p{font-size:13px;color:#555;margin:2px 0}table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}</style></head><body><h1>Pharmacy Cash Receipt</h1><p><b>Invoice:</b> ${s.invoice_no}</p><p><b>Patient:</b> ${s.patients?.full_name ?? "Walk-in"}${s.patients?.uhid ? ` (${s.patients.uhid})` : ""}</p><p><b>Date:</b> ${format(new Date(s.created_at), "dd MMM yyyy HH:mm")}</p><table><thead><tr style="border-bottom:1px solid #333"><th style="text-align:left;padding:4px 0">Medicine</th><th style="text-align:center;padding:4px 0">Qty</th><th style="text-align:right;padding:4px 0">Amount</th></tr></thead><tbody>${items}</tbody></table><h2 style="font-size:15px;text-align:right;margin-top:8px">Total: ${inr(Number(s.total))}</h2><script>window.print()</script></body></html>`); w.document.close();
+                    const contact = [hospital?.phone && `Ph: ${hospital.phone}`, hospital?.email].filter(Boolean).join(" · ");
+                    w.document.write(`<html><head><title>${s.invoice_no}</title><style>
+                      body{font-family:system-ui;padding:24px;max-width:520px;margin:auto}
+                      .hdr{text-align:center;padding-bottom:10px;margin-bottom:12px;border-bottom:2px solid #0EA5E9}
+                      .h-name{font-size:18px;font-weight:800;color:#0EA5E9}
+                      .h-sub{font-size:11px;color:#555;margin-top:2px}
+                      h1{font-size:15px;margin:6px 0 4px;text-transform:uppercase;letter-spacing:.05em}
+                      p{font-size:13px;color:#555;margin:2px 0}
+                      table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+                      .foot{margin-top:20px;padding-top:8px;border-top:1px solid #ddd;font-size:10px;color:#666;text-align:center}
+                    </style></head><body>
+                      <div class="hdr">
+                        <div class="h-name">${hospitalName}</div>
+                        ${hospital?.tagline ? `<div class="h-sub" style="font-style:italic">${hospital.tagline}</div>` : ""}
+                        ${hospital?.address ? `<div class="h-sub">${hospital.address}</div>` : ""}
+                        ${contact ? `<div class="h-sub">${contact}</div>` : ""}
+                      </div>
+                      <h1>Pharmacy Cash Receipt</h1>
+                      <p><b>Invoice:</b> ${s.invoice_no}</p>
+                      <p><b>Patient:</b> ${s.patients?.full_name ?? "Walk-in"}${s.patients?.uhid ? ` (${s.patients.uhid})` : ""}</p>
+                      <p><b>Date:</b> ${format(new Date(s.created_at), "dd MMM yyyy HH:mm")}</p>
+                      <table><thead><tr style="border-bottom:1px solid #333"><th style="text-align:left;padding:4px 0">Medicine</th><th style="text-align:center;padding:4px 0">Qty</th><th style="text-align:right;padding:4px 0">Amount</th></tr></thead><tbody>${items}</tbody></table>
+                      <h2 style="font-size:15px;text-align:right;margin-top:8px">Total: ${inr(Number(s.total))}</h2>
+                      <div class="foot">${hospitalName} · Computer Generated Receipt</div>
+                      <script>window.print()</script>
+                    </body></html>`);
+                    w.document.close();
                   }}
                   onWhatsApp={() => {
                     const itemsText = (s.pharmacy_sale_items ?? [])
                       .map((it: any) => `• ${it.medicines?.name ?? "Medicine"} x${it.quantity} — ${inr(Number(it.unit_price) * Number(it.quantity))}`)
                       .join("\n");
-                    const msg = `*Pharmacy Receipt — ${s.invoice_no}*\n` +
+                    const msg = `*${hospitalName} — Pharmacy Receipt ${s.invoice_no}*\n` +
                       `Patient: ${s.patients?.full_name ?? "Walk-in"}${s.patients?.uhid ? ` (${s.patients.uhid})` : ""}\n` +
                       `Date: ${format(new Date(s.created_at), "dd MMM yyyy, HH:mm")}\n` +
                       (itemsText ? `\n*Medicines:*\n${itemsText}\n` : "") +
                       `\n*Total Amount:* ${inr(Number(s.total))}\n` +
-                      `\nThank you for choosing our pharmacy!`;
+                      `\nThank you for choosing ${hospitalName}!`;
                     shareOnWhatsApp(msg, undefined, s.patients?.mobile);
                   }}
                   onDelete={async () => {

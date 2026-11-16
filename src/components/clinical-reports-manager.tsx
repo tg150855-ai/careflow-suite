@@ -16,10 +16,12 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { shareOnWhatsApp } from "@/lib/share";
-import { PrintHeader, PrintFooter } from "@/components/print-header";
+import { PrintHeader, PrintFooter, useHospitalProfile } from "@/components/print-header";
 import { SecureDeleteDialog } from "@/components/common/secure-delete-dialog";
 
 export function ClinicalReportsManager({ defaultDepartment = "opd" }: { defaultDepartment?: "opd" | "ipd" | "ot" }) {
+  const { data: hospitalProfile } = useHospitalProfile();
+  const hospitalName = hospitalProfile?.hospital_name || "Hospital";
   const [activeTab, setActiveTab] = useState<"opd" | "ipd" | "ot">(defaultDepartment);
   const [search, setSearch] = useState("");
   const qc = useQueryClient();
@@ -142,16 +144,16 @@ export function ClinicalReportsManager({ defaultDepartment = "opd" }: { defaultD
     let mobile = "";
     if (type === "opd") {
       mobile = item.patients?.mobile;
-      msg = `*Clinical Consultation Report — SBG Arogya Plus*\n` +
+      msg = `*Clinical Consultation Report — ${hospitalName}*\n` +
         `Patient: ${item.patients?.full_name} (${item.patients?.uhid})\n` +
         `Doctor: Dr. ${item.doctors?.name ?? "—"}\n` +
         `Diagnosis: ${item.diagnosis || "Under Evaluation"}\n` +
         `Clinical Notes: ${item.clinical_findings || item.notes || "—"}\n` +
         (item.follow_up_date ? `Next Follow-up: ${format(new Date(item.follow_up_date), "dd MMM yyyy")}\n` : "") +
-        `\nThank you for trusting CareFlow Suite.`;
+        `\nThank you for trusting ${hospitalName}.`;
     } else if (type === "ipd") {
       mobile = item.admissions?.patients?.mobile;
-      msg = `*IPD Discharge & Clinical Summary — SBG Arogya Plus*\n` +
+      msg = `*IPD Discharge & Clinical Summary — ${hospitalName}*\n` +
         `Patient: ${item.admissions?.patients?.full_name} (${item.admissions?.patients?.uhid})\n` +
         `Admission: #${item.admissions?.admission_no}\n` +
         `Primary Diagnosis: ${item.final_diagnosis || "—"}\n` +
@@ -161,7 +163,7 @@ export function ClinicalReportsManager({ defaultDepartment = "opd" }: { defaultD
         `\nWe wish you a healthy recovery.`;
     } else if (type === "ot") {
       mobile = item.patients?.mobile;
-      msg = `*OT Operative & Surgery Report — SBG Arogya Plus*\n` +
+      msg = `*OT Operative & Surgery Report — ${hospitalName}*\n` +
         `Procedure: ${item.procedure_name}\n` +
         `Surgery No: ${item.surgery_no}\n` +
         `Patient: ${item.patients?.full_name} (${item.patients?.uhid})\n` +

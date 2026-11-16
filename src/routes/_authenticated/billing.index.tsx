@@ -252,7 +252,8 @@ function PendingBillsSection() {
   const totalOutstanding = rows.reduce((s, r) => s + r.pending, 0);
 
   const whatsAppRemind = (r: typeof rows[number]) => {
-    const msg = `Payment Reminder — SBG Arogya Plus\n\nDear ${r.name} (${r.uhid}),\n\nYou have an outstanding balance of ${inr(r.pending)} on your hospital account (${r.bills.length} pending bill${r.bills.length > 1 ? "s" : ""}).\n\nDepartments: ${Array.from(r.depts).join(", ")}\n\nKindly clear the pending amount at your earliest. Thank you.`;
+    const hospName = hospital?.hospital_name || "Hospital";
+    const msg = `Payment Reminder — ${hospName}\n\nDear ${r.name} (${r.uhid}),\n\nYou have an outstanding balance of ${inr(r.pending)} on your hospital account (${r.bills.length} pending bill${r.bills.length > 1 ? "s" : ""}).\n\nDepartments: ${Array.from(r.depts).join(", ")}\n\nKindly clear the pending amount at your earliest. Thank you.`;
     shareOnWhatsApp(msg, undefined, r.mobile ?? undefined);
   };
 

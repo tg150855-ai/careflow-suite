@@ -20,12 +20,27 @@ import { BrandLogo } from "@/components/brand";
 import { LANGUAGES, applyLanguage, type AppLanguage } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MODULE_PRESETS, MODULE_REGISTRY, enabledKeysFrom } from "@/lib/modules";
+import { useMyHospital } from "@/lib/use-my-hospital";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
+
+async function saveHospitalSettings(patch: Record<string, any>, hospitalId?: string | null) {
+  const { error } = await (supabase as any)
+    .from("hospital_settings")
+    .upsert({ id: SETTINGS_ID, ...patch }, { onConflict: "id" });
+  if (error) throw error;
+  if (hospitalId && hospitalId !== SETTINGS_ID) {
+    try {
+      await (supabase as any)
+        .from("hospital_settings")
+        .upsert({ id: hospitalId, ...patch }, { onConflict: "id" });
+    } catch { /* ignore secondary upsert failure */ }
+  }
+}
 
 type Settings = {
   id: string;
@@ -77,20 +92,48 @@ function SettingsPage() {
   const { hasAnyRole } = useAuth();
   const canEdit = hasAnyRole(["admin", "super_admin"]);
   const qc = useQueryClient();
+  const { hospital } = useMyHospital();
+  const hospitalId = hospital?.id ?? null;
+
+  const refreshAll = () => {
+    qc.invalidateQueries({ queryKey: ["hospital-settings"] });
+    qc.invalidateQueries({ queryKey: ["my-hospital"] });
+  };
 
   const { data: settings, isLoading } = useQuery<Settings>({
-    queryKey: ["hospital-settings", "full"],
+    queryKey: ["hospital-settings", "full", hospitalId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("hospital_settings")
-        .select("*")
-        .eq("id", SETTINGS_ID)
-        .maybeSingle();
-      if (error) {
-        console.warn("Could not fetch hospital_settings row, using defaults:", error.message);
-        return DEFAULT_SETTINGS;
+      let fetched: any = null;
+      if (hospitalId) {
+        const { data } = await (supabase as any)
+          .from("hospital_settings")
+          .select("*")
+          .eq("id", hospitalId)
+          .maybeSingle();
+        fetched = data;
       }
-      return data ? { ...DEFAULT_SETTINGS, ...data } : DEFAULT_SETTINGS;
+      if (!fetched) {
+        const { data, error } = await (supabase as any)
+          .from("hospital_settings")
+          .select("*")
+          .eq("id", SETTINGS_ID)
+          .maybeSingle();
+        if (error) {
+          console.warn("Could not fetch hospital_settings row, using defaults:", error.message);
+        } else {
+          fetched = data;
+        }
+      }
+      const initial: Settings = fetched ? { ...DEFAULT_SETTINGS, ...fetched } : DEFAULT_SETTINGS;
+      if (hospital?.hospital_name && (initial.hospital_name === "SBG Arogya Plus" || !initial.hospital_name)) {
+        initial.hospital_name = hospital.hospital_name;
+      }
+      if (hospital?.phone && !initial.phone) initial.phone = hospital.phone;
+      if (hospital?.email && !initial.email) initial.email = hospital.email;
+      if (hospital?.address && !initial.address) {
+        initial.address = [hospital.address, hospital.city, hospital.state].filter(Boolean).join(", ");
+      }
+      return initial;
     },
   });
 
@@ -126,23 +169,23 @@ function SettingsPage() {
         </TabsList>
 
         <TabsContent value="language">
-          <LanguageTab settings={settings} canEdit={canEdit} onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+          <LanguageTab settings={settings} canEdit={canEdit} hospitalId={hospitalId} onSaved={refreshAll} />
         </TabsContent>
 
         <TabsContent value="profile">
-          <ProfileTab settings={settings} canEdit={canEdit} onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+          <ProfileTab settings={settings} canEdit={canEdit} hospitalId={hospitalId} onSaved={refreshAll} />
         </TabsContent>
         <TabsContent value="logo">
-          <LogoTab settings={settings} canEdit={canEdit} onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+          <LogoTab settings={settings} canEdit={canEdit} hospitalId={hospitalId} onSaved={refreshAll} />
         </TabsContent>
         <TabsContent value="branding">
-          <BrandingTab settings={settings} canEdit={canEdit} onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+          <BrandingTab settings={settings} canEdit={canEdit} hospitalId={hospitalId} onSaved={refreshAll} />
         </TabsContent>
         <TabsContent value="departments">
-          <DepartmentsTab settings={settings} canEdit={canEdit} onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+          <DepartmentsTab settings={settings} canEdit={canEdit} hospitalId={hospitalId} onSaved={refreshAll} />
         </TabsContent>
         <TabsContent value="prescription">
-          <JsonTab field="prescription" label="Prescription" settings={settings} canEdit={canEdit}
+          <JsonTab field="prescription" label="Prescription" settings={settings} canEdit={canEdit} hospitalId={hospitalId}
             fields={[
               { key: "header", label: "Header text", type: "textarea" },
               { key: "footer", label: "Footer text", type: "textarea" },
@@ -157,46 +200,46 @@ function SettingsPage() {
               { key: "margins_mm", label: "Page margin (mm)", type: "number" },
               { key: "number_format", label: "Prescription number format", type: "text" },
             ]}
-            onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+            onSaved={refreshAll} />
         </TabsContent>
         <TabsContent value="billing">
-          <JsonTab field="billing" label="Billing" settings={settings} canEdit={canEdit}
+          <JsonTab field="billing" label="Billing" settings={settings} canEdit={canEdit} hospitalId={hospitalId}
             fields={[
               { key: "gst_percent", label: "GST %", type: "number" },
               { key: "invoice_prefix", label: "Invoice prefix", type: "text" },
               { key: "receipt_prefix", label: "Receipt prefix", type: "text" },
               { key: "currency", label: "Currency code", type: "text" },
             ]}
-            onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+            onSaved={refreshAll} />
         </TabsContent>
         <TabsContent value="printers">
-          <JsonTab field="printers" label="Printers" settings={settings} canEdit={canEdit}
+          <JsonTab field="printers" label="Printers" settings={settings} canEdit={canEdit} hospitalId={hospitalId}
             fields={[
               { key: "opd", label: "OPD printer name", type: "text" },
               { key: "billing", label: "Billing printer name", type: "text" },
               { key: "pharmacy", label: "Pharmacy printer name", type: "text" },
               { key: "lab", label: "Lab printer name", type: "text" },
             ]}
-            onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+            onSaved={refreshAll} />
         </TabsContent>
         <TabsContent value="messaging">
-          <JsonTab field="messaging" label="WhatsApp & SMS" settings={settings} canEdit={canEdit}
+          <JsonTab field="messaging" label="WhatsApp & SMS" settings={settings} canEdit={canEdit} hospitalId={hospitalId}
             fields={[
               { key: "whatsapp_api_key", label: "WhatsApp API key", type: "text" },
               { key: "whatsapp_sender_id", label: "WhatsApp sender ID", type: "text" },
               { key: "sms_api_key", label: "SMS API key", type: "text" },
               { key: "sms_sender_id", label: "SMS sender ID", type: "text" },
             ]}
-            onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+            onSaved={refreshAll} />
         </TabsContent>
         <TabsContent value="security">
-          <JsonTab field="security" label="Security" settings={settings} canEdit={canEdit}
+          <JsonTab field="security" label="Security" settings={settings} canEdit={canEdit} hospitalId={hospitalId}
             fields={[
               { key: "min_password_length", label: "Min password length", type: "number" },
               { key: "session_minutes", label: "Session timeout (minutes)", type: "number" },
               { key: "max_attempts", label: "Max login attempts", type: "number" },
             ]}
-            onSaved={() => qc.invalidateQueries({ queryKey: ["hospital-settings"] })} />
+            onSaved={refreshAll} />
         </TabsContent>
       </Tabs>
     </div>
@@ -204,7 +247,7 @@ function SettingsPage() {
 }
 
 // ---------- Profile ----------
-function ProfileTab({ settings, canEdit, onSaved }: { settings: Settings; canEdit: boolean; onSaved: () => void }) {
+function ProfileTab({ settings, canEdit, hospitalId, onSaved }: { settings: Settings; canEdit: boolean; hospitalId?: string | null; onSaved: () => void }) {
   const [v, setV] = useState({
     hospital_name: settings.hospital_name ?? "",
     tagline: settings.tagline ?? "",
@@ -221,14 +264,27 @@ function ProfileTab({ settings, canEdit, onSaved }: { settings: Settings; canEdi
   async function save() {
     setSaving(true);
     const before = { ...settings };
-    const { error } = await (supabase as any)
-      .from("hospital_settings")
-      .upsert({ id: SETTINGS_ID, ...v }, { onConflict: "id" });
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    await logAudit({ action: "update", entity: "hospital_settings", entityId: SETTINGS_ID, before, after: v });
-    toast.success("Hospital profile saved");
-    onSaved();
+    try {
+      await saveHospitalSettings(v, hospitalId);
+      if (hospitalId) {
+        await supabase
+          .from("hospitals")
+          .update({
+            hospital_name: v.hospital_name,
+            phone: v.phone || null,
+            email: v.email || null,
+            address: v.address || null,
+          })
+          .eq("id", hospitalId);
+      }
+      setSaving(false);
+      await logAudit({ action: "update", entity: "hospital_settings", entityId: hospitalId || SETTINGS_ID, before, after: v });
+      toast.success("Hospital profile saved");
+      onSaved();
+    } catch (err: any) {
+      setSaving(false);
+      toast.error(err.message || "Failed to save hospital profile");
+    }
   }
 
   return (
@@ -256,7 +312,7 @@ function ProfileTab({ settings, canEdit, onSaved }: { settings: Settings; canEdi
 }
 
 // ---------- Logo ----------
-function LogoTab({ settings, canEdit, onSaved }: { settings: Settings; canEdit: boolean; onSaved: () => void }) {
+function LogoTab({ settings, canEdit, hospitalId, onSaved }: { settings: Settings; canEdit: boolean; hospitalId?: string | null; onSaved: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -279,24 +335,27 @@ function LogoTab({ settings, canEdit, onSaved }: { settings: Settings; canEdit: 
       .from("hospital-assets")
       .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
     const url = signed?.signedUrl;
-    const { error } = await (supabase as any)
-      .from("hospital_settings")
-      .upsert({ id: SETTINGS_ID, logo_url: url }, { onConflict: "id" });
-    setUploading(false);
-    if (error) return toast.error(error.message);
-    await logAudit({ action: "update", entity: "hospital_settings.logo", entityId: SETTINGS_ID, after: { logo_url: url } });
-    toast.success("Logo updated");
-    onSaved();
+    try {
+      await saveHospitalSettings({ logo_url: url }, hospitalId);
+      setUploading(false);
+      await logAudit({ action: "update", entity: "hospital_settings.logo", entityId: hospitalId || SETTINGS_ID, after: { logo_url: url } });
+      toast.success("Logo updated");
+      onSaved();
+    } catch (err: any) {
+      setUploading(false);
+      toast.error(err.message || "Failed to update logo");
+    }
   }
 
   async function remove() {
-    const { error } = await (supabase as any)
-      .from("hospital_settings")
-      .upsert({ id: SETTINGS_ID, logo_url: null }, { onConflict: "id" });
-    if (error) return toast.error(error.message);
-    await logAudit({ action: "delete", entity: "hospital_settings.logo", entityId: SETTINGS_ID });
-    toast.success("Logo removed");
-    onSaved();
+    try {
+      await saveHospitalSettings({ logo_url: null }, hospitalId);
+      await logAudit({ action: "delete", entity: "hospital_settings.logo", entityId: hospitalId || SETTINGS_ID });
+      toast.success("Logo removed");
+      onSaved();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove logo");
+    }
   }
 
   return (
@@ -332,7 +391,7 @@ function LogoTab({ settings, canEdit, onSaved }: { settings: Settings; canEdit: 
 }
 
 // ---------- Branding ----------
-function BrandingTab({ settings, canEdit, onSaved }: { settings: Settings; canEdit: boolean; onSaved: () => void }) {
+function BrandingTab({ settings, canEdit, hospitalId, onSaved }: { settings: Settings; canEdit: boolean; hospitalId?: string | null; onSaved: () => void }) {
   const [v, setV] = useState({
     primary_color: settings.primary_color ?? "#0EA5E9",
     secondary_color: settings.secondary_color ?? "#0F172A",
@@ -342,14 +401,16 @@ function BrandingTab({ settings, canEdit, onSaved }: { settings: Settings; canEd
 
   async function save() {
     setSaving(true);
-    const { error } = await (supabase as any)
-      .from("hospital_settings")
-      .upsert({ id: SETTINGS_ID, ...v }, { onConflict: "id" });
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    await logAudit({ action: "update", entity: "hospital_settings.branding", entityId: SETTINGS_ID, after: v });
-    toast.success("Branding saved");
-    onSaved();
+    try {
+      await saveHospitalSettings(v, hospitalId);
+      setSaving(false);
+      await logAudit({ action: "update", entity: "hospital_settings.branding", entityId: hospitalId || SETTINGS_ID, after: v });
+      toast.success("Branding saved");
+      onSaved();
+    } catch (err: any) {
+      setSaving(false);
+      toast.error(err.message || "Failed to save branding");
+    }
   }
 
   return (
@@ -378,7 +439,7 @@ function BrandingTab({ settings, canEdit, onSaved }: { settings: Settings; canEd
 }
 
 // ---------- Departments / Module management ----------
-function DepartmentsTab({ settings, canEdit, onSaved }: { settings: Settings; canEdit: boolean; onSaved: () => void }) {
+function DepartmentsTab({ settings, canEdit, hospitalId, onSaved }: { settings: Settings; canEdit: boolean; hospitalId?: string | null; onSaved: () => void }) {
   const [enabled, setEnabled] = useState<Set<string>>(() => enabledKeysFrom(settings.departments) as Set<string>);
   const [saving, setSaving] = useState(false);
 
@@ -395,14 +456,16 @@ function DepartmentsTab({ settings, canEdit, onSaved }: { settings: Settings; ca
   async function save() {
     setSaving(true);
     const departments = MODULE_REGISTRY.map((m) => ({ key: m.key, name: m.name, enabled: enabled.has(m.key) }));
-    const { error } = await (supabase as any)
-      .from("hospital_settings")
-      .upsert({ id: SETTINGS_ID, departments }, { onConflict: "id" });
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    await logAudit({ action: "update", entity: "hospital_settings.departments", entityId: SETTINGS_ID, after: { departments } });
-    toast.success("Modules saved");
-    onSaved();
+    try {
+      await saveHospitalSettings({ departments }, hospitalId);
+      setSaving(false);
+      await logAudit({ action: "update", entity: "hospital_settings.departments", entityId: hospitalId || SETTINGS_ID, after: { departments } });
+      toast.success("Modules saved");
+      onSaved();
+    } catch (err: any) {
+      setSaving(false);
+      toast.error(err.message || "Failed to save departments");
+    }
   }
 
   return (
@@ -452,12 +515,13 @@ function DepartmentsTab({ settings, canEdit, onSaved }: { settings: Settings; ca
 
 
 // ---------- JSON Tab (prescription / billing / printers / messaging / security) ----------
-function JsonTab({ field, label, settings, canEdit, fields, onSaved }: {
+function JsonTab({ field, label, settings, canEdit, fields, hospitalId, onSaved }: {
   field: keyof Settings;
   label: string;
   settings: Settings;
   canEdit: boolean;
   fields: { key: string; label: string; type: "text" | "number" | "textarea" }[];
+  hospitalId?: string | null;
   onSaved: () => void;
 }) {
   const [v, setV] = useState<Record<string, any>>(() => ({ ...(settings[field] as any || {}) }));
@@ -467,15 +531,16 @@ function JsonTab({ field, label, settings, canEdit, fields, onSaved }: {
 
   async function save() {
     setSaving(true);
-    const payload: any = { id: SETTINGS_ID, [field]: v };
-    const { error } = await (supabase as any)
-      .from("hospital_settings")
-      .upsert(payload, { onConflict: "id" });
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    await logAudit({ action: "update", entity: `hospital_settings.${String(field)}`, entityId: SETTINGS_ID, after: payload });
-    toast.success(`${label} settings saved`);
-    onSaved();
+    try {
+      await saveHospitalSettings({ [field]: v }, hospitalId);
+      setSaving(false);
+      await logAudit({ action: "update", entity: `hospital_settings.${String(field)}`, entityId: hospitalId || SETTINGS_ID, after: { [field]: v } });
+      toast.success(`${label} settings saved`);
+      onSaved();
+    } catch (err: any) {
+      setSaving(false);
+      toast.error(err.message || `Failed to save ${label.toLowerCase()} settings`);
+    }
   }
 
   return (
@@ -514,21 +579,23 @@ function Row({ label, full, children }: { label: string; full?: boolean; childre
 }
 
 // ---------- Language ----------
-function LanguageTab({ settings, canEdit, onSaved }: { settings: Settings & { default_language?: string }; canEdit: boolean; onSaved: () => void }) {
+function LanguageTab({ settings, canEdit, hospitalId, onSaved }: { settings: Settings & { default_language?: string }; canEdit: boolean; hospitalId?: string | null; onSaved: () => void }) {
   const [lang, setLang] = useState<AppLanguage>(((settings as any).default_language ?? "en") as AppLanguage);
   const [saving, setSaving] = useState(false);
 
   async function save() {
     setSaving(true);
-    const { error } = await (supabase as any)
-      .from("hospital_settings")
-      .upsert({ id: SETTINGS_ID, default_language: lang }, { onConflict: "id" });
-    setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    await applyLanguage(lang);
-    logAudit({ action: "update", entity: "hospital_settings", entityId: SETTINGS_ID, after: { default_language: lang } });
-    toast.success("Language updated");
-    onSaved();
+    try {
+      await saveHospitalSettings({ default_language: lang }, hospitalId);
+      setSaving(false);
+      await applyLanguage(lang);
+      logAudit({ action: "update", entity: "hospital_settings", entityId: hospitalId || SETTINGS_ID, after: { default_language: lang } });
+      toast.success("Language updated");
+      onSaved();
+    } catch (err: any) {
+      setSaving(false);
+      toast.error(err.message || "Failed to update language");
+    }
   }
 
   return (

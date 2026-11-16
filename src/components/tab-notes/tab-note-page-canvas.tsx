@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +35,9 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { useHospitalProfile } from "@/components/print-header";
 import { useMyHospital } from "@/lib/use-my-hospital";
+import { BRAND } from "@/components/brand";
 import { useMedicineSuggestions } from "@/components/opd/medicine-autocomplete";
+import { syncPrescribedMedicinesToPharmacy } from "@/lib/pharmacy-sync";
 import {
   type PatientTabNote,
   type DrawingStroke,
@@ -97,61 +99,42 @@ export function TabNotePageCanvas({
   onSaved,
   onCancel,
 }: TabNotePageCanvasProps) {
+  const qc = useQueryClient();
   // Hospital queries
   const { hospital: myHospital } = useMyHospital();
   const { data: hospProfile } = useHospitalProfile();
 
-  // Query actual registered hospitals from the database
-  const { data: registeredHospitals = [] } = useQuery({
-    queryKey: ["all-registered-hospitals-for-letterhead"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("hospitals")
-        .select("id, hospital_name, address, phone, email, city, state")
-        .order("created_at", { ascending: false });
-      return data ?? [];
-    },
-  });
-
-  // Resolve actual registered hospital name (filtering out any default 'SBG Arogya' placeholder)
+  // Resolve actual registered hospital name strictly for the current hospital / tenant
   const defaultHospitalName = useMemo(() => {
     if (initialNote?.hospital_name) {
       return initialNote.hospital_name;
     }
-    // 1. Check logged in user's tenant hospital
-    if (myHospital?.hospital_name && !myHospital.hospital_name.toLowerCase().includes("sbg arogya")) {
-      return myHospital.hospital_name;
-    }
-    // 2. Check registered hospitals in hospitals table
-    const realHosp = registeredHospitals.find(
-      (h: any) => h.hospital_name && !h.hospital_name.toLowerCase().includes("sbg arogya")
-    );
-    if (realHosp?.hospital_name) {
-      return realHosp.hospital_name;
-    }
-    // 3. Check hospital_settings if configured by admin
+    // 1. Highest priority: The resolved hospital name from useHospitalProfile() (which resolves active tenant hospital + hospital_settings)
     if (hospProfile?.hospital_name && !hospProfile.hospital_name.toLowerCase().includes("sbg arogya")) {
       return hospProfile.hospital_name;
     }
-    // 4. Fallback to myHospital or first registered
+    // 2. Logged-in user's tenant hospital
+    if (myHospital?.hospital_name && !myHospital.hospital_name.toLowerCase().includes("sbg arogya")) {
+      return myHospital.hospital_name;
+    }
+    // 3. Fallbacks
+    if (hospProfile?.hospital_name) return hospProfile.hospital_name;
     if (myHospital?.hospital_name) return myHospital.hospital_name;
-    if (registeredHospitals[0]?.hospital_name) return registeredHospitals[0].hospital_name;
 
-    return "CAREFLOW MULTISPECIALITY HOSPITAL";
-  }, [initialNote, myHospital, registeredHospitals, hospProfile]);
+    return BRAND.name;
+  }, [initialNote?.hospital_name, hospProfile?.hospital_name, myHospital?.hospital_name]);
 
   const [hospitalName, setHospitalName] = useState(defaultHospitalName);
+  const [isHospitalNameUserEdited, setIsHospitalNameUserEdited] = useState(false);
 
   // Sync hospital name when queries resolve
   useEffect(() => {
-    if (!hospitalName || hospitalName.toLowerCase().includes("sbg arogya")) {
-      if (defaultHospitalName && !defaultHospitalName.toLowerCase().includes("sbg arogya")) {
-        setHospitalName(defaultHospitalName);
-      }
+    if (!isHospitalNameUserEdited && defaultHospitalName) {
+      setHospitalName(defaultHospitalName);
     }
-  }, [defaultHospitalName, hospitalName]);
+  }, [defaultHospitalName, isHospitalNameUserEdited]);
 
-  const { data: suggestions = [] } = useMedicineSuggestions();
+  const { data: suggestions = [] } = useMedicineSuggestions(myHospital?.id);
 
   // Canvas and tool states
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -357,22 +340,23 @@ export function TabNotePageCanvas({
     // Actual registered hospital name
     ctx.fillStyle = "#0f172a";
     ctx.font = "bold 20px 'Segoe UI', Roboto, sans-serif";
-    const displayName = hospitalName.trim() || "CAREFLOW HOSPITAL";
+    const displayName = hospitalName.trim() || hospProfile?.hospital_name || myHospital?.hospital_name || BRAND.name;
     ctx.fillText(displayName.toUpperCase(), 35, 36);
 
     // Tagline & Hospital Contact
     ctx.fillStyle = "#64748b";
     ctx.font = "11px 'Segoe UI', Roboto, sans-serif";
     const tagline =
-      myHospital?.city && myHospital?.state
-        ? `${myHospital.city}, ${myHospital.state}`
-        : hospProfile?.tagline || "Multi-Speciality Healthcare & Research Centre";
+      hospProfile?.tagline ||
+      (myHospital?.city && myHospital?.state ? `${myHospital.city}, ${myHospital.state}` : null) ||
+      hospProfile?.address ||
+      "Multi-Speciality Healthcare & Research Centre";
     ctx.fillText(tagline, 35, 52);
 
     const contactStr = [
-      myHospital?.address || hospProfile?.address,
-      myHospital?.phone ? `Ph: ${myHospital.phone}` : hospProfile?.phone ? `Ph: ${hospProfile.phone}` : null,
-      myHospital?.email || hospProfile?.email,
+      hospProfile?.phone ? `Ph: ${hospProfile.phone}` : myHospital?.phone ? `Ph: ${myHospital.phone}` : null,
+      hospProfile?.email || myHospital?.email || null,
+      hospProfile?.address || myHospital?.address || null,
     ]
       .filter(Boolean)
       .join("  |  ");
@@ -852,6 +836,9 @@ export function TabNotePageCanvas({
     setMedicineQuery("");
     setShowMedicineDropdown(false);
     toast.success(`"${nameToAdd}" rendered on prescription page`);
+
+    // Sync newly added medicine into Pharmacy inventory
+    syncPrescribedMedicinesToPharmacy([{ name: nameToAdd }], myHospital?.id, qc);
   };
 
   const handleRemoveMedicine = (idx: number) => {
@@ -893,6 +880,15 @@ export function TabNotePageCanvas({
       });
 
       toast.success(initialNote ? "Handwritten page updated" : "New page saved to patient record");
+
+      if (medicines.length > 0) {
+        await syncPrescribedMedicinesToPharmacy(
+          medicines.map((m) => ({ name: m.name })),
+          myHospital?.id,
+          qc
+        );
+      }
+
       if (onSaved) onSaved(saved);
     } catch (err: any) {
       console.error("[tab-note save error]", err);
@@ -976,7 +972,10 @@ export function TabNotePageCanvas({
             <span className="text-[10px] text-muted-foreground whitespace-nowrap">Hospital:</span>
             <Input
               value={hospitalName}
-              onChange={(e) => setHospitalName(e.target.value)}
+              onChange={(e) => {
+                setHospitalName(e.target.value);
+                setIsHospitalNameUserEdited(true);
+              }}
               placeholder="Registered Hospital Name"
               className="h-6 text-[11px] font-medium w-36 md:w-52 bg-background border-muted px-1.5 py-0"
             />

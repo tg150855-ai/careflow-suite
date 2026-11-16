@@ -246,7 +246,7 @@ export function printTabNote(note: PatientTabNote) {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>${note.title} - Patient Note</title>
+        <title>${note.hospital_name ? `${note.hospital_name} — ` : ""}${note.title}</title>
         <style>
           @page {
             size: A4 portrait;

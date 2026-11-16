@@ -221,14 +221,15 @@ function EmergencyPage() {
   }
 
   async function getHospitalName(): Promise<string> {
+    if (hospital?.hospital_name) return hospital.hospital_name;
     try {
       const { data } = await (supabase as any)
         .from("hospital_settings")
         .select("hospital_name")
         .eq("id", "00000000-0000-0000-0000-000000000001")
         .maybeSingle();
-      return data?.hospital_name || BRAND.name;
-    } catch { return BRAND.name; }
+      return (data?.hospital_name && data.hospital_name !== "SBG Arogya Plus" ? data.hospital_name : null) || hospital?.hospital_name || data?.hospital_name || BRAND.name;
+    } catch { return hospital?.hospital_name || BRAND.name; }
   }
 
   function mapRow(c: ER) {
@@ -309,9 +310,13 @@ function EmergencyPage() {
     logAudit({ action: "export", entity: "emergency_cases", after: { format: "pdf", count: rows.length } });
   }
 
-  function printCase(c: ER) {
+  async function printCase(c: ER) {
+    const hosp = await getHospitalName();
     const w = window.open("", "_blank"); if (!w) return;
-    w.document.write(`<pre style="font-family:sans-serif;padding:24px;white-space:pre-wrap">Emergency Case Slip
+    w.document.write(`<pre style="font-family:sans-serif;padding:24px;white-space:pre-wrap"><b>${hosp}</b>
+--------------------------------------------
+EMERGENCY CASE SLIP
+--------------------------------------------
 ER No: ${c.emergency_no}
 Patient: ${c.full_name}
 UHID: ${c.patients?.uhid ?? "—"}
@@ -321,7 +326,9 @@ Triage: ${(c.triage ?? "").toUpperCase()}
 Type: ${c.emergency_type ?? "—"}
 Chief Complaint: ${c.chief_complaint ?? "—"}
 Arrival: ${format(new Date(c.arrival_time), "dd MMM yyyy HH:mm")}
-Status: ${c.status}</pre>`);
+Status: ${c.status}
+--------------------------------------------
+Computer Generated Slip · ${format(new Date(), "dd-MM-yyyy HH:mm")}</pre>`);
     w.document.close(); w.focus(); w.print();
   }
 

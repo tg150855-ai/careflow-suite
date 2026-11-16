@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { RecordActions } from "@/components/common/record-actions";
 import { useMyHospital } from "@/lib/use-my-hospital";
+import { useHospitalProfile } from "@/components/print-header";
 import { fetchUnifiedDoctors, formatDoctorLabel } from "@/lib/doctors";
 
 export const Route = createFileRoute("/_authenticated/opd/appointments")({
@@ -47,6 +48,8 @@ const STATUS_TONE: Record<Status, string> = {
 function OpdAppointments() {
   const { user } = useAuth();
   const { hospital } = useMyHospital();
+  const { data: hospitalProfile } = useHospitalProfile();
+  const hospitalName = hospitalProfile?.hospital_name || hospital?.hospital_name || "Hospital";
   const hospitalId = hospital?.id ?? null;
   const qc = useQueryClient();
   const [date, setDate] = useState<string>(() => format(new Date(), "yyyy-MM-dd"));
@@ -183,10 +186,24 @@ function OpdAppointments() {
   function printAppt(a: any) {
     const w = window.open("", "_blank", "width=720,height=900");
     if (!w) return;
-    w.document.write(`<html><head><title>Appointment ${a.token_no ?? ""}</title>
-      <style>body{font-family:system-ui;padding:24px;color:#111}h1{margin:0 0 4px}
-      .row{margin:6px 0}.k{color:#666;display:inline-block;width:140px}</style></head><body>
-      <h1>Appointment Slip</h1>
+    const contact = [hospitalProfile?.phone && `Ph: ${hospitalProfile.phone}`, hospitalProfile?.email].filter(Boolean).join(" · ");
+    w.document.write(`<html><head><title>${hospitalName} - Appointment ${a.token_no ?? ""}</title>
+      <style>
+        body{font-family:system-ui;padding:24px;color:#111;max-width:640px;margin:auto}
+        .hdr{text-align:center;padding-bottom:10px;margin-bottom:12px;border-bottom:2px solid #0EA5E9}
+        .h-name{font-size:18px;font-weight:800;color:#0EA5E9}
+        .h-sub{font-size:11px;color:#555;margin-top:2px}
+        h1{font-size:15px;margin:6px 0 10px;text-transform:uppercase;letter-spacing:.05em}
+        .row{margin:6px 0;font-size:13px}.k{color:#666;display:inline-block;width:140px}
+        .foot{margin-top:20px;padding-top:8px;border-top:1px solid #ddd;font-size:10px;color:#666;text-align:center}
+      </style></head><body>
+      <div class="hdr">
+        <div class="h-name">${hospitalName}</div>
+        ${hospitalProfile?.tagline ? `<div class="h-sub" style="font-style:italic">${hospitalProfile.tagline}</div>` : ""}
+        ${hospitalProfile?.address ? `<div class="h-sub">${hospitalProfile.address}</div>` : ""}
+        ${contact ? `<div class="h-sub">${contact}</div>` : ""}
+      </div>
+      <h1>OPD Appointment Slip</h1>
       <div class="row"><span class="k">Token</span> #${a.token_no ?? "-"}</div>
       <div class="row"><span class="k">Date/Time</span> ${format(new Date(a.scheduled_at), "PPpp")}</div>
       <div class="row"><span class="k">Patient</span> ${a.patients?.full_name ?? "-"} (${a.patients?.uhid ?? ""})</div>
@@ -194,13 +211,14 @@ function OpdAppointments() {
       <div class="row"><span class="k">Doctor</span> ${a.doctors?.name ?? "-"}${a.doctors?.specialization ? ` (${a.doctors.specialization})` : ""}</div>
       <div class="row"><span class="k">Status</span> ${a.status}</div>
       ${a.notes ? `<div class="row"><span class="k">Notes</span> ${a.notes}</div>` : ""}
+      <div class="foot">${hospitalName} · Computer Generated Appointment Slip</div>
       <script>window.print()</script></body></html>`);
     w.document.close();
   }
 
   function whatsAppAppt(a: any) {
     const mobile = (a.patients?.mobile ?? "").replace(/[^0-9]/g, "");
-    const msg = `Appointment confirmed for ${a.patients?.full_name ?? ""} on ${format(new Date(a.scheduled_at), "PPp")} with ${a.doctors?.name ?? ""}${a.token_no ? ` (Token #${a.token_no})` : ""}.`;
+    const msg = `${hospitalName}: Appointment confirmed for ${a.patients?.full_name ?? ""} on ${format(new Date(a.scheduled_at), "PPp")} with ${a.doctors?.name ?? ""}${a.token_no ? ` (Token #${a.token_no})` : ""}.`;
     const url = mobile
       ? `https://wa.me/${mobile.length === 10 ? "91" + mobile : mobile}?text=${encodeURIComponent(msg)}`
       : `https://wa.me/?text=${encodeURIComponent(msg)}`;

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Printer, MessageSquare, ArrowLeft, Download } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
-import { PrintHeader, PrintFooter } from "@/components/print-header";
+import { PrintHeader, PrintFooter, useHospitalProfile } from "@/components/print-header";
 import { shareOnWhatsApp } from "@/lib/share";
 
 export const Route = createFileRoute("/ipd-dossier/$id/print")({ component: PrintIpdPatientFile });
@@ -16,6 +16,8 @@ function inr(n?: number | null) {
 
 function PrintIpdPatientFile() {
   const { id } = Route.useParams();
+  const { data: hospitalProfile } = useHospitalProfile();
+  const hospitalName = hospitalProfile?.hospital_name || "Hospital";
 
   const { data, isLoading } = useQuery({
     queryKey: ["ipd-complete-file", id],
@@ -77,7 +79,7 @@ function PrintIpdPatientFile() {
   const days = Math.max(1, differenceInDays(adm.discharged_at ? new Date(adm.discharged_at) : new Date(), new Date(adm.admitted_at)) + 1);
 
   const handleWhatsApp = () => {
-    const msg = `*Complete IPD Patient File / Dossier — SBG Arogya Plus*\n` +
+    const msg = `*Complete IPD Patient File / Dossier — ${hospitalName}*\n` +
       `Patient: ${p?.full_name} (${p?.uhid})\n` +
       `Admission: #${adm.admission_no}\n` +
       `Ward: ${adm.wards?.name ?? "—"} / Bed ${adm.beds?.bed_number ?? "—"}\n` +
@@ -86,7 +88,7 @@ function PrintIpdPatientFile() {
       `Status: ${adm.status?.toUpperCase()}\n` +
       (discharge?.final_diagnosis ? `Final Diagnosis: ${discharge.final_diagnosis}\n` : "") +
       (bill ? `Total Bill: ${inr(bill.total)} | Outstanding: ${inr(bill.pending)}\n` : "") +
-      `\nDigital patient record verified by CareFlow Hospital Suite.`;
+      `\nDigital patient record verified by ${hospitalName}.`;
     shareOnWhatsApp(msg, undefined, p?.mobile);
   };
 

@@ -21,19 +21,75 @@ export type HospitalProfile = {
 export function useHospitalProfile() {
   return useQuery({
     queryKey: ["hospital-settings", "profile"],
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
     queryFn: async (): Promise<HospitalProfile> => {
-      const { data } = await (supabase as any)
-        .from("hospital_settings")
-        .select("hospital_name, tagline, address, phone, email, website, registration_no, gst_no, nabh_no, logo_url, primary_color")
-        .eq("id", "00000000-0000-0000-0000-000000000001")
-        .maybeSingle();
+      // 1. Check if the active user belongs to a tenant hospital in `profiles` / `hospitals`
+      let tenantHospital: any = null;
+      try {
+        const { data: authData } = await supabase.auth.getSession();
+        const userId = authData?.session?.user?.id;
+        if (userId) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("hospital_id")
+            .eq("id", userId)
+            .maybeSingle();
+
+          const hospitalId = (prof as { hospital_id?: string | null } | null)?.hospital_id;
+          if (hospitalId) {
+            const { data: hRow } = await supabase
+              .from("hospitals")
+              .select("id, hospital_name, phone, email, address, city, state")
+              .eq("id", hospitalId)
+              .maybeSingle();
+            tenantHospital = hRow;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch tenant hospital for print header:", err);
+      }
+
+      // 2. Query hospital_settings. If user has a tenant hospital, try tenant's settings first, then default
+      let data: any = null;
+      if (tenantHospital?.id) {
+        const { data: tenantSettings } = await (supabase as any)
+          .from("hospital_settings")
+          .select("hospital_name, tagline, address, phone, email, website, registration_no, gst_no, nabh_no, logo_url, primary_color")
+          .eq("id", tenantHospital.id)
+          .maybeSingle();
+        data = tenantSettings;
+      }
+
+      if (!data) {
+        const { data: defaultSettings } = await (supabase as any)
+          .from("hospital_settings")
+          .select("hospital_name, tagline, address, phone, email, website, registration_no, gst_no, nabh_no, logo_url, primary_color")
+          .eq("id", "00000000-0000-0000-0000-000000000001")
+          .maybeSingle();
+        data = defaultSettings;
+      }
+
+      const tenantAddress = tenantHospital
+        ? [tenantHospital.address, tenantHospital.city, tenantHospital.state].filter(Boolean).join(", ")
+        : null;
+
+      // Dynamic hospital name resolution:
+      // Priority 1: custom hospital_settings name if set and not the generic default
+      // Priority 2: tenant hospital name from hospitals table
+      // Priority 3: hospital_settings name
+      // Priority 4: BRAND.name fallback
+      const resolvedName =
+        (data?.hospital_name && data.hospital_name !== "SBG Arogya Plus" ? data.hospital_name : null) ||
+        tenantHospital?.hospital_name ||
+        data?.hospital_name ||
+        BRAND.name;
+
       return {
-        hospital_name: data?.hospital_name || BRAND.name,
+        hospital_name: resolvedName,
         tagline: data?.tagline ?? null,
-        address: data?.address ?? null,
-        phone: data?.phone ?? null,
-        email: data?.email ?? null,
+        address: data?.address || tenantAddress || null,
+        phone: data?.phone || tenantHospital?.phone || null,
+        email: data?.email || tenantHospital?.email || null,
         website: data?.website ?? null,
         registration_no: data?.registration_no ?? null,
         gst_no: data?.gst_no ?? null,
